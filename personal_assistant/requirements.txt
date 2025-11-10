@@ -1,0 +1,8 @@
+# Personal AI Assistant - Python Dependencies
+# This project uses only Python standard library
+# No external dependencies required
+
+# Python 3.7+ required for:
+# - dataclasses support
+# - typing improvements
+# - datetime.fromisoformat()

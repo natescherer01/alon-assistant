@@ -1,0 +1,73 @@
+"""
+SQLAlchemy database models
+"""
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON, Date, CheckConstraint
+from sqlalchemy.orm import relationship
+from database import Base
+
+
+class User(Base):
+    """User account model"""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    full_name = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    tasks = relationship("Task", back_populates="owner", cascade="all, delete-orphan")
+    chat_history = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
+
+
+class Task(Base):
+    """Task model - migrated from JSON structure"""
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+
+    # Task details
+    title = Column(String, nullable=False)
+    description = Column(Text, default="")
+    deadline = Column(Date, nullable=True)
+    intensity = Column(Integer, default=3)
+    status = Column(String, default="not_started")
+
+    # Dependencies and waiting
+    dependencies = Column(JSON, default=list)  # List of task IDs or descriptions
+    waiting_on = Column(String, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint('intensity >= 1 AND intensity <= 5', name='check_intensity'),
+        CheckConstraint("status IN ('not_started', 'in_progress', 'waiting_on', 'completed')", name='check_status'),
+    )
+
+    # Relationships
+    owner = relationship("User", back_populates="tasks")
+
+
+class ChatMessage(Base):
+    """Chat history model for Claude conversations"""
+    __tablename__ = "chat_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+
+    # Message content
+    message = Column(Text, nullable=False)  # User's message
+    response = Column(Text, nullable=False)  # Claude's response
+
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="chat_history")

@@ -1,0 +1,239 @@
+"""
+Task management API routes
+"""
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from database import get_db
+from models import User, Task
+from schemas import (
+    TaskCreate,
+    TaskUpdate,
+    TaskResponse,
+    NextTaskRequest,
+    TaskListRequest
+)
+from auth.dependencies import get_current_user
+from tasks.service import TaskService
+
+router = APIRouter(prefix="/tasks", tags=["Tasks"])
+
+
+@router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+async def create_task(
+    task_data: TaskCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Create a new task for the current user
+
+    Auto-detects intensity and waiting_on status if not provided
+    """
+    # Auto-detect intensity if not explicitly set
+    if task_data.intensity == 3:  # Default value
+        detected_intensity = TaskService.estimate_intensity(
+            f"{task_data.title} {task_data.description}"
+        )
+        task_data.intensity = detected_intensity
+
+    # Auto-detect waiting_on if not provided
+    if not task_data.waiting_on:
+        detected_waiting = TaskService.detect_waiting_on(
+            f"{task_data.title} {task_data.description}"
+        )
+        task_data.waiting_on = detected_waiting
+
+    # Create task
+    new_task = Task(
+        user_id=current_user.id,
+        title=task_data.title,
+        description=task_data.description,
+        deadline=task_data.deadline,
+        intensity=task_data.intensity,
+        dependencies=task_data.dependencies or [],
+        waiting_on=task_data.waiting_on
+    )
+
+    # Set status to waiting_on if applicable
+    if new_task.waiting_on:
+        new_task.status = "waiting_on"
+
+    db.add(new_task)
+    db.commit()
+    db.refresh(new_task)
+
+    return new_task
+
+
+@router.get("", response_model=List[TaskResponse])
+async def list_tasks(
+    list_type: str = "all",
+    days: int = 7,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    List tasks based on filter type
+
+    - all: All active (non-completed) tasks
+    - waiting: Tasks waiting on responses
+    - upcoming: Tasks due in the next N days
+    """
+    if list_type == "waiting":
+        tasks = TaskService.get_waiting_tasks(db, current_user.id)
+    elif list_type == "upcoming":
+        tasks = TaskService.get_upcoming_tasks(db, current_user.id, days)
+    else:  # all
+        tasks = db.query(Task).filter(
+            Task.user_id == current_user.id,
+            Task.status != "completed"
+        ).all()
+
+    return tasks
+
+
+@router.get("/next", response_model=Optional[TaskResponse])
+async def get_next_task(
+    intensity_filter: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get the next task to work on based on priority
+
+    Optional intensity filter: light, medium, heavy
+    """
+    task = TaskService.get_next_task(db, current_user.id, intensity_filter)
+    return task
+
+
+@router.get("/{task_id}", response_model=TaskResponse)
+async def get_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific task by ID"""
+    task = db.query(Task).filter(
+        Task.id == task_id,
+        Task.user_id == current_user.id
+    ).first()
+
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+
+    return task
+
+
+@router.patch("/{task_id}", response_model=TaskResponse)
+async def update_task(
+    task_id: int,
+    task_update: TaskUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update a task"""
+    task = db.query(Task).filter(
+        Task.id == task_id,
+        Task.user_id == current_user.id
+    ).first()
+
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+
+    # Update fields
+    update_data = task_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(task, field, value)
+
+    task.updated_at = db.func.now()
+
+    db.commit()
+    db.refresh(task)
+
+    return task
+
+
+@router.post("/{task_id}/complete", response_model=TaskResponse)
+async def complete_task(
+    task_id: int,
+    notes: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Mark a task as completed"""
+    task = db.query(Task).filter(
+        Task.id == task_id,
+        Task.user_id == current_user.id
+    ).first()
+
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+
+    task.status = "completed"
+    task.completed_at = db.func.now()
+    task.updated_at = db.func.now()
+
+    if notes:
+        task.description += f"\n\nCompleted: {notes}"
+
+    db.commit()
+    db.refresh(task)
+
+    return task
+
+
+@router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a task"""
+    task = db.query(Task).filter(
+        Task.id == task_id,
+        Task.user_id == current_user.id
+    ).first()
+
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+
+    db.delete(task)
+    db.commit()
+
+    return None
+
+
+@router.get("/{task_id}/prerequisites", response_model=List[str])
+async def get_task_prerequisites(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get suggested prerequisite tasks"""
+    task = db.query(Task).filter(
+        Task.id == task_id,
+        Task.user_id == current_user.id
+    ).first()
+
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+
+    suggestions = TaskService.suggest_prerequisites(task.title)
+    return suggestions
