@@ -73,9 +73,10 @@ app = FastAPI(
 limiter = setup_rate_limiting(app)
 
 # Add security headers middleware
-app.add_middleware(SecurityHeadersMiddleware)
+# TODO: Re-enable after fixing CSP for cross-origin
+# app.add_middleware(SecurityHeadersMiddleware)
 
-# CORS middleware (AFTER security headers)
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
