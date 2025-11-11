@@ -53,7 +53,9 @@ const useAuthStore = create((set) => ({
 
       return { success: true };
     } catch (error) {
+      console.error('Signup error:', error);
       const message = error.response?.data?.detail || 'Signup failed';
+      console.error('Error message:', message);
       set({ error: message, isLoading: false });
       return { success: false, error: message };
     }

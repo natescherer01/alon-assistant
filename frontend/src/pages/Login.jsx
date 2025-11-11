@@ -15,7 +15,8 @@ function Login() {
   useEffect(() => {
     clearError();
     return () => clearError();
-  }, [clearError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount/unmount
 
   const handleSubmit = async (e) => {
     e.preventDefault();
