@@ -81,10 +81,11 @@ async def list_tasks(
     """
     List tasks based on filter type
 
-    - all: All active (non-completed) tasks
+    - all: All active (non-completed, non-deleted) tasks
     - waiting: Tasks waiting on responses
     - upcoming: Tasks due in the next N days
     - completed: All completed tasks (most recent first)
+    - deleted: Tasks in trash (most recent first)
     """
     if list_type == "waiting":
         tasks = TaskService.get_waiting_tasks(db, current_user.id)
@@ -95,10 +96,15 @@ async def list_tasks(
             Task.user_id == current_user.id,
             Task.status == "completed"
         ).order_by(Task.completed_at.desc()).all()
+    elif list_type == "deleted":
+        tasks = db.query(Task).filter(
+            Task.user_id == current_user.id,
+            Task.status == "deleted"
+        ).order_by(Task.deleted_at.desc()).all()
     else:  # all
         tasks = db.query(Task).filter(
             Task.user_id == current_user.id,
-            Task.status != "completed"
+            Task.status.notin_(["completed", "deleted"])
         ).all()
 
     return tasks
@@ -257,7 +263,7 @@ async def delete_task(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Delete a task"""
+    """Soft delete a task (move to trash)"""
     task = db.query(Task).filter(
         Task.id == task_id,
         Task.user_id == current_user.id
@@ -269,10 +275,44 @@ async def delete_task(
             detail="Task not found"
         )
 
-    db.delete(task)
+    # Soft delete: set status to deleted and timestamp
+    task.status = "deleted"
+    task.deleted_at = datetime.utcnow()
+    task.updated_at = datetime.utcnow()
+
     db.commit()
 
     return None
+
+
+@router.post("/{task_id}/restore", response_model=TaskResponse)
+async def restore_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Restore a deleted task from trash"""
+    task = db.query(Task).filter(
+        Task.id == task_id,
+        Task.user_id == current_user.id,
+        Task.status == "deleted"
+    ).first()
+
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found in trash"
+        )
+
+    # Restore task: set status to not_started and clear deleted_at
+    task.status = "not_started"
+    task.deleted_at = None
+    task.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(task)
+
+    return task
 
 
 @router.get("/{task_id}/prerequisites", response_model=List[str])

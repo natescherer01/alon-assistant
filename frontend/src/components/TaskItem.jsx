@@ -21,6 +21,7 @@ function TaskItem({ task, onUpdate, onDelete }) {
       in_progress: { bg: '#DBEAFE', text: '#1E40AF' },
       waiting_on: { bg: '#FEF3C7', text: '#92400E' },
       completed: { bg: '#D1FAE5', text: '#065F46' },
+      deleted: { bg: '#FEE2E2', text: '#991B1B' },
     };
     return colors[status] || colors.not_started;
   };
@@ -112,6 +113,15 @@ function TaskItem({ task, onUpdate, onDelete }) {
       } catch (error) {
         alert('Failed to delete task');
       }
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      await tasksAPI.restoreTask(task.id);
+      onUpdate();
+    } catch (error) {
+      alert('Failed to restore task');
     }
   };
 
@@ -237,76 +247,103 @@ function TaskItem({ task, onUpdate, onDelete }) {
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-          {task.status !== 'completed' && (
+          {task.status === 'deleted' ? (
+            <button
+              onClick={handleRestore}
+              style={{
+                padding: '8px 14px',
+                fontSize: '13px',
+                fontWeight: '500',
+                color: '#fff',
+                background: '#0066FF',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#0052CC';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = '#0066FF';
+              }}
+            >
+              Restore
+            </button>
+          ) : (
             <>
+              {task.status !== 'completed' && (
+                <>
+                  <button
+                    onClick={handleComplete}
+                    disabled={isCompleting}
+                    style={{
+                      padding: '8px 14px',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      color: '#fff',
+                      background: '#10B981',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: isCompleting ? 'not-allowed' : 'pointer',
+                      opacity: isCompleting ? 0.6 : 1,
+                      transition: 'background 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isCompleting) e.target.style.background = '#059669';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = '#10B981';
+                    }}
+                  >
+                    Complete
+                  </button>
+
+                  <select
+                    value={task.status}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    style={{
+                      padding: '8px 10px',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      borderRadius: '8px',
+                      background: '#fff',
+                      cursor: 'pointer',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="not_started">Not Started</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="waiting_on">Waiting On</option>
+                  </select>
+                </>
+              )}
+
               <button
-                onClick={handleComplete}
-                disabled={isCompleting}
+                onClick={handleDelete}
                 style={{
                   padding: '8px 14px',
                   fontSize: '13px',
                   fontWeight: '500',
                   color: '#fff',
-                  background: '#10B981',
+                  background: '#EF4444',
                   border: 'none',
                   borderRadius: '8px',
-                  cursor: isCompleting ? 'not-allowed' : 'pointer',
-                  opacity: isCompleting ? 0.6 : 1,
+                  cursor: 'pointer',
                   transition: 'background 0.2s',
                 }}
                 onMouseEnter={(e) => {
-                  if (!isCompleting) e.target.style.background = '#059669';
+                  e.target.style.background = '#DC2626';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = '#10B981';
+                  e.target.style.background = '#EF4444';
                 }}
               >
-                Complete
+                Delete
               </button>
-
-              <select
-                value={task.status}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                style={{
-                  padding: '8px 10px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
-                  background: '#fff',
-                  cursor: 'pointer',
-                  outline: 'none',
-                }}
-              >
-                <option value="not_started">Not Started</option>
-                <option value="in_progress">In Progress</option>
-                <option value="waiting_on">Waiting On</option>
-              </select>
             </>
           )}
-
-          <button
-            onClick={handleDelete}
-            style={{
-              padding: '8px 14px',
-              fontSize: '13px',
-              fontWeight: '500',
-              color: '#fff',
-              background: '#EF4444',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'background 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#DC2626';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#EF4444';
-            }}
-          >
-            Delete
-          </button>
         </div>
       </div>
     </div>

@@ -110,7 +110,7 @@ class TaskService:
         query = db.query(Task).filter(
             and_(
                 Task.user_id == user_id,
-                Task.status.notin_(["completed", "waiting_on"])
+                Task.status.notin_(["completed", "waiting_on", "deleted"])
             )
         )
 
@@ -161,7 +161,7 @@ class TaskService:
         tasks = db.query(Task).filter(
             and_(
                 Task.user_id == user_id,
-                Task.status != "completed",
+                Task.status.notin_(["completed", "deleted"]),
                 Task.deadline.isnot(None),
                 Task.deadline <= cutoff_date
             )

@@ -43,10 +43,10 @@ class ClaudeService:
         three_days_ago = datetime.now() - timedelta(days=3)
         tomorrow = today + timedelta(days=1)
 
-        # Get user's current tasks
+        # Get user's current tasks (exclude completed and deleted)
         active_tasks = db.query(Task).filter(
             Task.user_id == user.id,
-            Task.status != "completed"
+            Task.status.notin_(["completed", "deleted"])
         ).all()
 
         # Get recently completed tasks (last 3 days) for context
@@ -55,6 +55,14 @@ class ClaudeService:
             Task.status == "completed",
             Task.completed_at >= three_days_ago
         ).order_by(Task.completed_at.desc()).limit(5).all()
+
+        # Get recently deleted tasks (last 24 hours) for context
+        one_day_ago = datetime.now() - timedelta(days=1)
+        recently_deleted = db.query(Task).filter(
+            Task.user_id == user.id,
+            Task.status == "deleted",
+            Task.deleted_at >= one_day_ago
+        ).order_by(Task.deleted_at.desc()).limit(5).all()
 
         # Categorize tasks by urgency
         urgent_deadlines = []  # Deadline within 1 day
@@ -135,6 +143,15 @@ class ClaudeService:
                     task_summary += f" (completed {task.completed_at.strftime('%Y-%m-%d')})"
                 task_summary += "\n"
 
+        # Add recently deleted tasks
+        if recently_deleted:
+            task_summary += "\n🗑️ RECENTLY DELETED (last 24 hours - can be restored):\n"
+            for task in recently_deleted:
+                task_summary += f"- Task #{task.id}: {task.title}"
+                if task.deleted_at:
+                    task_summary += f" (deleted {task.deleted_at.strftime('%Y-%m-%d %H:%M')})"
+                task_summary += "\n"
+
         system_prompt = f"""You are Sam, the Alon Assistant - a personal AI assistant helping {user.full_name or user.email} manage their tasks and stay productive.
 
 Your name is Sam. When users greet you or ask who you are, introduce yourself as Sam, the Alon Assistant.
@@ -183,6 +200,9 @@ ACTION: COMPLETE_TASK | Task ID: [id] | Notes: [completion notes]
 
 **Update Task:**
 ACTION: UPDATE_TASK | Task ID: [id] | Status: [status] | Deadline: [YYYY-MM-DD] | Intensity: [1-5] | Waiting On: [person/thing] | Description: [new desc]
+
+**Restore Deleted Task:**
+ACTION: RESTORE_TASK | Task ID: [id]
 
 ## Conversational Task Creation Strategy
 When user wants to add a task, be SMART about gathering info:
@@ -411,6 +431,11 @@ When mentioning tasks, use this format:
                     if task:
                         modified_tasks.append(task)
 
+                elif action_type == "RESTORE_TASK":
+                    task = self._restore_task_from_action(params, user, db)
+                    if task:
+                        modified_tasks.append(task)
+
             except Exception as e:
                 # Log error but continue with other actions
                 print(f"Error executing action {action_type}: {str(e)}")
@@ -585,6 +610,41 @@ When mentioning tasks, use this format:
         if "dependencies" in params:
             dep_str = params["dependencies"]
             task.dependencies = [dep.strip() for dep in dep_str.split(",") if dep.strip()]
+
+        db.commit()
+        db.refresh(task)
+
+        return task
+
+    def _restore_task_from_action(
+        self,
+        params: Dict[str, str],
+        user: User,
+        db: Session
+    ) -> Task:
+        """Restore deleted task from action params"""
+        task_id = params.get("task_id")
+        if not task_id:
+            return None
+
+        try:
+            task_id = int(task_id)
+        except:
+            return None
+
+        task = db.query(Task).filter(
+            Task.id == task_id,
+            Task.user_id == user.id,
+            Task.status == "deleted"
+        ).first()
+
+        if not task:
+            return None
+
+        # Restore task
+        task.status = "not_started"
+        task.deleted_at = None
+        task.updated_at = datetime.utcnow()
 
         db.commit()
         db.refresh(task)

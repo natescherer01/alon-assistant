@@ -108,6 +108,11 @@ export const tasksAPI = {
     await apiClient.delete(`/tasks/${taskId}`);
   },
 
+  restoreTask: async (taskId) => {
+    const response = await apiClient.post(`/tasks/${taskId}/restore`);
+    return response.data;
+  },
+
   getPrerequisites: async (taskId) => {
     const response = await apiClient.get(`/tasks/${taskId}/prerequisites`);
     return response.data;

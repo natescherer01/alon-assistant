@@ -50,11 +50,12 @@ class Task(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
+    deleted_at = Column(DateTime, nullable=True)
 
     # Constraints
     __table_args__ = (
         CheckConstraint('intensity >= 1 AND intensity <= 5', name='check_intensity'),
-        CheckConstraint("status IN ('not_started', 'in_progress', 'waiting_on', 'completed')", name='check_status'),
+        CheckConstraint("status IN ('not_started', 'in_progress', 'waiting_on', 'completed', 'deleted')", name='check_status'),
     )
 
     # Relationships

@@ -57,10 +57,10 @@ function Dashboard() {
   };
 
   const getFilterCounts = () => {
-    const all = allTasks.filter((t) => t.status !== 'completed').length;
+    const all = allTasks.filter((t) => t.status !== 'completed' && t.status !== 'deleted').length;
     const waiting = allTasks.filter((t) => t.status === 'waiting_on').length;
-    const upcoming = allTasks.filter((t) => t.deadline && t.status !== 'completed').length;
-    // For completed count, we'll fetch it separately since allTasks only has active tasks
+    const upcoming = allTasks.filter((t) => t.deadline && t.status !== 'completed' && t.status !== 'deleted').length;
+    // For completed and deleted counts, we'll fetch them separately since allTasks only has active tasks
     return { all, waiting, upcoming };
   };
 
@@ -381,6 +381,22 @@ function Dashboard() {
                   }}
                 >
                   Completed
+                </button>
+                <button
+                  onClick={() => setFilter('deleted')}
+                  style={{
+                    padding: '12px 20px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    background: filter === 'deleted' ? '#0066FF' : '#F3F4F6',
+                    color: filter === 'deleted' ? '#fff' : '#000',
+                  }}
+                >
+                  Trash
                 </button>
               </div>
 
