@@ -17,7 +17,8 @@ logger = get_logger(__name__)
 
 
 @router.post("", response_model=ChatResponse)
-@limiter.limit("20/minute")  # Max 20 chat messages per minute to prevent API cost explosion
+# TODO: Re-enable after fixing rate limiting
+# @limiter.limit("20/minute")  # Max 20 chat messages per minute to prevent API cost explosion
 async def chat_with_assistant(
     request: Request,
     message_data: ChatMessageCreate,
