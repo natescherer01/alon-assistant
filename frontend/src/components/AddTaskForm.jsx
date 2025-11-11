@@ -6,6 +6,7 @@ function AddTaskForm({ onTaskAdded }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    project: '',
     deadline: '',
     intensity: 3,
     is_recurring: false,
@@ -24,6 +25,10 @@ function AddTaskForm({ onTaskAdded }) {
         intensity: parseInt(formData.intensity),
         is_recurring: formData.is_recurring,
       };
+
+      if (formData.project) {
+        taskData.project = formData.project;
+      }
 
       if (formData.deadline) {
         taskData.deadline = formData.deadline;
@@ -44,6 +49,7 @@ function AddTaskForm({ onTaskAdded }) {
       setFormData({
         title: '',
         description: '',
+        project: '',
         deadline: '',
         intensity: 3,
         is_recurring: false,
@@ -214,6 +220,43 @@ function AddTaskForm({ onTaskAdded }) {
               outline: 'none',
               resize: 'vertical',
               fontFamily: 'inherit',
+              transition: 'border-color 0.2s, box-shadow 0.2s',
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#0066FF';
+              e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+              e.target.style.boxShadow = 'none';
+            }}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="project" style={{
+            display: 'block',
+            fontSize: '13px',
+            fontWeight: '600',
+            color: '#374151',
+            marginBottom: '8px',
+          }}>
+            Project
+          </label>
+          <input
+            type="text"
+            id="project"
+            name="project"
+            value={formData.project}
+            onChange={handleChange}
+            placeholder="e.g., Work, Personal, Home"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              fontSize: '15px',
+              border: '1px solid rgba(0, 0, 0, 0.1)',
+              borderRadius: '8px',
+              outline: 'none',
               transition: 'border-color 0.2s, box-shadow 0.2s',
             }}
             onFocus={(e) => {

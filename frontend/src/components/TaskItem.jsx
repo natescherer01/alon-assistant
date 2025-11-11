@@ -194,6 +194,19 @@ function TaskItem({ task, onUpdate, onDelete }) {
                 🔁 Recurring
               </span>
             )}
+
+            {task.project && (
+              <span style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                background: '#FEF3C7',
+                color: '#92400E',
+              }}>
+                📁 {task.project}
+              </span>
+            )}
           </div>
 
           {task.description && (

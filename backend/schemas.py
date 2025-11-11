@@ -51,6 +51,7 @@ class TaskBase(BaseModel):
     description: Optional[str] = ""
     deadline: Optional[date] = None
     intensity: Optional[int] = Field(default=3, ge=1, le=5)
+    project: Optional[str] = None
     dependencies: Optional[List] = []
     waiting_on: Optional[str] = None
     is_recurring: Optional[bool] = False
@@ -68,6 +69,7 @@ class TaskUpdate(BaseModel):
     description: Optional[str] = None
     deadline: Optional[date] = None
     intensity: Optional[int] = Field(default=None, ge=1, le=5)
+    project: Optional[str] = None
     status: Optional[str] = None
     dependencies: Optional[List] = None
     waiting_on: Optional[str] = None

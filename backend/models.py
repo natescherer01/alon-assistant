@@ -35,6 +35,7 @@ class Task(Base):
     deadline = Column(Date, nullable=True)
     intensity = Column(Integer, default=3)
     status = Column(String, default="not_started")
+    project = Column(String, nullable=True)
 
     # Dependencies and waiting
     dependencies = Column(JSON, default=list)  # List of task IDs or descriptions

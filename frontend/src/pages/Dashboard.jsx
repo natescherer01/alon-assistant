@@ -14,22 +14,28 @@ function Dashboard() {
   const [allTasks, setAllTasks] = useState([]);
   const [nextTask, setNextTask] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [projectFilter, setProjectFilter] = useState('all');
+  const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showChat, setShowChat] = useState(true);
 
   useEffect(() => {
     loadTasks();
     loadNextTask();
-  }, [filter]);
+  }, [filter, projectFilter]);
 
   const loadTasks = async () => {
     setIsLoading(true);
     try {
-      const data = await tasksAPI.getTasks(filter);
+      const data = await tasksAPI.getTasks(filter, 7, projectFilter === 'all' ? null : projectFilter);
       setTasks(data);
-      // Also load all tasks for accurate counts
+      // Also load all tasks for accurate counts and project list
       const allData = await tasksAPI.getTasks('all');
       setAllTasks(allData);
+
+      // Extract unique projects
+      const uniqueProjects = [...new Set(allData.map(t => t.project).filter(p => p))];
+      setProjects(uniqueProjects);
     } catch (error) {
       console.error('Failed to load tasks:', error);
     } finally {
@@ -317,6 +323,7 @@ function Dashboard() {
                 display: 'flex',
                 gap: '8px',
                 flexWrap: 'wrap',
+                alignItems: 'center',
               }}>
                 <button
                   onClick={() => setFilter('all')}
@@ -398,6 +405,35 @@ function Dashboard() {
                 >
                   Trash
                 </button>
+
+                {/* Project Filter Dropdown */}
+                {projects.length > 0 && (
+                  <>
+                    <div style={{ width: '1px', height: '32px', background: 'rgba(0, 0, 0, 0.1)', margin: '0 4px' }} />
+                    <select
+                      value={projectFilter}
+                      onChange={(e) => setProjectFilter(e.target.value)}
+                      style={{
+                        padding: '12px 16px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        background: '#F3F4F6',
+                        color: '#000',
+                        outline: 'none',
+                      }}
+                    >
+                      <option value="all">All Projects</option>
+                      {projects.map((project) => (
+                        <option key={project} value={project}>
+                          📁 {project}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
               </div>
 
               {/* Task List */}

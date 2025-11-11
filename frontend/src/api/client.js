@@ -72,9 +72,13 @@ export const authAPI = {
 // ==================== Tasks API ====================
 
 export const tasksAPI = {
-  getTasks: async (listType = 'all', days = 7) => {
+  getTasks: async (listType = 'all', days = 7, project = null) => {
+    const params = { list_type: listType, days };
+    if (project) {
+      params.project = project;
+    }
     const response = await apiClient.get('/tasks', {
-      params: { list_type: listType, days },
+      params,
     });
     return response.data;
   },

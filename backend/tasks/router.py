@@ -52,6 +52,7 @@ async def create_task(
         description=task_data.description,
         deadline=task_data.deadline,
         intensity=task_data.intensity,
+        project=task_data.project,
         dependencies=task_data.dependencies or [],
         waiting_on=task_data.waiting_on,
         is_recurring=1 if task_data.is_recurring else 0,
@@ -75,6 +76,7 @@ async def create_task(
 async def list_tasks(
     list_type: str = "all",
     days: int = 7,
+    project: Optional[str] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -86,26 +88,37 @@ async def list_tasks(
     - upcoming: Tasks due in the next N days
     - completed: All completed tasks (most recent first)
     - deleted: Tasks in trash (most recent first)
+
+    Optional project filter: filter tasks by project name
     """
     if list_type == "waiting":
         tasks = TaskService.get_waiting_tasks(db, current_user.id)
     elif list_type == "upcoming":
         tasks = TaskService.get_upcoming_tasks(db, current_user.id, days)
     elif list_type == "completed":
-        tasks = db.query(Task).filter(
+        query = db.query(Task).filter(
             Task.user_id == current_user.id,
             Task.status == "completed"
-        ).order_by(Task.completed_at.desc()).all()
+        )
+        if project:
+            query = query.filter(Task.project == project)
+        tasks = query.order_by(Task.completed_at.desc()).all()
     elif list_type == "deleted":
-        tasks = db.query(Task).filter(
+        query = db.query(Task).filter(
             Task.user_id == current_user.id,
             Task.status == "deleted"
-        ).order_by(Task.deleted_at.desc()).all()
+        )
+        if project:
+            query = query.filter(Task.project == project)
+        tasks = query.order_by(Task.deleted_at.desc()).all()
     else:  # all
-        tasks = db.query(Task).filter(
+        query = db.query(Task).filter(
             Task.user_id == current_user.id,
             Task.status.notin_(["completed", "deleted"])
-        ).all()
+        )
+        if project:
+            query = query.filter(Task.project == project)
+        tasks = query.all()
 
     return tasks
 
