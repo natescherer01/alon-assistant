@@ -158,7 +158,7 @@ async def update_task(
     for field, value in update_data.items():
         setattr(task, field, value)
 
-    task.updated_at = db.func.now()
+    task.updated_at = datetime.utcnow()
 
     db.commit()
     db.refresh(task)
@@ -187,8 +187,8 @@ async def complete_task(
 
     # Mark current task as completed
     task.status = "completed"
-    task.completed_at = db.func.now()
-    task.updated_at = db.func.now()
+    task.completed_at = datetime.utcnow()
+    task.updated_at = datetime.utcnow()
 
     if notes:
         task.description += f"\n\nCompleted: {notes}"
