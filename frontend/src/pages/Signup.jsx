@@ -19,6 +19,12 @@ function Signup() {
     e.preventDefault();
     setValidationError('');
 
+    // Validate password length (bcrypt limit)
+    if (formData.password.length > 72) {
+      setValidationError('Password cannot be longer than 72 characters');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setValidationError('Passwords do not match');
       return;

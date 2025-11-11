@@ -44,8 +44,17 @@ async def signup(request: Request, user_data: UserCreate, db: Session = Depends(
             detail="Email already registered"
         )
 
+    # Validate and hash password
+    try:
+        hashed_password = get_password_hash(user_data.password)
+    except ValueError as e:
+        logger.warning(f"Password validation failed during signup: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
     # Create new user
-    hashed_password = get_password_hash(user_data.password)
     new_user = User(
         email=user_data.email,
         password_hash=hashed_password,
