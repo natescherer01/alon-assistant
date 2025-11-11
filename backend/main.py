@@ -99,6 +99,18 @@ async def startup_event():
     try:
         init_db()
         logger.info("✓ Database initialized")
+
+        # Clean up old completed tasks (7 day retention)
+        from database import SessionLocal
+        from tasks.cleanup import cleanup_old_completed_tasks
+        db = SessionLocal()
+        try:
+            deleted_count = cleanup_old_completed_tasks(db, retention_days=7)
+            if deleted_count > 0:
+                logger.info(f"✓ Cleaned up {deleted_count} old completed tasks")
+        finally:
+            db.close()
+
         logger.info(f"✓ {settings.app_name} v{settings.app_version} is running")
         logger.info(f"✓ Environment: {settings.environment}")
         logger.info(f"✓ CORS origins: {', '.join(settings.cors_origins)}")
