@@ -15,11 +15,6 @@ function Signup() {
 
   const [validationError, setValidationError] = useState('');
 
-  // Debug: log error states
-  useEffect(() => {
-    console.log('Error states - authStore error:', error, 'validationError:', validationError);
-  }, [error, validationError]);
-
   // Clear errors when component mounts or unmounts
   useEffect(() => {
     clearError();
@@ -35,23 +30,13 @@ function Signup() {
     e.preventDefault();
     setValidationError('');
 
-    // Validate password length (bcrypt has a 72-byte limit, not character limit)
-    const passwordBytes = new TextEncoder().encode(formData.password).length;
-    if (passwordBytes > 72) {
-      console.log('Password too long:', passwordBytes, 'bytes');
-      setValidationError(`Password is too long (${passwordBytes} bytes). Must be 72 bytes or less. Try a shorter password or fewer special characters.`);
-      return;
-    }
-
+    // Only check if passwords match
     if (formData.password !== formData.confirmPassword) {
-      console.log('Passwords do not match');
       setValidationError('Passwords do not match');
       return;
     }
 
-    console.log('Submitting signup form...');
     const result = await signup(formData.email, formData.password, formData.fullName);
-    console.log('Signup result:', result);
     if (result.success) {
       navigate('/dashboard');
     }

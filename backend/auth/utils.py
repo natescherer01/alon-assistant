@@ -31,18 +31,9 @@ def get_password_hash(password: str) -> str:
     Returns:
         Hashed password
 
-    Raises:
-        ValueError: If password is too long (>72 bytes when UTF-8 encoded)
+    Note:
+        bcrypt automatically truncates passwords longer than 72 bytes
     """
-    # bcrypt has a 72-byte limit (not character limit)
-    password_bytes = password.encode('utf-8')
-    if len(password_bytes) > 72:
-        raise ValueError(
-            f"Password is too long ({len(password_bytes)} bytes). "
-            f"Must be 72 bytes or less when UTF-8 encoded. "
-            f"Try using a shorter password or fewer special characters."
-        )
-
     return pwd_context.hash(password)
 
 
