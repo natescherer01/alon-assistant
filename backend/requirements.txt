@@ -18,7 +18,7 @@ slowapi==0.1.9  # For rate limiting
 redis==5.0.1  # For token blacklist and caching
 
 # Claude API
-anthropic==0.18.1
+anthropic==0.40.0
 
 # CORS
 fastapi-cors==0.0.6
