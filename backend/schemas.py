@@ -3,8 +3,7 @@ Pydantic schemas for request/response validation
 """
 from datetime import datetime, date
 from typing import Optional, List
-import re
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field
 
 
 # ==================== User Schemas ====================
@@ -15,43 +14,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=12)
-
-    @validator('password')
-    def validate_password(cls, v):
-        """
-        Validate password meets security requirements:
-        - At least 12 characters
-        - Contains uppercase letter
-        - Contains lowercase letter
-        - Contains digit
-        - Contains special character
-        - Not a common password
-        """
-        if len(v) < 12:
-            raise ValueError('Password must be at least 12 characters long')
-
-        if not re.search(r'[A-Z]', v):
-            raise ValueError('Password must contain at least one uppercase letter')
-
-        if not re.search(r'[a-z]', v):
-            raise ValueError('Password must contain at least one lowercase letter')
-
-        if not re.search(r'[0-9]', v):
-            raise ValueError('Password must contain at least one digit')
-
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;/]', v):
-            raise ValueError('Password must contain at least one special character')
-
-        # Check against common passwords
-        common_passwords = [
-            'password', '123456789', 'qwertyuiop', 'abc123456789',
-            'password123', 'admin123', 'welcome123', 'letmein123'
-        ]
-        if v.lower() in common_passwords:
-            raise ValueError('Password is too common. Please choose a more secure password.')
-
-        return v
+    password: str
 
 
 class UserLogin(BaseModel):
