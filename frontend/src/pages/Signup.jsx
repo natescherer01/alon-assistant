@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuthStore from '../utils/authStore';
 
 function Signup() {
   const navigate = useNavigate();
-  const { signup, isLoading, error } = useAuthStore();
+  const { signup, isLoading, error, clearError } = useAuthStore();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -14,6 +14,16 @@ function Signup() {
   });
 
   const [validationError, setValidationError] = useState('');
+
+  // Clear errors when component mounts or unmounts
+  useEffect(() => {
+    clearError();
+    setValidationError('');
+    return () => {
+      clearError();
+      setValidationError('');
+    };
+  }, [clearError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,6 +48,13 @@ function Signup() {
   };
 
   const handleChange = (e) => {
+    // Clear errors when user starts typing
+    if (error) {
+      clearError();
+    }
+    if (validationError) {
+      setValidationError('');
+    }
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,

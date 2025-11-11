@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuthStore from '../utils/authStore';
 
 function Login() {
   const navigate = useNavigate();
-  const { login, isLoading, error } = useAuthStore();
+  const { login, isLoading, error, clearError } = useAuthStore();
 
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+
+  // Clear errors when component mounts or unmounts
+  useEffect(() => {
+    clearError();
+    return () => clearError();
+  }, [clearError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,6 +26,10 @@ function Login() {
   };
 
   const handleChange = (e) => {
+    // Clear error when user starts typing
+    if (error) {
+      clearError();
+    }
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,

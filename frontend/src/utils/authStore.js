@@ -69,6 +69,10 @@ const useAuthStore = create((set) => ({
     });
   },
 
+  clearError: () => {
+    set({ error: null });
+  },
+
   checkAuth: async () => {
     const token = localStorage.getItem('token');
     if (!token) {
