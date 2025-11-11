@@ -70,7 +70,8 @@ app = FastAPI(
 )
 
 # Set up rate limiting (FIRST)
-limiter = setup_rate_limiting(app)
+# TODO: Temporarily disabled to test CORS
+# limiter = setup_rate_limiting(app)
 
 # Add security headers middleware
 # TODO: Re-enable after fixing CSP for cross-origin
