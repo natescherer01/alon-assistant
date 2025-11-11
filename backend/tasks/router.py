@@ -84,11 +84,17 @@ async def list_tasks(
     - all: All active (non-completed) tasks
     - waiting: Tasks waiting on responses
     - upcoming: Tasks due in the next N days
+    - completed: All completed tasks (most recent first)
     """
     if list_type == "waiting":
         tasks = TaskService.get_waiting_tasks(db, current_user.id)
     elif list_type == "upcoming":
         tasks = TaskService.get_upcoming_tasks(db, current_user.id, days)
+    elif list_type == "completed":
+        tasks = db.query(Task).filter(
+            Task.user_id == current_user.id,
+            Task.status == "completed"
+        ).order_by(Task.completed_at.desc()).all()
     else:  # all
         tasks = db.query(Task).filter(
             Task.user_id == current_user.id,

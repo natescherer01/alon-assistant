@@ -59,7 +59,8 @@ function Dashboard() {
   const getFilterCounts = () => {
     const all = allTasks.filter((t) => t.status !== 'completed').length;
     const waiting = allTasks.filter((t) => t.status === 'waiting_on').length;
-    const upcoming = allTasks.filter((t) => t.deadline).length;
+    const upcoming = allTasks.filter((t) => t.deadline && t.status !== 'completed').length;
+    // For completed count, we'll fetch it separately since allTasks only has active tasks
     return { all, waiting, upcoming };
   };
 
@@ -364,6 +365,22 @@ function Dashboard() {
                   }}
                 >
                   Upcoming ({counts.upcoming})
+                </button>
+                <button
+                  onClick={() => setFilter('completed')}
+                  style={{
+                    padding: '12px 20px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    background: filter === 'completed' ? '#0066FF' : '#F3F4F6',
+                    color: filter === 'completed' ? '#fff' : '#000',
+                  }}
+                >
+                  Completed
                 </button>
               </div>
 

@@ -39,15 +39,22 @@ class ClaudeService:
         """
         from datetime import timedelta
 
+        today = datetime.now().date()
+        three_days_ago = datetime.now() - timedelta(days=3)
+        tomorrow = today + timedelta(days=1)
+
         # Get user's current tasks
         active_tasks = db.query(Task).filter(
             Task.user_id == user.id,
             Task.status != "completed"
         ).all()
 
-        today = datetime.now().date()
-        three_days_ago = datetime.now() - timedelta(days=3)
-        tomorrow = today + timedelta(days=1)
+        # Get recently completed tasks (last 3 days) for context
+        recently_completed = db.query(Task).filter(
+            Task.user_id == user.id,
+            Task.status == "completed",
+            Task.completed_at >= three_days_ago
+        ).order_by(Task.completed_at.desc()).limit(5).all()
 
         # Categorize tasks by urgency
         urgent_deadlines = []  # Deadline within 1 day
@@ -118,6 +125,15 @@ class ClaudeService:
                 task_summary += "\n"
         else:
             task_summary += "No active tasks.\n"
+
+        # Add recently completed tasks
+        if recently_completed:
+            task_summary += "\n✅ RECENTLY COMPLETED (last 3 days):\n"
+            for task in recently_completed:
+                task_summary += f"- Task #{task.id}: {task.title}"
+                if task.completed_at:
+                    task_summary += f" (completed {task.completed_at.strftime('%Y-%m-%d')})"
+                task_summary += "\n"
 
         system_prompt = f"""You are Sam, the Alon Assistant - a personal AI assistant helping {user.full_name or user.email} manage their tasks and stay productive.
 
