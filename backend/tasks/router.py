@@ -2,6 +2,7 @@
 Task management API routes
 """
 from typing import List, Optional
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database import get_db
@@ -52,7 +53,11 @@ async def create_task(
         deadline=task_data.deadline,
         intensity=task_data.intensity,
         dependencies=task_data.dependencies or [],
-        waiting_on=task_data.waiting_on
+        waiting_on=task_data.waiting_on,
+        is_recurring=1 if task_data.is_recurring else 0,
+        recurrence_type=task_data.recurrence_type,
+        recurrence_interval=task_data.recurrence_interval,
+        recurrence_end_date=task_data.recurrence_end_date
     )
 
     # Set status to waiting_on if applicable
@@ -168,7 +173,7 @@ async def complete_task(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Mark a task as completed"""
+    """Mark a task as completed and create next occurrence if recurring"""
     task = db.query(Task).filter(
         Task.id == task_id,
         Task.user_id == current_user.id
@@ -180,12 +185,59 @@ async def complete_task(
             detail="Task not found"
         )
 
+    # Mark current task as completed
     task.status = "completed"
     task.completed_at = db.func.now()
     task.updated_at = db.func.now()
 
     if notes:
         task.description += f"\n\nCompleted: {notes}"
+
+    # Handle recurring tasks
+    if task.is_recurring and task.recurrence_type and task.deadline:
+        # Calculate next deadline
+        current_deadline = task.deadline
+        interval = task.recurrence_interval or 1
+
+        if task.recurrence_type == "daily":
+            next_deadline = current_deadline + timedelta(days=interval)
+        elif task.recurrence_type == "weekly":
+            next_deadline = current_deadline + timedelta(weeks=interval)
+        elif task.recurrence_type == "monthly":
+            # Approximate monthly recurrence
+            next_deadline = current_deadline + timedelta(days=30 * interval)
+        elif task.recurrence_type == "yearly":
+            # Approximate yearly recurrence
+            next_deadline = current_deadline + timedelta(days=365 * interval)
+        else:
+            next_deadline = None
+
+        # Check if we should create next occurrence
+        should_create_next = True
+        if task.recurrence_end_date and next_deadline:
+            should_create_next = next_deadline <= task.recurrence_end_date
+
+        # Create next occurrence
+        if should_create_next and next_deadline:
+            next_task = Task(
+                user_id=task.user_id,
+                title=task.title,
+                description=task.description.split("\n\nCompleted:")[0],  # Remove completion notes
+                deadline=next_deadline,
+                intensity=task.intensity,
+                dependencies=task.dependencies,
+                waiting_on=task.waiting_on,
+                is_recurring=task.is_recurring,
+                recurrence_type=task.recurrence_type,
+                recurrence_interval=task.recurrence_interval,
+                recurrence_end_date=task.recurrence_end_date
+            )
+
+            # Set status to waiting_on if applicable
+            if next_task.waiting_on:
+                next_task.status = "waiting_on"
+
+            db.add(next_task)
 
     db.commit()
     db.refresh(task)

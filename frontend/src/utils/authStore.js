@@ -38,11 +38,20 @@ const useAuthStore = create((set) => ({
   signup: async (email, password, fullName) => {
     set({ isLoading: true, error: null });
     try {
-      await authAPI.signup(email, password, fullName);
+      const data = await authAPI.signup(email, password, fullName);
+      localStorage.setItem('token', data.access_token);
 
-      // Auto-login after signup
-      const result = await useAuthStore.getState().login(email, password);
-      return result;
+      // Fetch user data
+      const user = await authAPI.getCurrentUser();
+
+      set({
+        token: data.access_token,
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+
+      return { success: true };
     } catch (error) {
       const message = error.response?.data?.detail || 'Signup failed';
       set({ error: message, isLoading: false });

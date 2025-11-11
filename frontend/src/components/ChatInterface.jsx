@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { chatAPI } from '../api/client';
+import useAuthStore from '../utils/authStore';
 
 function ChatInterface({ onTaskUpdate }) {
+  const { user } = useAuthStore();
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -83,63 +86,253 @@ function ChatInterface({ onTaskUpdate }) {
     }
   };
 
-  const quickPrompts = [
-    "What's next?",
-    "Show my tasks",
-    "What am I waiting on?",
-    "Add a task",
-  ];
+  const handleClearChat = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to clear all chat history? This action cannot be undone.'
+    );
 
-  const handleQuickPrompt = (prompt) => {
-    setInputMessage(prompt);
+    if (!confirmed) return;
+
+    try {
+      await chatAPI.clearHistory();
+      setMessages([]);
+    } catch (error) {
+      alert('Failed to clear chat history: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  // Get user initials for avatar
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
-      {/* Header */}
-      <div className="bg-indigo-600 text-white px-6 py-4 rounded-t-lg">
-        <h2 className="text-xl font-semibold">AI Assistant</h2>
-        <p className="text-sm text-indigo-100">Ask me about your tasks or add new ones</p>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+    <div style={{
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      maxWidth: '1200px',
+      margin: '0 auto',
+      width: '100%',
+      padding: '24px',
+    }}>
+      {/* Messages Container */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        marginBottom: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '24px',
+      }}>
         {isLoadingHistory ? (
-          <div className="text-center text-gray-500">Loading chat history...</div>
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'rgba(0, 0, 0, 0.4)',
+            fontSize: '16px',
+          }}>
+            Loading chat history...
+          </div>
         ) : messages.length === 0 ? (
-          <div className="text-center text-gray-500">
-            <p className="mb-4">👋 Hi! I'm your AI task assistant.</p>
-            <p className="text-sm">Ask me anything about your tasks or try one of the quick prompts below.</p>
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            flexDirection: 'column',
+            gap: '16px',
+          }}>
+            <p style={{ color: 'rgba(0, 0, 0, 0.4)', fontSize: '18px' }}>
+              Start a conversation with Sam
+            </p>
           </div>
         ) : (
           messages.map((msg, index) => (
             <div
               key={index}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              style={{
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'flex-start',
+                flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
+              }}
             >
-              <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                  msg.role === 'user'
-                    ? 'bg-indigo-600 text-white'
-                    : msg.role === 'error'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-gray-100 text-gray-900'
-                }`}
-              >
-                <p className="whitespace-pre-wrap">{msg.content}</p>
+              {/* Avatar */}
+              <div style={{
+                width: '40px',
+                height: '40px',
+                minWidth: '40px',
+                borderRadius: '50%',
+                background: msg.role === 'user' ? '#0066FF' : '#F3F4F6',
+                color: msg.role === 'user' ? '#fff' : '#000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: msg.role === 'user' ? '14px' : '18px',
+                fontWeight: msg.role === 'user' ? '600' : '400',
+                overflow: 'hidden',
+              }}>
+                {msg.role === 'user' ? (
+                  getInitials(user?.full_name || user?.email)
+                ) : (
+                  <img src="/Sam.png" alt="Sam" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
+                )}
+              </div>
+
+              {/* Message Bubble */}
+              <div style={{
+                maxWidth: '70%',
+                padding: '14px 18px',
+                background: msg.role === 'user' ? '#0066FF' : msg.role === 'error' ? '#FEE2E2' : '#F3F4F6',
+                color: msg.role === 'user' ? '#fff' : msg.role === 'error' ? '#DC2626' : '#000',
+                borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+                fontSize: msg.role === 'user' ? '10px' : '14px',
+                lineHeight: '1.5',
+                wordBreak: 'break-word',
+              }}>
+                {msg.role === 'user' || msg.role === 'error' ? (
+                  <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+                ) : (
+                  <div style={{
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                  }}>
+                    <ReactMarkdown
+                      components={{
+                        p: ({node, ...props}) => <p style={{ margin: '0 0 6px 0', fontSize: '14px' }} {...props} />,
+                        ul: ({node, ...props}) => <ul style={{ margin: '6px 0', paddingLeft: '18px', fontSize: '14px' }} {...props} />,
+                        ol: ({node, ...props}) => <ol style={{ margin: '6px 0', paddingLeft: '18px', fontSize: '14px' }} {...props} />,
+                        li: ({node, ...props}) => <li style={{ margin: '3px 0', fontSize: '14px' }} {...props} />,
+                        h1: ({node, ...props}) => (
+                          <h1 style={{
+                            fontSize: '15px',
+                            fontWeight: '700',
+                            margin: '12px 0 6px 0',
+                            color: '#0066FF',
+                          }} {...props} />
+                        ),
+                        h2: ({node, ...props}) => (
+                          <h2 style={{
+                            fontSize: '14px',
+                            fontWeight: '700',
+                            margin: '10px 0 5px 0',
+                            color: '#0066FF',
+                          }} {...props} />
+                        ),
+                        h3: ({node, ...props}) => (
+                          <h3 style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            margin: '8px 0 4px 0',
+                            color: '#0066FF',
+                          }} {...props} />
+                        ),
+                        strong: ({node, ...props}) => <strong style={{ fontWeight: '600', color: '#1a1a1a', fontSize: '14px' }} {...props} />,
+                        blockquote: ({node, ...props}) => (
+                          <blockquote style={{
+                            borderLeft: '3px solid #0066FF',
+                            margin: '8px 0',
+                            background: 'rgba(0, 102, 255, 0.08)',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            lineHeight: '1.5',
+                            boxShadow: '0 1px 2px rgba(0, 102, 255, 0.1)',
+                          }} {...props} />
+                        ),
+                        code: ({node, inline, ...props}) => inline ? (
+                          <code style={{
+                            background: 'rgba(0, 0, 0, 0.05)',
+                            padding: '2px 5px',
+                            borderRadius: '3px',
+                            fontSize: '12px',
+                            fontFamily: 'monospace',
+                          }} {...props} />
+                        ) : (
+                          <code style={{
+                            display: 'block',
+                            background: 'rgba(0, 0, 0, 0.05)',
+                            padding: '8px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontFamily: 'monospace',
+                            margin: '6px 0',
+                          }} {...props} />
+                        ),
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                )}
               </div>
             </div>
           ))
         )}
 
+        {/* Loading Indicator */}
         {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-lg px-4 py-2">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
-              </div>
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            alignItems: 'flex-start',
+          }}>
+            {/* Assistant Avatar */}
+            <div style={{
+              width: '40px',
+              height: '40px',
+              minWidth: '40px',
+              borderRadius: '50%',
+              background: '#F3F4F6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
+              <img src="/Sam.png" alt="Sam" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
+            </div>
+
+            {/* Typing Indicator */}
+            <div style={{
+              padding: '16px 20px',
+              background: '#F3F4F6',
+              borderRadius: '20px 20px 20px 4px',
+              display: 'flex',
+              gap: '4px',
+              alignItems: 'center',
+            }}>
+              <span style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#999',
+                animation: 'bounce 1.4s infinite ease-in-out both',
+                animationDelay: '-0.32s',
+              }} />
+              <span style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#999',
+                animation: 'bounce 1.4s infinite ease-in-out both',
+                animationDelay: '-0.16s',
+              }} />
+              <span style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#999',
+                animation: 'bounce 1.4s infinite ease-in-out both',
+              }} />
             </div>
           </div>
         )}
@@ -147,43 +340,99 @@ function ChatInterface({ onTaskUpdate }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Prompts */}
-      {messages.length === 0 && !isLoadingHistory && (
-        <div className="px-6 pb-4">
-          <div className="flex flex-wrap gap-2">
-            {quickPrompts.map((prompt, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickPrompt(prompt)}
-                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
+      {/* Clear Chat Button */}
+      {messages.length > 0 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginBottom: '12px',
+        }}>
+          <button
+            onClick={handleClearChat}
+            style={{
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: '500',
+              color: '#666',
+              background: 'transparent',
+              border: '1px solid rgba(0, 0, 0, 0.1)',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(239, 68, 68, 0.1)';
+              e.target.style.borderColor = '#EF4444';
+              e.target.style.color = '#DC2626';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'transparent';
+              e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+              e.target.style.color = '#666';
+            }}
+          >
+            Clear Chat
+          </button>
         </div>
       )}
 
-      {/* Input */}
-      <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            disabled={isLoading}
-            placeholder="Type your message..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !inputMessage.trim()}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Send
-          </button>
-        </div>
+      {/* Input Form */}
+      <form onSubmit={handleSubmit} style={{
+        display: 'flex',
+        gap: '12px',
+        padding: '16px',
+        background: '#F9FAFB',
+        borderRadius: '16px',
+        border: '1px solid rgba(0, 0, 0, 0.06)',
+      }}>
+        <input
+          type="text"
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          placeholder="Type your message..."
+          disabled={isLoading}
+          style={{
+            flex: 1,
+            padding: '12px 16px',
+            fontSize: '15px',
+            border: 'none',
+            borderRadius: '12px',
+            background: '#fff',
+            outline: 'none',
+            color: '#000',
+          }}
+        />
+        <button
+          type="submit"
+          disabled={!inputMessage.trim() || isLoading}
+          style={{
+            padding: '12px 24px',
+            fontSize: '15px',
+            fontWeight: '600',
+            color: '#fff',
+            background: '#0066FF',
+            border: 'none',
+            borderRadius: '12px',
+            cursor: (!inputMessage.trim() || isLoading) ? 'not-allowed' : 'pointer',
+            opacity: (!inputMessage.trim() || isLoading) ? 0.5 : 1,
+            transition: 'all 0.2s',
+          }}
+        >
+          Send
+        </button>
       </form>
+
+      {/* Bounce Animation Styles */}
+      <style>{`
+        @keyframes bounce {
+          0%, 80%, 100% {
+            transform: scale(0);
+          }
+          40% {
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 }

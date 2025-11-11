@@ -8,7 +8,7 @@ from database import Base
 
 
 class User(Base):
-    """User account model"""
+    """User account model - SaaS model where company provides API access"""
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -40,6 +40,12 @@ class Task(Base):
     dependencies = Column(JSON, default=list)  # List of task IDs or descriptions
     waiting_on = Column(String, nullable=True)
 
+    # Recurring task fields
+    is_recurring = Column(Integer, default=0)  # SQLite uses 0/1 for boolean
+    recurrence_type = Column(String, nullable=True)  # 'daily', 'weekly', 'monthly', 'yearly'
+    recurrence_interval = Column(Integer, default=1)  # Every X days/weeks/months
+    recurrence_end_date = Column(Date, nullable=True)  # Optional end date for recurrence
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -60,14 +66,14 @@ class ChatMessage(Base):
     __tablename__ = "chat_history"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # Message content
     message = Column(Text, nullable=False)  # User's message
     response = Column(Text, nullable=False)  # Claude's response
 
     # Metadata
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)  # Indexed for efficient cleanup queries
 
     # Relationships
     user = relationship("User", back_populates="chat_history")

@@ -1,211 +1,360 @@
 # Personal AI Assistant
 
-A smart task management system that acts as your personal micromanager, helping you stay organized and productive.
+A production-ready SaaS task management system powered by Claude AI that helps you stay organized and productive.
 
-## Features
+## Overview
 
-- **Intelligent Task Prioritization**: Automatically prioritizes tasks based on deadlines, intensity, and dependencies
-- **Smart Auto-Detection**: Detects task intensity and waiting-on status from your descriptions
-- **Proactive Reminders**: Tracks tasks waiting for responses and prompts you to follow up
-- **Prerequisite Suggestions**: Suggests tasks you might need to complete first
-- **Deadline Tracking**: Keeps you aware of upcoming and overdue tasks
-- **Dependency Management**: Ensures you complete tasks in the right order
+This is a full-stack web application where users sign up, manage their tasks, and interact with Claude AI for intelligent task assistance. **The company provides the Claude API access** - users simply create an account and start using the service.
 
-## Quick Start
+### Key Features
 
-### Using the /assistant Command (Recommended)
+- **AI-Powered Task Management** - Claude AI helps prioritize, organize, and track your tasks
+- **Smart Task Prioritization** - Automatically prioritizes based on deadlines, intensity, and dependencies
+- **Interactive Chat Interface** - Natural conversation with Claude about your tasks
+- **Secure Authentication** - JWT-based auth with refresh tokens and token revocation
+- **Production-Ready** - Built for Railway deployment with PostgreSQL and Redis
 
-The easiest way to use the system is through the `/assistant` slash command in Claude Code:
+## Architecture
+
+### SaaS Model
 
 ```
-/assistant
+┌─────────────────┐
+│   Users         │
+│   (Sign up)     │
+│   (Pay for      │
+│    service)     │
+└────────┬────────┘
+         │ HTTPS
+         ▼
+┌─────────────────────────────┐
+│   Your Company Infrastructure│
+│                             │
+│  ┌──────────┐  ┌─────────┐ │
+│  │ Backend  │  │Frontend │ │
+│  │(FastAPI) │  │(React)  │ │
+│  └────┬─────┘  └─────────┘ │
+│       │                    │
+│  ┌────┴──────┐  ┌────────┐│
+│  │PostgreSQL │  │ Redis  ││
+│  └───────────┘  └────────┘│
+│                            │
+│  Company's Anthropic API Key│
+│  (You pay for Claude)      │
+└─────────────────────────────┘
 ```
 
-This launches an interactive session where you can:
-- Ask "What's next?" to get your next task
-- Say "Add task: [description]" to add new tasks
-- Report completions: "I finished [task] and sent it to [person]"
-- Check on waiting items and get follow-up prompts
+### Tech Stack
 
-### Direct Python Usage
+**Backend:**
+- FastAPI (Python 3.11+)
+- PostgreSQL (production) / SQLite (development)
+- Redis (token blacklist & caching)
+- Anthropic Claude API
+- SQLAlchemy ORM
+- JWT authentication
 
-You can also use the Python CLI directly:
+**Frontend:**
+- React + Vite
+- TailwindCSS
+- Zustand (state management)
+- React Query
+- Axios
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL (production) or SQLite (development)
+- Redis (optional but recommended)
+- Anthropic API key
+
+### Backend Setup
+
+1. **Navigate to backend directory:**
+   ```bash
+   cd backend
+   ```
+
+2. **Create and activate virtual environment:**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure environment variables:**
+   Create `.env` file:
+   ```bash
+   # REQUIRED
+   SECRET_KEY=your-secure-secret-key-here-32-chars-min
+   ANTHROPIC_API_KEY=sk-ant-your-company-api-key
+
+   # OPTIONAL (defaults shown)
+   DATABASE_URL=sqlite:///./personal_assistant.db
+   REDIS_URL=redis://localhost:6379/0
+   CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+   ACCESS_TOKEN_EXPIRE_MINUTES=60
+   REFRESH_TOKEN_EXPIRE_DAYS=30
+   ENVIRONMENT=development
+   LOG_LEVEL=INFO
+   ```
+
+   Generate SECRET_KEY:
+   ```bash
+   python -c 'import secrets; print(secrets.token_urlsafe(32))'
+   ```
+
+5. **Run database migrations:**
+   ```bash
+   alembic upgrade head
+   ```
+
+6. **Start the server:**
+   ```bash
+   uvicorn main:app --reload
+   ```
+
+   API will be available at: http://localhost:8000
+
+### Frontend Setup
+
+1. **Navigate to frontend directory:**
+   ```bash
+   cd frontend
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment:**
+   Create `.env` file:
+   ```bash
+   VITE_API_BASE_URL=http://localhost:8000/api/v1
+   ```
+
+4. **Start development server:**
+   ```bash
+   npm run dev
+   ```
+
+   App will be available at: http://localhost:5173
+
+## API Documentation
+
+Once the backend is running, visit:
+- **Interactive API Docs:** http://localhost:8000/docs
+- **OpenAPI Schema:** http://localhost:8000/openapi.json
+
+### Key Endpoints
+
+**Authentication:**
+- `POST /api/v1/auth/signup` - Create account (returns tokens)
+- `POST /api/v1/auth/login` - Login (returns access + refresh tokens)
+- `POST /api/v1/auth/refresh` - Refresh access token
+- `POST /api/v1/auth/logout` - Revoke access token
+- `GET /api/v1/auth/me` - Get current user info
+
+**Tasks:**
+- `GET /api/v1/tasks` - List user's tasks
+- `POST /api/v1/tasks` - Create new task
+- `GET /api/v1/tasks/next` - Get next priority task
+- `PATCH /api/v1/tasks/{id}` - Update task
+- `POST /api/v1/tasks/{id}/complete` - Mark task complete
+- `DELETE /api/v1/tasks/{id}` - Delete task
+
+**Chat:**
+- `POST /api/v1/chat` - Send message to Claude AI
+- `GET /api/v1/chat/history` - Get chat history
+- `DELETE /api/v1/chat/history` - Clear chat history
+
+## Security Features
+
+✅ **Production-Ready Security:**
+- JWT authentication with 1-hour access tokens
+- 30-day refresh tokens for seamless re-authentication
+- Redis-based token blacklist for immediate revocation
+- Bcrypt password hashing
+- Strong password requirements (12+ chars, uppercase, lowercase, number, symbol)
+- Rate limiting on all endpoints
+- CORS protection
+- Security headers (HSTS, CSP, X-Frame-Options)
+- Input validation with Pydantic
+- PostgreSQL encryption at rest (production)
+
+✅ **SaaS Model:**
+- Company-provided API access (no user API key management)
+- Secure Railway environment variables
+- No encryption keys in code or .env files (in production)
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide to Railway.
+
+### Quick Deploy to Railway
+
+1. Create Railway account
+2. Add PostgreSQL and Redis databases
+3. Set environment variables:
+   ```
+   SECRET_KEY=<generated-key>
+   ANTHROPIC_API_KEY=sk-ant-<your-company-key>
+   ENVIRONMENT=production
+   CORS_ORIGINS=https://your-frontend.vercel.app
+   ```
+4. Deploy backend to Railway
+5. Deploy frontend to Vercel/Netlify with `VITE_API_BASE_URL=https://your-backend.railway.app/api/v1`
+
+Railway auto-configures `DATABASE_URL` and `REDIS_URL`.
+
+## Development
+
+### Database Migrations
+
+Create new migration:
+```bash
+cd backend
+alembic revision --autogenerate -m "description"
+alembic upgrade head
+```
+
+### Running Tests
 
 ```bash
-cd "personal_assistant"
-
-# Add a task
-python assistant.py add "Write technical brief" --deadline 2025-11-05 --intensity 4
-
-# See what to do next
-python assistant.py next
-
-# Get a light task
-python assistant.py next light
-
-# Complete a task
-python assistant.py complete 1 "Finished and sent to Luke for review"
-
-# List all tasks
-python assistant.py list
-
-# List waiting tasks
-python assistant.py list waiting
-
-# List upcoming tasks
-python assistant.py list upcoming
-
-# Show task details
-python assistant.py show 1
-
-# Update task status
-python assistant.py update 1 in_progress "Started working on this"
+cd backend
+pytest
 ```
 
-## Task Attributes
+### Code Quality
 
-Each task tracks:
-- **Title & Description**: What needs to be done
-- **Deadline**: When it's due (YYYY-MM-DD format)
-- **Intensity**: 1-5 scale (1=very light, 5=very heavy)
-- **Status**: not_started, in_progress, waiting_on, completed
-- **Dependencies**: Other tasks or people this depends on
-- **Waiting-on**: Who/what you're waiting for
+```bash
+# Format code
+black .
 
-## Intelligence Features
-
-### Auto-Detect Intensity
-
-The system automatically estimates task intensity from keywords:
-
-- **Light (1-2)**: email, call, meeting, review, check, quick, brief
-- **Medium (3)**: write, draft, prepare, update, organize
-- **Heavy (4-5)**: project, develop, design, research, build, implement, create
-
-Example: "Quick email to team" → Intensity 2 (Light)
-
-### Auto-Detect Waiting Status
-
-Automatically detects when you're waiting on someone:
-
-- "Sent to Luke" → Status: waiting_on, Waiting on: "Luke's response"
-- "Waiting for design approval" → Status: waiting_on, Waiting on: "design approval"
-
-### Prerequisite Suggestions
-
-Suggests tasks you might need to do first:
-
-- "Send report" → Suggests: "Review/proofread before sending"
-- "Team meeting" → Suggests: "Prepare agenda for meeting"
-- "Give presentation" → Suggests: "Prepare presentation slides"
-
-### Smart Prioritization
-
-Tasks are prioritized based on:
-1. **Deadline urgency** (overdue > today > tomorrow > this week)
-2. **Task intensity** (higher intensity = higher priority)
-3. **Current status** (in_progress tasks get a boost)
-4. **Dependencies** (won't show until prerequisites are done)
-
-## Example Workflows
-
-### Morning Check-in
-
-```
-/assistant
-"What's next?"
+# Lint
+flake8 .
 ```
 
-You'll see:
-- Your highest priority task
-- Upcoming tasks in the next 7 days
-- Tasks waiting for responses (with follow-up prompts if >3 days old)
-
-### Adding a Task
-
-```
-/assistant
-"Add task: Prepare quarterly sales report, due Nov 10"
-```
-
-System will:
-- Auto-detect intensity (4-heavy, because "prepare" + "report")
-- Suggest prerequisites ("Gather sales data")
-- Create the task with proper deadline
-
-### Completing a Task
-
-```
-/assistant
-"I finished the technical brief and sent it to Luke"
-```
-
-System will:
-- Mark task as completed
-- Auto-detect waiting status
-- Create follow-up task to check for Luke's response
-- Ask what you want to work on next
-
-### Checking Waiting Items
-
-```
-/assistant
-"Show me what I'm waiting on"
-```
-
-You'll see:
-- All tasks in waiting_on status
-- How long you've been waiting
-- Suggestions to follow up if >3 days
-
-## File Structure
+## Project Structure
 
 ```
 personal AI/
-├── .claude/
-│   └── commands/
-│       └── assistant.md          # Slash command definition
-├── personal_assistant/
-│   ├── assistant.py              # Main Python program
-│   ├── data/
-│   │   ├── tasks.json           # Task storage
-│   │   └── context.json         # System context
-│   └── requirements.txt         # Dependencies (none needed!)
-└── README.md                    # This file
+├── backend/
+│   ├── alembic/              # Database migrations
+│   ├── auth/                 # Authentication module
+│   │   ├── dependencies.py   # Auth dependencies
+│   │   ├── router.py         # Auth endpoints
+│   │   ├── token_blacklist.py # Redis token revocation
+│   │   └── utils.py          # JWT utils
+│   ├── chat/                 # Claude AI chat module
+│   │   ├── router.py         # Chat endpoints
+│   │   └── service.py        # Claude API integration
+│   ├── tasks/                # Task management module
+│   │   ├── router.py         # Task endpoints
+│   │   └── service.py        # Task business logic
+│   ├── config.py             # Application settings
+│   ├── database.py           # Database connection
+│   ├── logger.py             # Logging configuration
+│   ├── main.py               # FastAPI app entry point
+│   ├── models.py             # SQLAlchemy models
+│   ├── rate_limit.py         # Rate limiting setup
+│   ├── schemas.py            # Pydantic schemas
+│   ├── requirements.txt      # Python dependencies
+│   └── .env.example          # Environment template
+├── frontend/
+│   ├── src/
+│   │   ├── api/              # API client
+│   │   ├── components/       # React components
+│   │   ├── pages/            # Page components
+│   │   ├── utils/            # Utilities (authStore, etc.)
+│   │   ├── App.jsx           # Main app component
+│   │   └── main.jsx          # React entry point
+│   ├── package.json          # Node dependencies
+│   └── vite.config.js        # Vite configuration
+├── DESIGN_PROTOCOL.md        # Design system & patterns
+├── DEPLOYMENT.md             # Deployment guide
+└── README.md                 # This file
 ```
 
-## Requirements
+## Environment Variables Reference
 
-- Python 3.7 or higher
-- No external dependencies (uses only Python standard library)
+### Backend (.env)
 
-## Data Storage
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SECRET_KEY` | ✅ | - | JWT signing key (32+ chars) |
+| `ANTHROPIC_API_KEY` | ✅ | - | Company's Claude API key |
+| `DATABASE_URL` | No | `sqlite:///./personal_assistant.db` | Database connection string |
+| `REDIS_URL` | No | `redis://localhost:6379/0` | Redis connection string |
+| `CORS_ORIGINS` | No | `http://localhost:5173,...` | Allowed frontend origins (comma-separated) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | No | `60` | Access token expiration (minutes) |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | No | `30` | Refresh token expiration (days) |
+| `ENVIRONMENT` | No | `development` | Environment (development\|production) |
+| `LOG_LEVEL` | No | `INFO` | Logging level |
 
-All data is stored locally in JSON files:
-- `personal_assistant/data/tasks.json` - Your tasks
-- `personal_assistant/data/context.json` - System state
+### Frontend (.env)
 
-These files are created automatically on first use.
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `VITE_API_BASE_URL` | No | `http://localhost:8000/api/v1` | Backend API URL |
 
-## Tips for Best Results
+## Troubleshooting
 
-1. **Be specific with deadlines**: The system prioritizes based on deadlines
-2. **Let auto-detection work**: Just describe tasks naturally, the system will detect intensity and waiting status
-3. **Check in regularly**: Use "What's next?" to stay on track
-4. **Report completions fully**: Include what happened (sent to who, waiting for what)
-5. **Use intensity filters**: "What's next light" when you only have a few minutes
+### Common Issues
 
-## Future Enhancements (Not in MVP)
+**Backend won't start:**
+- Check Python version (3.11+ required)
+- Verify all dependencies installed: `pip install -r requirements.txt`
+- Check SECRET_KEY and ANTHROPIC_API_KEY are set in `.env`
+- Run migrations: `alembic upgrade head`
 
-Potential additions:
-- Recurring tasks
-- Time tracking
-- Calendar integration
-- Email/notification support
-- Task templates
-- Project grouping
-- Analytics and productivity insights
+**Frontend can't connect to backend:**
+- Verify backend is running on http://localhost:8000
+- Check `VITE_API_BASE_URL` in frontend `.env`
+- Check CORS_ORIGINS includes frontend URL in backend `.env`
+
+**Database errors:**
+- For SQLite: Check file permissions
+- For PostgreSQL: Verify DATABASE_URL format and database exists
+- Run migrations: `alembic upgrade head`
+
+**Redis connection errors:**
+- Verify Redis is running: `redis-cli ping` (should return "PONG")
+- Check REDIS_URL in `.env`
+- Redis is optional - app will work without it (but no token revocation)
+
+**Claude API errors:**
+- Verify ANTHROPIC_API_KEY is valid
+- Check API key has available credits at https://console.anthropic.com/
+- Check rate limits haven't been exceeded
+
+## Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## License
+
+This project is proprietary and confidential.
+
+## Support
+
+For issues or questions:
+- Check [DEPLOYMENT.md](DEPLOYMENT.md) for deployment issues
+- Review API docs at `/docs` endpoint
+- Check Railway logs for production issues
 
 ---
 
-Built with Claude Code
+**Built with FastAPI, React, and Claude AI**

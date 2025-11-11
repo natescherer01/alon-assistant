@@ -59,6 +59,10 @@ export const authAPI = {
     const response = await apiClient.get('/auth/me');
     return response.data;
   },
+
+  deleteAccount: async () => {
+    await apiClient.delete('/auth/account');
+  },
 };
 
 // ==================== Tasks API ====================

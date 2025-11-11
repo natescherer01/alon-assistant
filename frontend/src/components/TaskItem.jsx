@@ -2,26 +2,25 @@ import { useState } from 'react';
 import { tasksAPI } from '../api/client';
 
 function TaskItem({ task, onUpdate, onDelete }) {
-  const [isEditing, setIsEditing] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
 
   const getIntensityColor = (intensity) => {
     const colors = {
-      1: 'bg-green-100 text-green-800',
-      2: 'bg-blue-100 text-blue-800',
-      3: 'bg-yellow-100 text-yellow-800',
-      4: 'bg-orange-100 text-orange-800',
-      5: 'bg-red-100 text-red-800',
+      1: { bg: '#D1FAE5', text: '#065F46' },
+      2: { bg: '#DBEAFE', text: '#1E40AF' },
+      3: { bg: '#FEF3C7', text: '#92400E' },
+      4: { bg: '#FED7AA', text: '#9A3412' },
+      5: { bg: '#FEE2E2', text: '#991B1B' },
     };
     return colors[intensity] || colors[3];
   };
 
   const getStatusColor = (status) => {
     const colors = {
-      not_started: 'bg-gray-100 text-gray-800',
-      in_progress: 'bg-blue-100 text-blue-800',
-      waiting_on: 'bg-yellow-100 text-yellow-800',
-      completed: 'bg-green-100 text-green-800',
+      not_started: { bg: '#F3F4F6', text: '#4B5563' },
+      in_progress: { bg: '#DBEAFE', text: '#1E40AF' },
+      waiting_on: { bg: '#FEF3C7', text: '#92400E' },
+      completed: { bg: '#D1FAE5', text: '#065F46' },
     };
     return colors[status] || colors.not_started;
   };
@@ -35,18 +34,51 @@ function TaskItem({ task, onUpdate, onDelete }) {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
-      return (
-        <span className="text-red-600 font-semibold">
-          OVERDUE by {Math.abs(diffDays)} days
-        </span>
-      );
+      return {
+        text: `OVERDUE by ${Math.abs(diffDays)} days`,
+        color: '#DC2626',
+        fontWeight: '600',
+      };
     } else if (diffDays === 0) {
-      return <span className="text-red-600 font-semibold">DUE TODAY</span>;
+      return {
+        text: 'DUE TODAY',
+        color: '#DC2626',
+        fontWeight: '600',
+      };
     } else if (diffDays === 1) {
-      return <span className="text-orange-600">Due tomorrow</span>;
+      return {
+        text: 'Due tomorrow',
+        color: '#EA580C',
+        fontWeight: '500',
+      };
     } else {
-      return <span className="text-gray-600">Due in {diffDays} days</span>;
+      return {
+        text: `Due in ${diffDays} days`,
+        color: '#6B7280',
+        fontWeight: '400',
+      };
     }
+  };
+
+  const formatRecurrence = () => {
+    if (!task.is_recurring || !task.recurrence_type) return null;
+
+    const interval = task.recurrence_interval || 1;
+    const type = task.recurrence_type;
+
+    let text = 'Repeats ';
+    if (interval === 1) {
+      text += type;
+    } else {
+      text += `every ${interval} ${type === 'daily' ? 'days' : type === 'weekly' ? 'weeks' : type === 'monthly' ? 'months' : 'years'}`;
+    }
+
+    if (task.recurrence_end_date) {
+      const endDate = new Date(task.recurrence_end_date);
+      text += ` until ${endDate.toLocaleDateString()}`;
+    }
+
+    return text;
   };
 
   const handleComplete = async () => {
@@ -83,63 +115,168 @@ function TaskItem({ task, onUpdate, onDelete }) {
     }
   };
 
+  const intensityColors = getIntensityColor(task.intensity);
+  const statusColors = getStatusColor(task.status);
+  const deadlineInfo = task.deadline ? formatDeadline(task.deadline) : null;
+
   return (
-    <div className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
-            <span
-              className={`px-2 py-1 rounded text-xs font-medium ${getIntensityColor(
-                task.intensity
-              )}`}
-            >
+    <div style={{
+      background: '#fff',
+      borderRadius: '16px',
+      padding: '20px',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      transition: 'box-shadow 0.2s',
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.12)';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+    }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+        {/* Main Content */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#000',
+              margin: 0,
+            }}>
+              {task.title}
+            </h3>
+
+            <span style={{
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: '600',
+              background: intensityColors.bg,
+              color: intensityColors.text,
+            }}>
               Intensity {task.intensity}
             </span>
-            <span
-              className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-                task.status
-              )}`}
-            >
+
+            <span style={{
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: '600',
+              background: statusColors.bg,
+              color: statusColors.text,
+            }}>
               {task.status.replace('_', ' ')}
             </span>
+
+            {task.is_recurring && (
+              <span style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                background: '#E0E7FF',
+                color: '#4338CA',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}>
+                🔁 Recurring
+              </span>
+            )}
           </div>
 
           {task.description && (
-            <p className="text-gray-600 text-sm mb-2">{task.description}</p>
+            <p style={{
+              fontSize: '14px',
+              color: '#6B7280',
+              lineHeight: '1.6',
+              marginBottom: '12px',
+            }}>
+              {task.description}
+            </p>
           )}
 
-          <div className="flex flex-wrap gap-2 text-sm">
-            {task.deadline && (
-              <div className="flex items-center gap-1">
-                <span>📅</span>
-                {formatDeadline(task.deadline)}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '14px' }}>
+            {deadlineInfo && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: deadlineInfo.color,
+                fontWeight: deadlineInfo.fontWeight,
+              }}>
+                {deadlineInfo.text}
               </div>
             )}
 
             {task.waiting_on && (
-              <div className="text-yellow-700">
-                ⏳ Waiting on: {task.waiting_on}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: '#92400E',
+              }}>
+                Waiting on: {task.waiting_on}
+              </div>
+            )}
+
+            {formatRecurrence() && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: '#4338CA',
+                fontWeight: '500',
+              }}>
+                {formatRecurrence()}
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex gap-2 ml-4">
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
           {task.status !== 'completed' && (
             <>
               <button
                 onClick={handleComplete}
                 disabled={isCompleting}
-                className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
+                style={{
+                  padding: '8px 14px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: '#10B981',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: isCompleting ? 'not-allowed' : 'pointer',
+                  opacity: isCompleting ? 0.6 : 1,
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isCompleting) e.target.style.background = '#059669';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#10B981';
+                }}
               >
-                ✓ Complete
+                Complete
               </button>
 
               <select
                 value={task.status}
                 onChange={(e) => handleStatusChange(e.target.value)}
-                className="px-2 py-1 border border-gray-300 rounded text-sm"
+                style={{
+                  padding: '8px 10px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  background: '#fff',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
               >
                 <option value="not_started">Not Started</option>
                 <option value="in_progress">In Progress</option>
@@ -150,7 +287,23 @@ function TaskItem({ task, onUpdate, onDelete }) {
 
           <button
             onClick={handleDelete}
-            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+            style={{
+              padding: '8px 14px',
+              fontSize: '13px',
+              fontWeight: '500',
+              color: '#fff',
+              background: '#EF4444',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#DC2626';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#EF4444';
+            }}
           >
             Delete
           </button>

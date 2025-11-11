@@ -61,159 +61,391 @@ function Dashboard() {
 
   const counts = getFilterCounts();
 
+  // Get user initials
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Personal AI Assistant</h1>
-              <p className="text-sm text-gray-600">Welcome back, {user?.full_name || user?.email}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowChat(!showChat)}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-              >
-                {showChat ? '📋 Show Tasks' : '💬 Show Chat'}
-              </button>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Logout
-              </button>
-            </div>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F5F5F7' }}>
+      {/* Glassmorphism Navbar */}
+      <nav style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        background: 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+      }}>
+        <div style={{
+          maxWidth: '1400px',
+          margin: '0 auto',
+          padding: '16px 24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          {/* Logo */}
+          <img
+            src="/alon-logo.png"
+            alt="Alon"
+            style={{
+              height: '36px',
+            }}
+          />
+
+          {/* User Section */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Toggle Chat/Tasks Button */}
+            <button
+              onClick={() => setShowChat(!showChat)}
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#fff',
+                background: '#0066FF',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#0052CC';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = '#0066FF';
+              }}
+            >
+              {showChat ? 'Tasks' : 'Chat'}
+            </button>
+
+            {/* Profile Button */}
+            <button
+              onClick={() => navigate('/profile')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#666',
+                background: 'transparent',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(0, 0, 0, 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+              }}
+            >
+              Profile
+            </button>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#666',
+                background: 'transparent',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(0, 0, 0, 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+              }}
+            >
+              Logout
+            </button>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {showChat ? (
-              <div className="h-[700px]">
-                <ChatInterface onTaskUpdate={handleTaskUpdate} />
-              </div>
-            ) : (
-              <>
-                {/* Next Task */}
-                {nextTask && (
-                  <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
-                    <h2 className="text-xl font-semibold mb-4">🎯 Next Task</h2>
-                    <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-                      <h3 className="text-lg font-semibold mb-2">{nextTask.title}</h3>
-                      {nextTask.description && (
-                        <p className="text-white/90 text-sm mb-2">{nextTask.description}</p>
-                      )}
-                      {nextTask.deadline && (
-                        <p className="text-white/80 text-sm">📅 Deadline: {nextTask.deadline}</p>
-                      )}
-                    </div>
+      {/* Main Content */}
+      <main style={{
+        flex: 1,
+        maxWidth: '1400px',
+        width: '100%',
+        margin: '0 auto',
+        padding: '24px',
+        position: 'relative',
+      }}>
+        {showChat ? (
+          <div style={{
+            height: 'calc(100vh - 120px)',
+            position: 'relative',
+          }}>
+            {/* Gradient Background for Chat */}
+            <div style={{
+              position: 'absolute',
+              inset: '-24px',
+              zIndex: 0,
+              backgroundImage: `
+                radial-gradient(circle 1200px at 15% 20%,
+                  rgba(64, 64, 176, 0.6) 0%,
+                  rgba(64, 64, 176, 0.3) 30%,
+                  rgba(64, 64, 176, 0.1) 50%,
+                  transparent 70%
+                ),
+                radial-gradient(circle 900px at 5% 70%,
+                  rgba(64, 64, 176, 0.45) 0%,
+                  rgba(64, 64, 176, 0.2) 40%,
+                  transparent 65%
+                ),
+                radial-gradient(circle 1100px at 90% 60%,
+                  rgba(0, 212, 221, 0.5) 0%,
+                  rgba(0, 212, 221, 0.25) 35%,
+                  rgba(0, 212, 221, 0.1) 50%,
+                  transparent 70%
+                ),
+                radial-gradient(circle 800px at 85% 10%,
+                  rgba(0, 212, 221, 0.35) 0%,
+                  rgba(0, 212, 221, 0.15) 40%,
+                  transparent 60%
+                )
+              `,
+              filter: 'blur(180px)',
+              pointerEvents: 'none',
+            }} />
+
+            <div style={{ position: 'relative', zIndex: 1, height: '100%' }}>
+              <ChatInterface onTaskUpdate={handleTaskUpdate} />
+            </div>
+          </div>
+        ) : (
+          <div style={{ position: 'relative' }}>
+            {/* Gradient Background for Tasks */}
+            <div style={{
+              position: 'absolute',
+              inset: '-24px',
+              zIndex: 0,
+              backgroundImage: `
+                radial-gradient(circle 1200px at 15% 20%,
+                  rgba(64, 64, 176, 0.6) 0%,
+                  rgba(64, 64, 176, 0.3) 30%,
+                  rgba(64, 64, 176, 0.1) 50%,
+                  transparent 70%
+                ),
+                radial-gradient(circle 900px at 5% 70%,
+                  rgba(64, 64, 176, 0.45) 0%,
+                  rgba(64, 64, 176, 0.2) 40%,
+                  transparent 65%
+                ),
+                radial-gradient(circle 1100px at 90% 60%,
+                  rgba(0, 212, 221, 0.5) 0%,
+                  rgba(0, 212, 221, 0.25) 35%,
+                  rgba(0, 212, 221, 0.1) 50%,
+                  transparent 70%
+                ),
+                radial-gradient(circle 800px at 85% 10%,
+                  rgba(0, 212, 221, 0.35) 0%,
+                  rgba(0, 212, 221, 0.15) 40%,
+                  transparent 60%
+                )
+              `,
+              filter: 'blur(180px)',
+              pointerEvents: 'none',
+            }} />
+
+            <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px' }}>
+              {/* Tasks Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* Next Task */}
+              {nextTask && (
+                <div style={{
+                  background: '#0066FF',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  color: '#fff',
+                }}>
+                  <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>
+                    Next Task
+                  </h2>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                  }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>
+                      {nextTask.title}
+                    </h3>
+                    {nextTask.description && (
+                      <p style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>
+                        {nextTask.description}
+                      </p>
+                    )}
+                    {nextTask.deadline && (
+                      <p style={{ fontSize: '14px', opacity: 0.8 }}>
+                        Due: {nextTask.deadline}
+                      </p>
+                    )}
                   </div>
+                </div>
+              )}
+
+              {/* Add Task */}
+              <AddTaskForm onTaskAdded={handleTaskUpdate} />
+
+              {/* Task Filters */}
+              <div style={{
+                background: '#fff',
+                borderRadius: '16px',
+                padding: '16px',
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap',
+              }}>
+                <button
+                  onClick={() => setFilter('all')}
+                  style={{
+                    padding: '12px 20px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    background: filter === 'all' ? '#0066FF' : '#F3F4F6',
+                    color: filter === 'all' ? '#fff' : '#000',
+                  }}
+                >
+                  All Active ({counts.all})
+                </button>
+                <button
+                  onClick={() => setFilter('waiting')}
+                  style={{
+                    padding: '12px 20px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    background: filter === 'waiting' ? '#0066FF' : '#F3F4F6',
+                    color: filter === 'waiting' ? '#fff' : '#000',
+                  }}
+                >
+                  Waiting ({counts.waiting})
+                </button>
+                <button
+                  onClick={() => setFilter('upcoming')}
+                  style={{
+                    padding: '12px 20px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    background: filter === 'upcoming' ? '#0066FF' : '#F3F4F6',
+                    color: filter === 'upcoming' ? '#fff' : '#000',
+                  }}
+                >
+                  Upcoming ({counts.upcoming})
+                </button>
+              </div>
+
+              {/* Task List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {isLoading ? (
+                  <div style={{
+                    background: '#fff',
+                    borderRadius: '16px',
+                    padding: '48px',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      border: '4px solid #F3F4F6',
+                      borderTop: '4px solid #0066FF',
+                      borderRadius: '50%',
+                      margin: '0 auto 16px',
+                      animation: 'spin 1s linear infinite',
+                    }} />
+                    <p style={{ color: '#666' }}>Loading tasks...</p>
+                  </div>
+                ) : tasks.length === 0 ? (
+                  <div style={{
+                    background: '#fff',
+                    borderRadius: '16px',
+                    padding: '48px',
+                    textAlign: 'center',
+                  }}>
+                    <p style={{ color: '#666' }}>
+                      No tasks found. Add your first task to get started!
+                    </p>
+                  </div>
+                ) : (
+                  tasks.map((task) => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      onUpdate={handleTaskUpdate}
+                      onDelete={handleTaskUpdate}
+                    />
+                  ))
                 )}
-
-                {/* Add Task */}
-                <AddTaskForm onTaskAdded={handleTaskUpdate} />
-
-                {/* Task Filters */}
-                <div className="bg-white rounded-lg shadow p-4">
-                  <div className="flex gap-2 flex-wrap">
-                    <button
-                      onClick={() => setFilter('all')}
-                      className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                        filter === 'all'
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      All Active ({counts.all})
-                    </button>
-                    <button
-                      onClick={() => setFilter('waiting')}
-                      className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                        filter === 'waiting'
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      Waiting ({counts.waiting})
-                    </button>
-                    <button
-                      onClick={() => setFilter('upcoming')}
-                      className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                        filter === 'upcoming'
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      Upcoming ({counts.upcoming})
-                    </button>
-                  </div>
-                </div>
-
-                {/* Task List */}
-                <div className="space-y-4">
-                  {isLoading ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                      <p className="mt-4 text-gray-600">Loading tasks...</p>
-                    </div>
-                  ) : tasks.length === 0 ? (
-                    <div className="bg-white rounded-lg shadow p-8 text-center">
-                      <p className="text-gray-600">No tasks found. Add your first task to get started!</p>
-                    </div>
-                  ) : (
-                    tasks.map((task) => (
-                      <TaskItem
-                        key={task.id}
-                        task={task}
-                        onUpdate={handleTaskUpdate}
-                        onDelete={handleTaskUpdate}
-                      />
-                    ))
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Stats */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Overview</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Active Tasks</span>
-                  <span className="font-semibold text-indigo-600">{counts.all}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Waiting On</span>
-                  <span className="font-semibold text-yellow-600">{counts.waiting}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">With Deadlines</span>
-                  <span className="font-semibold text-gray-900">{counts.upcoming}</span>
-                </div>
               </div>
             </div>
 
-            {/* Tips */}
-            <div className="bg-indigo-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-indigo-900 mb-3">💡 Tips</h3>
-              <ul className="space-y-2 text-sm text-indigo-800">
-                <li>• Use the chat to quickly manage tasks</li>
-                <li>• Say "What's next?" to get your priority task</li>
-                <li>• The system auto-detects task intensity</li>
-                <li>• Tasks with deadlines are prioritized</li>
-              </ul>
+            {/* Sidebar */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* Stats */}
+              <div style={{
+                background: '#fff',
+                borderRadius: '16px',
+                padding: '24px',
+              }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', color: '#000' }}>
+                  Overview
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>Active Tasks</span>
+                    <span style={{ fontWeight: 'bold', color: '#0066FF' }}>{counts.all}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>Waiting On</span>
+                    <span style={{ fontWeight: 'bold', color: '#F59E0B' }}>{counts.waiting}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>With Deadlines</span>
+                    <span style={{ fontWeight: 'bold', color: '#000' }}>{counts.upcoming}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
             </div>
           </div>
-        </div>
+        )}
       </main>
+
+      {/* Spin Animation */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

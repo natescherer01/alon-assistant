@@ -13,9 +13,7 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const result = await login(formData.email, formData.password);
-
     if (result.success) {
       navigate('/dashboard');
     }
@@ -29,79 +27,183 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Personal AI Assistant
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to manage your tasks
+    <div style={{ minHeight: '100vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      {/* Gradient Background */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 0,
+        backgroundImage: `
+          radial-gradient(circle 1200px at 15% 20%,
+            rgba(64, 64, 176, 0.6) 0%,
+            rgba(64, 64, 176, 0.3) 30%,
+            rgba(64, 64, 176, 0.1) 50%,
+            transparent 70%
+          ),
+          radial-gradient(circle 900px at 5% 70%,
+            rgba(64, 64, 176, 0.45) 0%,
+            rgba(64, 64, 176, 0.2) 40%,
+            transparent 65%
+          ),
+          radial-gradient(circle 1100px at 90% 60%,
+            rgba(0, 212, 221, 0.5) 0%,
+            rgba(0, 212, 221, 0.25) 35%,
+            rgba(0, 212, 221, 0.1) 50%,
+            transparent 70%
+          ),
+          radial-gradient(circle 800px at 85% 10%,
+            rgba(0, 212, 221, 0.35) 0%,
+            rgba(0, 212, 221, 0.15) 40%,
+            transparent 60%
+          )
+        `,
+        filter: 'blur(180px)',
+      }} />
+
+      {/* Login Card */}
+      <div style={{
+        position: 'relative',
+        zIndex: 10,
+        width: '100%',
+        maxWidth: '480px',
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        borderRadius: '24px',
+        padding: '48px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+      }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <img
+            src="/alon-logo.png"
+            alt="Alon"
+            style={{
+              height: '60px',
+              marginBottom: '16px',
+            }}
+          />
+          <p style={{ fontSize: '18px', color: 'rgba(0, 0, 0, 0.6)' }}>
+            Sign in to your account
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          )}
+        {/* Error Message */}
+        {error && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '24px',
+          }}>
+            <p style={{ color: '#DC2626', fontSize: '14px' }}>{error}</p>
+          </div>
+        )}
 
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div>
+            <label htmlFor="email" style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: '#000',
+              marginBottom: '8px',
+            }}>
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="your@email.com"
+              style={{
+                width: '100%',
+                padding: '16px',
+                fontSize: '16px',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                outline: 'none',
+                transition: 'border-color 0.2s',
+              }}
+            />
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
+            <label htmlFor="password" style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: '#000',
+              marginBottom: '8px',
+            }}>
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+              style={{
+                width: '100%',
+                padding: '16px',
+                fontSize: '16px',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                outline: 'none',
+                transition: 'border-color 0.2s',
+              }}
+            />
           </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link
-                to="/signup"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Sign up
-              </Link>
-            </p>
-          </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            style={{
+              width: '100%',
+              padding: '16px',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#fff',
+              background: '#0066FF',
+              border: 'none',
+              borderRadius: '16px',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              opacity: isLoading ? 0.6 : 1,
+              transition: 'all 0.2s',
+              marginTop: '8px',
+            }}
+          >
+            {isLoading ? 'Signing in...' : 'Sign in'}
+          </button>
         </form>
+
+        {/* Footer */}
+        <p style={{
+          textAlign: 'center',
+          marginTop: '32px',
+          fontSize: '14px',
+          color: 'rgba(0, 0, 0, 0.6)',
+        }}>
+          Don't have an account?{' '}
+          <Link
+            to="/signup"
+            style={{
+              color: '#0066FF',
+              fontWeight: '600',
+              textDecoration: 'none',
+            }}
+          >
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   );
