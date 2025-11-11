@@ -11,6 +11,7 @@ function Dashboard() {
   const { user, logout } = useAuthStore();
 
   const [tasks, setTasks] = useState([]);
+  const [allTasks, setAllTasks] = useState([]);
   const [nextTask, setNextTask] = useState(null);
   const [filter, setFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -26,6 +27,9 @@ function Dashboard() {
     try {
       const data = await tasksAPI.getTasks(filter);
       setTasks(data);
+      // Also load all tasks for accurate counts
+      const allData = await tasksAPI.getTasks('all');
+      setAllTasks(allData);
     } catch (error) {
       console.error('Failed to load tasks:', error);
     } finally {
@@ -53,9 +57,9 @@ function Dashboard() {
   };
 
   const getFilterCounts = () => {
-    const all = tasks.filter((t) => t.status !== 'completed').length;
-    const waiting = tasks.filter((t) => t.status === 'waiting_on').length;
-    const upcoming = tasks.filter((t) => t.deadline).length;
+    const all = allTasks.filter((t) => t.status !== 'completed').length;
+    const waiting = allTasks.filter((t) => t.status === 'waiting_on').length;
+    const upcoming = allTasks.filter((t) => t.deadline).length;
     return { all, waiting, upcoming };
   };
 
