@@ -127,7 +127,9 @@ function Signup() {
             padding: '16px',
             marginBottom: '24px',
           }}>
-            <p style={{ color: '#DC2626', fontSize: '14px' }}>{error || validationError}</p>
+            <p style={{ color: '#DC2626', fontSize: '14px', margin: 0 }}>
+              {typeof error === 'string' ? error : (error ? JSON.stringify(error) : validationError)}
+            </p>
           </div>
         )}
 

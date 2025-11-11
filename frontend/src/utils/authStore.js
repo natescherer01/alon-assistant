@@ -29,7 +29,12 @@ const useAuthStore = create((set) => ({
 
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.detail || 'Login failed';
+      let message = 'Login failed';
+      if (error.response?.data?.detail) {
+        message = typeof error.response.data.detail === 'string'
+          ? error.response.data.detail
+          : JSON.stringify(error.response.data.detail);
+      }
       set({ error: message, isLoading: false });
       return { success: false, error: message };
     }
@@ -53,7 +58,12 @@ const useAuthStore = create((set) => ({
 
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.detail || 'Signup failed';
+      let message = 'Signup failed';
+      if (error.response?.data?.detail) {
+        message = typeof error.response.data.detail === 'string'
+          ? error.response.data.detail
+          : JSON.stringify(error.response.data.detail);
+      }
       set({ error: message, isLoading: false });
       return { success: false, error: message };
     }

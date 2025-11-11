@@ -108,7 +108,9 @@ function Login() {
             padding: '16px',
             marginBottom: '24px',
           }}>
-            <p style={{ color: '#DC2626', fontSize: '14px' }}>{error}</p>
+            <p style={{ color: '#DC2626', fontSize: '14px', margin: 0 }}>
+              {typeof error === 'string' ? error : JSON.stringify(error)}
+            </p>
           </div>
         )}
 
