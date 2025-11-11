@@ -19,9 +19,10 @@ function Signup() {
     e.preventDefault();
     setValidationError('');
 
-    // Validate password length (bcrypt limit)
-    if (formData.password.length > 72) {
-      setValidationError('Password cannot be longer than 72 characters');
+    // Validate password length (bcrypt has a 72-byte limit, not character limit)
+    const passwordBytes = new TextEncoder().encode(formData.password).length;
+    if (passwordBytes > 72) {
+      setValidationError(`Password is too long (${passwordBytes} bytes). Must be 72 bytes or less. Try a shorter password or fewer special characters.`);
       return;
     }
 

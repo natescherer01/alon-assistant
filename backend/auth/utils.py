@@ -32,11 +32,16 @@ def get_password_hash(password: str) -> str:
         Hashed password
 
     Raises:
-        ValueError: If password is too long (>72 characters)
+        ValueError: If password is too long (>72 bytes when UTF-8 encoded)
     """
-    # bcrypt has a 72-byte limit, enforce at character level for simplicity
-    if len(password) > 72:
-        raise ValueError("Password cannot be longer than 72 characters")
+    # bcrypt has a 72-byte limit (not character limit)
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        raise ValueError(
+            f"Password is too long ({len(password_bytes)} bytes). "
+            f"Must be 72 bytes or less when UTF-8 encoded. "
+            f"Try using a shorter password or fewer special characters."
+        )
 
     return pwd_context.hash(password)
 
