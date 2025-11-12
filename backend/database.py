@@ -8,11 +8,13 @@ from config import get_settings
 
 settings = get_settings()
 
-# Create database engine
+# Create database engine with connection pool settings
 engine = create_engine(
     settings.database_url,
-    connect_args={"check_same_thread": False} if "sqlite" in settings.database_url else {},
+    connect_args={"check_same_thread": False} if "sqlite" in settings.database_url else {"connect_timeout": 10},
     echo=settings.debug,
+    pool_pre_ping=True,  # Validate connections before using them
+    pool_recycle=300,  # Recycle connections after 5 minutes
 )
 
 # Create session factory
