@@ -195,7 +195,7 @@ function ChatInterface({ onTaskUpdate }) {
                 background: msg.role === 'user' ? '#0066FF' : msg.role === 'error' ? '#FEE2E2' : '#F3F4F6',
                 color: msg.role === 'user' ? '#fff' : msg.role === 'error' ? '#DC2626' : '#000',
                 borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                fontSize: msg.role === 'user' ? '10px' : '14px',
+                fontSize: '14px',
                 lineHeight: '1.5',
                 wordBreak: 'break-word',
               }}>

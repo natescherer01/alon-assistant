@@ -3,6 +3,19 @@ import { tasksAPI } from '../api/client';
 
 function TaskItem({ task, onUpdate, onDelete }) {
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    title: task.title,
+    description: task.description || '',
+    project: task.project || '',
+    deadline: task.deadline || '',
+    intensity: task.intensity,
+    waiting_on: task.waiting_on || '',
+    is_recurring: task.is_recurring || false,
+    recurrence_type: task.recurrence_type || 'daily',
+    recurrence_interval: task.recurrence_interval || 1,
+    recurrence_end_date: task.recurrence_end_date || '',
+  });
 
   const getIntensityColor = (intensity) => {
     const colors = {
@@ -125,10 +138,516 @@ function TaskItem({ task, onUpdate, onDelete }) {
     }
   };
 
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Reset form data to original task values
+    setFormData({
+      title: task.title,
+      description: task.description || '',
+      project: task.project || '',
+      deadline: task.deadline || '',
+      intensity: task.intensity,
+      waiting_on: task.waiting_on || '',
+      is_recurring: task.is_recurring || false,
+      recurrence_type: task.recurrence_type || 'daily',
+      recurrence_interval: task.recurrence_interval || 1,
+      recurrence_end_date: task.recurrence_end_date || '',
+    });
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    try {
+      const updateData = {
+        title: formData.title,
+        description: formData.description,
+        intensity: parseInt(formData.intensity),
+        is_recurring: formData.is_recurring,
+      };
+
+      if (formData.project) {
+        updateData.project = formData.project;
+      }
+
+      if (formData.deadline) {
+        updateData.deadline = formData.deadline;
+      }
+
+      if (formData.waiting_on) {
+        updateData.waiting_on = formData.waiting_on;
+      }
+
+      // Only include recurrence data if task is recurring
+      if (formData.is_recurring) {
+        updateData.recurrence_type = formData.recurrence_type;
+        updateData.recurrence_interval = parseInt(formData.recurrence_interval);
+        if (formData.recurrence_end_date) {
+          updateData.recurrence_end_date = formData.recurrence_end_date;
+        }
+      }
+
+      await tasksAPI.updateTask(task.id, updateData);
+      setIsEditing(false);
+      onUpdate();
+    } catch (error) {
+      alert('Failed to update task: ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const handleChange = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setFormData({
+      ...formData,
+      [e.target.name]: value,
+    });
+  };
+
   const intensityColors = getIntensityColor(task.intensity);
   const statusColors = getStatusColor(task.status);
   const deadlineInfo = task.deadline ? formatDeadline(task.deadline) : null;
 
+  // If editing, show edit form
+  if (isEditing) {
+    return (
+      <div style={{
+        background: '#fff',
+        borderRadius: '16px',
+        padding: '24px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px',
+        }}>
+          <h3 style={{
+            fontSize: '18px',
+            fontWeight: '600',
+            color: '#000',
+            margin: 0,
+          }}>
+            Edit Task
+          </h3>
+        </div>
+
+        <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <label htmlFor="title" style={{
+              display: 'block',
+              fontSize: '13px',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '8px',
+            }}>
+              Task Title *
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              required
+              value={formData.title}
+              onChange={handleChange}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                fontSize: '15px',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                outline: 'none',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#0066FF';
+                e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="description" style={{
+              display: 'block',
+              fontSize: '13px',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '8px',
+            }}>
+              Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows={3}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                fontSize: '15px',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                outline: 'none',
+                resize: 'vertical',
+                fontFamily: 'inherit',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#0066FF';
+                e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="project" style={{
+              display: 'block',
+              fontSize: '13px',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '8px',
+            }}>
+              Project
+            </label>
+            <input
+              type="text"
+              id="project"
+              name="project"
+              value={formData.project}
+              onChange={handleChange}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                fontSize: '15px',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                outline: 'none',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#0066FF';
+                e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label htmlFor="deadline" style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '8px',
+              }}>
+                Deadline
+              </label>
+              <input
+                type="date"
+                id="deadline"
+                name="deadline"
+                value={formData.deadline}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  fontSize: '15px',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#0066FF';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="intensity" style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '8px',
+              }}>
+                Intensity
+              </label>
+              <select
+                id="intensity"
+                name="intensity"
+                value={formData.intensity}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  fontSize: '15px',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  outline: 'none',
+                  background: '#fff',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#0066FF';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              >
+                <option value={1}>1 - Very Light</option>
+                <option value={2}>2 - Light</option>
+                <option value={3}>3 - Medium</option>
+                <option value={4}>4 - Heavy</option>
+                <option value={5}>5 - Very Heavy</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="waiting_on" style={{
+              display: 'block',
+              fontSize: '13px',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '8px',
+            }}>
+              Waiting On
+            </label>
+            <input
+              type="text"
+              id="waiting_on"
+              name="waiting_on"
+              value={formData.waiting_on}
+              onChange={handleChange}
+              placeholder="Who or what are you waiting on?"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                fontSize: '15px',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                outline: 'none',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#0066FF';
+                e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+
+          {/* Recurring Task Section */}
+          <div style={{
+            borderTop: '1px solid rgba(0, 0, 0, 0.08)',
+            paddingTop: '20px',
+            marginTop: '8px',
+          }}>
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              cursor: 'pointer',
+              marginBottom: formData.is_recurring ? '16px' : '0',
+            }}>
+              <input
+                type="checkbox"
+                name="is_recurring"
+                checked={formData.is_recurring}
+                onChange={handleChange}
+                style={{
+                  width: '18px',
+                  height: '18px',
+                  cursor: 'pointer',
+                  accentColor: '#0066FF',
+                }}
+              />
+              <span style={{
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+              }}>
+                Make this a recurring task
+              </span>
+            </label>
+
+            {formData.is_recurring && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingLeft: '28px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label htmlFor="recurrence_type" style={{
+                      display: 'block',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                    }}>
+                      Repeats
+                    </label>
+                    <select
+                      id="recurrence_type"
+                      name="recurrence_type"
+                      value={formData.recurrence_type}
+                      onChange={handleChange}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        fontSize: '14px',
+                        border: '1px solid rgba(0, 0, 0, 0.1)',
+                        borderRadius: '8px',
+                        outline: 'none',
+                        background: '#fff',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="recurrence_interval" style={{
+                      display: 'block',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                    }}>
+                      Every
+                    </label>
+                    <input
+                      type="number"
+                      id="recurrence_interval"
+                      name="recurrence_interval"
+                      min="1"
+                      value={formData.recurrence_interval}
+                      onChange={handleChange}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        fontSize: '14px',
+                        border: '1px solid rgba(0, 0, 0, 0.1)',
+                        borderRadius: '8px',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="recurrence_end_date" style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                  }}>
+                    End Date (Optional)
+                  </label>
+                  <input
+                    type="date"
+                    id="recurrence_end_date"
+                    name="recurrence_end_date"
+                    value={formData.recurrence_end_date}
+                    onChange={handleChange}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      fontSize: '14px',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      borderRadius: '8px',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
+            <button
+              type="submit"
+              style={{
+                flex: 1,
+                padding: '14px',
+                fontSize: '15px',
+                fontWeight: '600',
+                color: '#fff',
+                background: '#0066FF',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#0052CC';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = '#0066FF';
+              }}
+            >
+              Save Changes
+            </button>
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              style={{
+                padding: '14px 20px',
+                fontSize: '15px',
+                fontWeight: '600',
+                color: '#6B7280',
+                background: 'transparent',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#F3F4F6';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  // Otherwise show normal task view
   return (
     <div style={{
       background: '#fff',
@@ -332,6 +851,29 @@ function TaskItem({ task, onUpdate, onDelete }) {
                   </select>
                 </>
               )}
+
+              <button
+                onClick={handleEdit}
+                style={{
+                  padding: '8px 14px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: '#0066FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#0052CC';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#0066FF';
+                }}
+              >
+                Edit
+              </button>
 
               <button
                 onClick={handleDelete}

@@ -18,17 +18,45 @@ function Dashboard() {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showChat, setShowChat] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadTasks();
     loadNextTask();
   }, [filter, projectFilter]);
 
+  const sortTasksByDeadline = (tasksToSort) => {
+    return [...tasksToSort].sort((a, b) => {
+      // Tasks without deadlines go to the end
+      if (!a.deadline && !b.deadline) return 0;
+      if (!a.deadline) return 1;
+      if (!b.deadline) return -1;
+
+      // Sort by deadline chronologically (earliest first)
+      return new Date(a.deadline) - new Date(b.deadline);
+    });
+  };
+
+  const filterTasksBySearch = (tasksToFilter) => {
+    if (!searchQuery.trim()) return tasksToFilter;
+
+    const query = searchQuery.toLowerCase();
+    return tasksToFilter.filter((task) => {
+      const titleMatch = task.title?.toLowerCase().includes(query);
+      const descriptionMatch = task.description?.toLowerCase().includes(query);
+      const projectMatch = task.project?.toLowerCase().includes(query);
+      const waitingOnMatch = task.waiting_on?.toLowerCase().includes(query);
+
+      return titleMatch || descriptionMatch || projectMatch || waitingOnMatch;
+    });
+  };
+
   const loadTasks = async () => {
     setIsLoading(true);
     try {
       const data = await tasksAPI.getTasks(filter, 7, projectFilter === 'all' ? null : projectFilter);
-      setTasks(data);
+      const sortedData = sortTasksByDeadline(data);
+      setTasks(sortedData);
       // Also load all tasks for accurate counts and project list
       const allData = await tasksAPI.getTasks('all');
       setAllTasks(allData);
@@ -71,6 +99,9 @@ function Dashboard() {
   };
 
   const counts = getFilterCounts();
+
+  // Apply search filter to tasks
+  const displayedTasks = filterTasksBySearch(tasks);
 
   // Get user initials
   const getInitials = (name) => {
@@ -315,6 +346,69 @@ function Dashboard() {
               {/* Add Task */}
               <AddTaskForm onTaskAdded={handleTaskUpdate} />
 
+              {/* Search Bar */}
+              <div style={{
+                background: '#fff',
+                borderRadius: '16px',
+                padding: '16px',
+              }}>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="Search tasks by title, description, project..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px 12px 44px',
+                      fontSize: '15px',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      borderRadius: '8px',
+                      outline: 'none',
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#0066FF';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                  <span style={{
+                    position: 'absolute',
+                    left: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    fontSize: '18px',
+                    color: '#9CA3AF',
+                  }}>
+                    🔍
+                  </span>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#9CA3AF',
+                        fontSize: '20px',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        lineHeight: 1,
+                      }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Task Filters */}
               <div style={{
                 background: '#fff',
@@ -456,7 +550,7 @@ function Dashboard() {
                     }} />
                     <p style={{ color: '#666' }}>Loading tasks...</p>
                   </div>
-                ) : tasks.length === 0 ? (
+                ) : displayedTasks.length === 0 ? (
                   <div style={{
                     background: '#fff',
                     borderRadius: '16px',
@@ -464,11 +558,11 @@ function Dashboard() {
                     textAlign: 'center',
                   }}>
                     <p style={{ color: '#666' }}>
-                      No tasks found. Add your first task to get started!
+                      {searchQuery ? `No tasks found matching "${searchQuery}"` : 'No tasks found. Add your first task to get started!'}
                     </p>
                   </div>
                 ) : (
-                  tasks.map((task) => (
+                  displayedTasks.map((task) => (
                     <TaskItem
                       key={task.id}
                       task={task}
