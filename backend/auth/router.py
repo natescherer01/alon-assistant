@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Header
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User
-from schemas import UserCreate, UserLogin, UserResponse, Token, RefreshTokenRequest
+from schemas import UserCreate, UserLogin, UserResponse, Token, RefreshTokenRequest, UserUpdate
 from auth.utils import (
     verify_password, get_password_hash, create_token_pair,
     decode_refresh_token, revoke_token, revoke_all_user_tokens,
@@ -119,6 +119,40 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
     Returns:
         User object
     """
+    return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+@limiter.limit("10/minute")
+async def update_current_user(
+    request: Request,
+    user_update: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update current user profile
+
+    Args:
+        user_update: User update data (full_name, timezone)
+        current_user: Authenticated user from token
+        db: Database session
+
+    Returns:
+        Updated user object
+    """
+    # Update fields if provided
+    if user_update.full_name is not None:
+        current_user.full_name = user_update.full_name
+
+    if user_update.timezone is not None:
+        current_user.timezone = user_update.timezone
+
+    db.commit()
+    db.refresh(current_user)
+
+    logger.info(f"User profile updated: {current_user.email}")
+
     return current_user
 
 

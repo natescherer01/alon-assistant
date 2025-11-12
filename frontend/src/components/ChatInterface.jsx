@@ -200,7 +200,7 @@ function ChatInterface({ onTaskUpdate }) {
                 wordBreak: 'break-word',
               }}>
                 {msg.role === 'user' || msg.role === 'error' ? (
-                  <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+                  <p style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: '14px' }}>{msg.content}</p>
                 ) : (
                   <div style={{
                     fontSize: '14px',

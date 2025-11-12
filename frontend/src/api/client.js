@@ -64,6 +64,11 @@ export const authAPI = {
     return response.data;
   },
 
+  updateProfile: async (updates) => {
+    const response = await apiClient.patch('/auth/me', updates);
+    return response.data;
+  },
+
   deleteAccount: async () => {
     await apiClient.delete('/auth/account');
   },

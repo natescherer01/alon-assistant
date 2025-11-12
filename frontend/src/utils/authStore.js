@@ -83,6 +83,10 @@ const useAuthStore = create((set) => ({
     set({ error: null });
   },
 
+  setUser: (user) => {
+    set({ user });
+  },
+
   checkAuth: async () => {
     const token = localStorage.getItem('token');
     if (!token) {

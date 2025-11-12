@@ -11,6 +11,7 @@ from pydantic import BaseModel, EmailStr, Field
 class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
+    timezone: Optional[str] = "UTC"
 
 
 class UserCreate(UserBase):
@@ -20,6 +21,11 @@ class UserCreate(UserBase):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    timezone: Optional[str] = None
 
 
 class UserResponse(UserBase):

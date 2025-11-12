@@ -3,10 +3,42 @@ import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../utils/authStore';
 import { authAPI } from '../api/client';
 
+// Common timezones list
+const TIMEZONES = [
+  'UTC',
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'America/Anchorage',
+  'Pacific/Honolulu',
+  'Europe/London',
+  'Europe/Paris',
+  'Europe/Berlin',
+  'Europe/Rome',
+  'Europe/Madrid',
+  'Asia/Tokyo',
+  'Asia/Shanghai',
+  'Asia/Hong_Kong',
+  'Asia/Singapore',
+  'Asia/Dubai',
+  'Asia/Kolkata',
+  'Australia/Sydney',
+  'Australia/Melbourne',
+  'Pacific/Auckland',
+];
+
 function Profile() {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, setUser, logout } = useAuthStore();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: user?.full_name || '',
+    timezone: user?.timezone || 'UTC',
+  });
+  const [saveMessage, setSaveMessage] = useState(null);
 
   useEffect(() => {
     // Redirect if not logged in
@@ -15,9 +47,61 @@ function Profile() {
     }
   }, [user, navigate]);
 
+  useEffect(() => {
+    // Update form data when user changes
+    if (user) {
+      setFormData({
+        full_name: user.full_name || '',
+        timezone: user.timezone || 'UTC',
+      });
+    }
+  }, [user]);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setSaveMessage(null);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setFormData({
+      full_name: user.full_name || '',
+      timezone: user.timezone || 'UTC',
+    });
+    setSaveMessage(null);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    setSaveMessage(null);
+
+    try {
+      const updatedUser = await authAPI.updateProfile(formData);
+      setUser(updatedUser);
+      setIsEditing(false);
+      setSaveMessage({ type: 'success', text: 'Profile updated successfully!' });
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (error) {
+      setSaveMessage({
+        type: 'error',
+        text: error.response?.data?.detail || 'Failed to update profile',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -187,7 +271,7 @@ function Profile() {
             Profile
           </h1>
           <p style={{ fontSize: '16px', color: 'rgba(0, 0, 0, 0.6)' }}>
-            View your account information
+            View and edit your account information
           </p>
         </div>
 
@@ -238,14 +322,115 @@ function Profile() {
           </div>
 
           {/* Account Details */}
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#000',
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             marginBottom: '24px',
           }}>
-            Account Information
-          </h3>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: '#000',
+              margin: 0,
+            }}>
+              Account Information
+            </h3>
+
+            {/* Edit/Save/Cancel Buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#666',
+                      background: 'transparent',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      borderRadius: '8px',
+                      cursor: isSaving ? 'not-allowed' : 'pointer',
+                      opacity: isSaving ? 0.5 : 1,
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSaving) e.target.style.background = 'rgba(0, 0, 0, 0.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = 'transparent';
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={isSaving}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#fff',
+                      background: '#0066FF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: isSaving ? 'not-allowed' : 'pointer',
+                      opacity: isSaving ? 0.5 : 1,
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSaving) e.target.style.background = '#0052CC';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = '#0066FF';
+                    }}
+                  >
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleEdit}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#fff',
+                    background: '#0066FF',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#0052CC';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = '#0066FF';
+                  }}
+                >
+                  Edit Profile
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Save Message */}
+          {saveMessage && (
+            <div style={{
+              padding: '12px 16px',
+              marginBottom: '24px',
+              borderRadius: '8px',
+              fontSize: '14px',
+              background: saveMessage.type === 'success' ? '#D1FAE5' : '#FEE2E2',
+              color: saveMessage.type === 'success' ? '#065F46' : '#991B1B',
+              border: `1px solid ${saveMessage.type === 'success' ? '#6EE7B7' : '#FCA5A5'}`,
+            }}>
+              {saveMessage.text}
+            </div>
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
@@ -260,15 +445,36 @@ function Profile() {
               }}>
                 Full Name
               </label>
-              <p style={{
-                fontSize: '16px',
-                color: '#000',
-                padding: '12px 16px',
-                background: '#F9FAFB',
-                borderRadius: '8px',
-              }}>
-                {user.full_name || 'Not set'}
-              </p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="full_name"
+                  value={formData.full_name}
+                  onChange={handleChange}
+                  placeholder="Enter your full name"
+                  style={{
+                    width: '100%',
+                    fontSize: '16px',
+                    color: '#000',
+                    padding: '12px 16px',
+                    background: '#fff',
+                    border: '2px solid #0066FF',
+                    borderRadius: '8px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              ) : (
+                <p style={{
+                  fontSize: '16px',
+                  color: '#000',
+                  padding: '12px 16px',
+                  background: '#F9FAFB',
+                  borderRadius: '8px',
+                }}>
+                  {user.full_name || 'Not set'}
+                </p>
+              )}
             </div>
 
             <div>
@@ -292,6 +498,55 @@ function Profile() {
               }}>
                 {user.email}
               </p>
+            </div>
+
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: 'rgba(0, 0, 0, 0.5)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '8px',
+              }}>
+                Timezone
+              </label>
+              {isEditing ? (
+                <select
+                  name="timezone"
+                  value={formData.timezone}
+                  onChange={handleChange}
+                  style={{
+                    width: '100%',
+                    fontSize: '16px',
+                    color: '#000',
+                    padding: '12px 16px',
+                    background: '#fff',
+                    border: '2px solid #0066FF',
+                    borderRadius: '8px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {TIMEZONES.map((tz) => (
+                    <option key={tz} value={tz}>
+                      {tz}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p style={{
+                  fontSize: '16px',
+                  color: '#000',
+                  padding: '12px 16px',
+                  background: '#F9FAFB',
+                  borderRadius: '8px',
+                }}>
+                  {user.timezone || 'UTC'}
+                </p>
+              )}
             </div>
 
             <div>
