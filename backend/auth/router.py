@@ -1,5 +1,6 @@
 """
 Authentication API routes: signup, login
+Production-hardened with OWASP security best practices
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Header
 from sqlalchemy.orm import Session
@@ -12,6 +13,11 @@ from auth.utils import (
     create_access_token
 )
 from auth.dependencies import get_current_user
+from auth.account_lockout import (
+    is_account_locked, increment_failed_attempts,
+    reset_failed_attempts, get_lockout_time_remaining
+)
+from auth.security_logging import SecurityEvent, get_client_ip, get_user_agent
 from rate_limit import limiter
 from logger import get_logger
 
@@ -66,10 +72,15 @@ async def signup(request: Request, user_data: UserCreate, db: Session = Depends(
 
 
 @router.post("/login", response_model=Token)
-@limiter.limit("5/minute")  # Max 5 login attempts per minute
+@limiter.limit("5/minute")  # Max 5 login attempts per minute per IP
 async def login(request: Request, credentials: UserLogin, db: Session = Depends(get_db)):
     """
     Login and receive JWT access and refresh tokens
+
+    Security features:
+    - Account lockout after 5 failed attempts (30 min lock)
+    - Security event logging
+    - Rate limiting (per-IP)
 
     Args:
         credentials: Login credentials (email, password)
@@ -79,29 +90,90 @@ async def login(request: Request, credentials: UserLogin, db: Session = Depends(
         JWT access token (1 hour) and refresh token (30 days)
 
     Raises:
-        HTTPException: If credentials are invalid
+        HTTPException: If credentials are invalid or account is locked
     """
+    client_ip = get_client_ip(request)
+    user_agent = get_user_agent(request)
+
     # Find user
     user = db.query(User).filter(User.email == credentials.email).first()
     if not user:
-        logger.warning(f"Login attempt with non-existent email: {credentials.email}")
+        # Log failed attempt (don't reveal that user doesn't exist)
+        SecurityEvent.log_authentication_attempt(
+            email=credentials.email,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            success=False,
+            failure_reason="Invalid credentials"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Check if account is locked
+    if is_account_locked(user):
+        remaining_seconds = get_lockout_time_remaining(user)
+        remaining_minutes = remaining_seconds // 60
+
+        SecurityEvent.log_authentication_attempt(
+            email=credentials.email,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            success=False,
+            failure_reason=f"Account locked ({remaining_minutes}m remaining)"
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail=f"Account is locked due to multiple failed login attempts. "
+                   f"Please try again in {remaining_minutes} minutes.",
+            headers={"Retry-After": str(remaining_seconds)},
         )
 
     # Verify password
     if not verify_password(credentials.password, user.password_hash):
-        logger.warning(f"Failed login attempt for user: {credentials.email}")
+        # Increment failed attempts and potentially lock account
+        attempts = increment_failed_attempts(db, user)
+
+        # Log failed attempt
+        SecurityEvent.log_authentication_attempt(
+            email=credentials.email,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            success=False,
+            failure_reason="Invalid password"
+        )
+
+        # Check if account was just locked
+        if is_account_locked(user):
+            SecurityEvent.log_account_locked(
+                email=user.email,
+                ip_address=client_ip,
+                failed_attempts=attempts,
+                locked_until=user.locked_until
+            )
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Password correct - reset failed attempts
+    reset_failed_attempts(db, user)
+
     # Create token pair (access + refresh)
     tokens = create_token_pair(user.email)
+
+    # Log successful authentication
+    SecurityEvent.log_authentication_attempt(
+        email=user.email,
+        ip_address=client_ip,
+        user_agent=user_agent,
+        success=True
+    )
 
     logger.info(f"Successful login: {user.email}")
 
@@ -293,6 +365,14 @@ async def delete_account(
     """
     user_email = current_user.email
     user_id = current_user.id
+    client_ip = get_client_ip(request)
+
+    # Log account deletion for security audit
+    SecurityEvent.log_account_deletion(
+        user_id=user_id,
+        email=user_email,
+        ip_address=client_ip
+    )
 
     # Revoke all tokens for this user
     revoke_all_user_tokens(user_email)

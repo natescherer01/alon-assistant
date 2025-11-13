@@ -18,6 +18,12 @@ class User(Base):
     timezone = Column(String, default="UTC")  # User's timezone for date/time display
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Account security - lockout mechanism
+    failed_login_attempts = Column(Integer, default=0)
+    locked_until = Column(DateTime, nullable=True)
+    last_failed_login = Column(DateTime, nullable=True)
+    last_successful_login = Column(DateTime, nullable=True)
+
     # Relationships
     tasks = relationship("Task", back_populates="owner", cascade="all, delete-orphan")
     chat_history = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")

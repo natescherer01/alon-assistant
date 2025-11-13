@@ -3,7 +3,7 @@ Pydantic schemas for request/response validation
 """
 from datetime import datetime, date
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, validator
 
 
 # ==================== User Schemas ====================
@@ -16,6 +16,25 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+
+    @validator('password')
+    def validate_password(cls, v):
+        """
+        Validate password according to NIST SP 800-63B (2025) guidelines
+
+        Requirements:
+        - Minimum 15 characters (NIST recommended)
+        - Maximum 64 characters
+        - No complexity requirements (per NIST 2025)
+        - Check against compromised passwords
+        """
+        from auth.password_validator import validate_password_strength
+
+        is_valid, error_message = validate_password_strength(v)
+        if not is_valid:
+            raise ValueError(error_message)
+
+        return v
 
 
 class UserLogin(BaseModel):

@@ -19,44 +19,55 @@ logger = get_logger(__name__)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Middleware to add security headers to all responses"""
+    """
+    OWASP-compliant security headers middleware (2025)
+
+    Based on OWASP Secure Headers Project recommendations
+    """
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
 
-        # Prevent clickjacking
+        # X-Frame-Options: Prevent clickjacking
         response.headers["X-Frame-Options"] = "DENY"
 
-        # Prevent MIME sniffing
+        # X-Content-Type-Options: Prevent MIME sniffing
         response.headers["X-Content-Type-Options"] = "nosniff"
 
-        # Enable XSS protection (legacy browsers)
-        response.headers["X-XSS-Protection"] = "1; mode=block"
+        # X-XSS-Protection: DEPRECATED - Set to 0 per OWASP 2025
+        # Modern browsers deprecated this header; it can introduce vulnerabilities
+        response.headers["X-XSS-Protection"] = "0"
 
-        # Content Security Policy
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: https:; "
-            "font-src 'self' data:; "
-            "connect-src 'self'; "
-            "frame-ancestors 'none';"
-        )
+        # Content Security Policy: Primary XSS defense
+        # Allow connection to Railway backend from Vercel frontend
+        csp_directives = [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline'",  # Needed for React
+            "style-src 'self' 'unsafe-inline'",   # Needed for inline styles
+            "img-src 'self' data: https:",
+            "font-src 'self' data:",
+            "connect-src 'self' https://alon-assistant.up.railway.app",  # PRODUCTION backend
+            "frame-ancestors 'none'",
+            "base-uri 'self'",
+            "form-action 'self'"
+        ]
+        response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
 
-        # Enforce HTTPS (only in production)
+        # Strict-Transport-Security: Force HTTPS (production only)
         if settings.environment == "production":
             response.headers["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains"
+                "max-age=31536000; includeSubDomains; preload"
             )
 
-        # Referrer policy
+        # Referrer-Policy: Control referrer information
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
-        # Permissions policy
+        # Permissions-Policy: Restrict browser features
         response.headers["Permissions-Policy"] = (
-            "geolocation=(), microphone=(), camera=()"
+            "geolocation=(), microphone=(), camera=(), payment=()"
         )
+
+        # DO NOT include Expect-CT (deprecated per OWASP 2025)
 
         return response
 
@@ -69,23 +80,21 @@ app = FastAPI(
     debug=settings.debug
 )
 
-# Set up rate limiting (FIRST)
-# TODO: Temporarily disabled to test CORS
-# limiter = setup_rate_limiting(app)
+# Add security headers middleware (FIRST)
+app.add_middleware(SecurityHeadersMiddleware)
 
-# Add security headers middleware
-# TODO: Re-enable after fixing CSP for cross-origin
-# app.add_middleware(SecurityHeadersMiddleware)
-
-# CORS middleware
+# CORS middleware (production-hardened)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=settings.cors_origins,  # Specific origins only (set in Railway env vars)
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],  # Specific methods only
+    allow_headers=["Authorization", "Content-Type"],  # Specific headers only
     max_age=3600,  # Cache preflight requests for 1 hour
 )
+
+# Set up rate limiting
+limiter = setup_rate_limiting(app)
 
 # Include routers
 app.include_router(auth_router, prefix=settings.api_prefix)

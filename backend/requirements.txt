@@ -16,6 +16,7 @@ bcrypt==4.0.1  # Pin to 4.0.1 for passlib compatibility
 python-dotenv==1.0.0
 slowapi==0.1.9  # For rate limiting
 redis==5.0.1  # For token blacklist and caching
+requests==2.31.0  # For Have I Been Pwned API (password breach checking)
 
 # Claude API
 anthropic==0.40.0
