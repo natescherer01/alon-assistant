@@ -87,8 +87,8 @@ function Login() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <img
-            src="/alon-logo.png"
-            alt="Alon"
+            src="/Sam.png"
+            alt="Sam - Alon Assistant"
             style={{
               height: '60px',
               marginBottom: '16px',

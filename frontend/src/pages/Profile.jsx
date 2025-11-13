@@ -198,8 +198,8 @@ function Profile() {
         }}>
           {/* Logo */}
           <img
-            src="/alon-logo.png"
-            alt="Alon"
+            src="/Sam.png"
+            alt="Sam - Alon Assistant"
             style={{
               height: '36px',
               cursor: 'pointer',

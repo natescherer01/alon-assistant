@@ -149,3 +149,91 @@ class NextTaskRequest(BaseModel):
 class TaskListRequest(BaseModel):
     list_type: Optional[str] = Field(default="all", pattern="^(all|waiting|upcoming)$")
     days: Optional[int] = Field(default=7, ge=1, le=365)
+
+
+# ==================== Study Session Schemas ====================
+
+class StudySessionBase(BaseModel):
+    subject: str
+    session_type: Optional[str] = "initial"
+    duration_minutes: Optional[int] = None
+    review_number: Optional[int] = 0
+    next_review_date: Optional[datetime] = None
+    confidence_level: Optional[int] = Field(default=None, ge=1, le=5)
+    questions_attempted: Optional[int] = 0
+    questions_correct: Optional[int] = 0
+    used_active_recall: Optional[bool] = False
+    used_interleaving: Optional[bool] = False
+    slept_after_session: Optional[bool] = False
+    notes: Optional[str] = ""
+
+
+class StudySessionCreate(StudySessionBase):
+    task_id: Optional[int] = None
+
+
+class StudySessionUpdate(BaseModel):
+    session_type: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    next_review_date: Optional[datetime] = None
+    confidence_level: Optional[int] = Field(default=None, ge=1, le=5)
+    questions_attempted: Optional[int] = None
+    questions_correct: Optional[int] = None
+    used_active_recall: Optional[bool] = None
+    used_interleaving: Optional[bool] = None
+    slept_after_session: Optional[bool] = None
+    notes: Optional[str] = None
+    completed_at: Optional[datetime] = None
+
+
+class StudySessionResponse(StudySessionBase):
+    id: int
+    user_id: int
+    task_id: Optional[int] = None
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ==================== Active Recall Question Schemas ====================
+
+class ActiveRecallQuestionBase(BaseModel):
+    subject: str
+    question_type: Optional[str] = "recall"
+    question_text: str
+    suggested_answer: Optional[str] = None
+
+
+class ActiveRecallQuestionCreate(ActiveRecallQuestionBase):
+    study_session_id: Optional[int] = None
+    task_id: Optional[int] = None
+
+
+class ActiveRecallQuestionUpdate(BaseModel):
+    user_answer: Optional[str] = None
+    was_correct: Optional[bool] = None
+    difficulty_rating: Optional[int] = Field(default=None, ge=1, le=5)
+    times_reviewed: Optional[int] = None
+    last_reviewed: Optional[datetime] = None
+    next_review: Optional[datetime] = None
+    easiness_factor: Optional[int] = None
+
+
+class ActiveRecallQuestionResponse(ActiveRecallQuestionBase):
+    id: int
+    user_id: int
+    study_session_id: Optional[int] = None
+    task_id: Optional[int] = None
+    user_answer: Optional[str] = None
+    was_correct: Optional[bool] = None
+    difficulty_rating: Optional[int] = None
+    times_reviewed: int
+    last_reviewed: Optional[datetime] = None
+    next_review: Optional[datetime] = None
+    easiness_factor: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

@@ -86,3 +86,77 @@ class ChatMessage(Base):
 
     # Relationships
     user = relationship("User", back_populates="chat_history")
+
+
+class StudySession(Base):
+    """Study session tracking for spaced repetition and memory optimization"""
+    __tablename__ = "study_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)
+
+    # Session details
+    subject = Column(String, nullable=False)  # Subject/topic being studied
+    session_type = Column(String, default="initial")  # initial, review, practice_test, final_review
+    duration_minutes = Column(Integer, nullable=True)  # How long the session lasted
+
+    # Spaced repetition tracking
+    review_number = Column(Integer, default=0)  # 0=initial, 1=first review, 2=second review, etc.
+    next_review_date = Column(DateTime, nullable=True)  # When next review should happen
+
+    # Performance tracking
+    confidence_level = Column(Integer, nullable=True)  # 1-5 scale: how well did they know it
+    questions_attempted = Column(Integer, default=0)
+    questions_correct = Column(Integer, default=0)
+
+    # Memory optimization flags
+    used_active_recall = Column(Integer, default=0)  # Boolean: Did they use active recall?
+    used_interleaving = Column(Integer, default=0)  # Boolean: Did they interleave topics?
+    slept_after_session = Column(Integer, default=0)  # Boolean: Did they sleep after studying?
+
+    # Notes
+    notes = Column(Text, default="")
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    completed_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    owner = relationship("User", backref="study_sessions")
+    task = relationship("Task", backref="study_sessions")
+
+
+class ActiveRecallQuestion(Base):
+    """Active recall questions generated for study materials"""
+    __tablename__ = "active_recall_questions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    study_session_id = Column(Integer, ForeignKey("study_sessions.id", ondelete="CASCADE"), nullable=True)
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)
+
+    # Question details
+    subject = Column(String, nullable=False)
+    question_type = Column(String, default="recall")  # recall, comprehension, application, analysis
+    question_text = Column(Text, nullable=False)
+    suggested_answer = Column(Text, nullable=True)  # Optional: What the answer should cover
+
+    # User's response tracking
+    user_answer = Column(Text, nullable=True)
+    was_correct = Column(Integer, nullable=True)  # Boolean: Did they answer correctly?
+    difficulty_rating = Column(Integer, nullable=True)  # 1-5: How hard was this question?
+
+    # Spaced repetition
+    times_reviewed = Column(Integer, default=0)
+    last_reviewed = Column(DateTime, nullable=True)
+    next_review = Column(DateTime, nullable=True)
+    easiness_factor = Column(Integer, default=250)  # SM-2 algorithm: 250 = 2.5, stored as int
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    owner = relationship("User", backref="questions")
+    study_session = relationship("StudySession", backref="questions")
+    task = relationship("Task", backref="questions")
