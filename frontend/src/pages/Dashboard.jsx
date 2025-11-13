@@ -136,8 +136,8 @@ function Dashboard() {
         }}>
           {/* Logo */}
           <img
-            src="/Sam.png"
-            alt="Sam - Alon Assistant"
+            src="/alon-logo.png"
+            alt="Alon"
             style={{
               height: '36px',
             }}

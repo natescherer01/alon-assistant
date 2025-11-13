@@ -106,8 +106,8 @@ function Signup() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <img
-            src="/Sam.png"
-            alt="Sam - Alon Assistant"
+            src="/alon-logo.png"
+            alt="Alon"
             style={{
               height: '60px',
               marginBottom: '16px',
