@@ -37,12 +37,16 @@ SECRET_KEY=<paste_generated_key_here>
 
 **Purpose:** PostgreSQL connection string
 
-**Current Value (from your Railway dashboard):**
-```
-DATABASE_URL=postgresql://postgres:gWQAnFlcSsawPQeFIYJLciNxOPRnLWDz@crossover.proxy.rlwy.net:48825/railway
-```
+**Note:** Railway automatically provides this as an environment variable.
 
-**Note:** Railway automatically provides this. Do not change unless migrating databases.
+**To find your DATABASE_URL:**
+1. Go to Railway dashboard
+2. Click on your PostgreSQL database service
+3. Go to "Variables" tab
+4. Copy the DATABASE_URL value
+5. Paste it into your backend service's environment variables
+
+**Do not hardcode this URL anywhere!** Railway manages it automatically.
 
 ---
 
