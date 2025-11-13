@@ -2,6 +2,12 @@
 
 A production-ready SaaS task management system powered by Claude AI that helps you stay organized and productive.
 
+## ⚠️ Important: Production-First Development
+
+**This project uses a production-first testing approach.** We DO NOT use localhost for testing production features. All development and testing happens directly in the Railway production environment.
+
+**Read this first:** [SECURITY_AND_BEST_PRACTICES.md](SECURITY_AND_BEST_PRACTICES.md)
+
 ## Overview
 
 This is a full-stack web application where users sign up, manage their tasks, and interact with Claude AI for intelligent task assistance. **The company provides the Claude API access** - users simply create an account and start using the service.
@@ -63,96 +69,57 @@ This is a full-stack web application where users sign up, manage their tasks, an
 
 ## Getting Started
 
-### Prerequisites
+### ⚠️ Production-First Development
 
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL (production) or SQLite (development)
-- Redis (optional but recommended)
-- Anthropic API key
+**We DO NOT use localhost for testing production features.**
 
-### Backend Setup
+This project is designed to be developed and tested directly in the Railway production environment. Security features, CORS, HTTPS headers, and authentication work differently on localhost, so testing locally gives false confidence.
 
-1. **Navigate to backend directory:**
+**Development Workflow:**
+1. Make code changes locally
+2. Commit and push to GitHub (never commit credentials!)
+3. Railway auto-deploys (1-2 minutes)
+4. Test in production: https://sam.alontechnologies.com
+5. Check Railway logs for errors
+6. Iterate
+
+**See:** [SECURITY_AND_BEST_PRACTICES.md](SECURITY_AND_BEST_PRACTICES.md) for complete workflow
+
+### Quick Deploy (Recommended Approach)
+
+**Skip local setup. Deploy directly to Railway:**
+
+1. **Fork/clone this repository**
    ```bash
-   cd backend
+   git clone <your-repo>
+   cd personal\ AI
    ```
 
-2. **Create and activate virtual environment:**
+2. **Deploy to Railway**
+   - See [DEPLOYMENT.md](DEPLOYMENT.md) for complete guide
+   - Railway provisions PostgreSQL and Redis automatically
+   - Set environment variables in Railway dashboard (NEVER in code)
+
+3. **Test in production**
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   curl https://alon-assistant.up.railway.app/health
    ```
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+4. **Deploy frontend to Vercel**
+   - Point `VITE_API_BASE_URL` to Railway backend
+   - See [DEPLOYMENT.md](DEPLOYMENT.md)
 
-4. **Configure environment variables:**
-   Create `.env` file:
-   ```bash
-   # REQUIRED
-   SECRET_KEY=your-secure-secret-key-here-32-chars-min
-   ANTHROPIC_API_KEY=sk-ant-your-company-api-key
-
-   # OPTIONAL (defaults shown)
-   DATABASE_URL=sqlite:///./personal_assistant.db
-   REDIS_URL=redis://localhost:6379/0
-   CORS_ORIGINS=http://localhost:5173,http://localhost:3000
-   ACCESS_TOKEN_EXPIRE_MINUTES=60
-   REFRESH_TOKEN_EXPIRE_DAYS=30
-   ENVIRONMENT=development
-   LOG_LEVEL=INFO
-   ```
-
-   Generate SECRET_KEY:
-   ```bash
-   python -c 'import secrets; print(secrets.token_urlsafe(32))'
-   ```
-
-5. **Run database migrations:**
-   ```bash
-   alembic upgrade head
-   ```
-
-6. **Start the server:**
-   ```bash
-   uvicorn main:app --reload
-   ```
-
-   API will be available at: http://localhost:8000
-
-### Frontend Setup
-
-1. **Navigate to frontend directory:**
-   ```bash
-   cd frontend
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment:**
-   Create `.env` file:
-   ```bash
-   VITE_API_BASE_URL=http://localhost:8000/api/v1
-   ```
-
-4. **Start development server:**
-   ```bash
-   npm run dev
-   ```
-
-   App will be available at: http://localhost:5173
+**Production environment:**
+- Backend: https://alon-assistant.up.railway.app
+- Frontend: https://sam.alontechnologies.com
+- Database: Railway PostgreSQL (managed)
+- Cache: Railway Redis (managed)
 
 ## API Documentation
 
-Once the backend is running, visit:
-- **Interactive API Docs:** http://localhost:8000/docs
-- **OpenAPI Schema:** http://localhost:8000/openapi.json
+**Production API Docs:**
+- **Interactive API Docs:** https://alon-assistant.up.railway.app/docs
+- **OpenAPI Schema:** https://alon-assistant.up.railway.app/openapi.json
 
 ### Key Endpoints
 
@@ -178,70 +145,120 @@ Once the backend is running, visit:
 
 ## Security Features
 
-✅ **Production-Ready Security:**
-- JWT authentication with 1-hour access tokens
-- 30-day refresh tokens for seamless re-authentication
-- Redis-based token blacklist for immediate revocation
-- Bcrypt password hashing
-- Strong password requirements (12+ chars, uppercase, lowercase, number, symbol)
-- Rate limiting on all endpoints
-- CORS protection
-- Security headers (HSTS, CSP, X-Frame-Options)
-- Input validation with Pydantic
-- PostgreSQL encryption at rest (production)
+✅ **Production-Ready Security (OWASP & NIST Compliant):**
+- **Authentication:** JWT with 30-min access tokens, 7-day refresh tokens
+- **Password Security:** NIST SP 800-63B validation, Have I Been Pwned breach checking
+- **Account Protection:** Lockout after 5 failed attempts (30-min automatic unlock)
+- **Token Management:** Redis-based blacklist for immediate revocation
+- **Password Hashing:** Bcrypt (12 rounds)
+- **Rate Limiting:** 100 requests/minute per IP
+- **CORS:** Restricted to production domain only
+- **Security Headers:** HSTS (1 year), CSP, X-Frame-Options, X-Content-Type-Options
+- **Input Validation:** Pydantic schemas with strict validation
+- **Database Security:** PostgreSQL encryption at rest (Railway), parameterized queries
+- **Logging:** JSON-formatted security events (failed logins, lockouts, suspicious activity)
+- **Request Limits:** 10MB max request size
 
-✅ **SaaS Model:**
-- Company-provided API access (no user API key management)
-- Secure Railway environment variables
-- No encryption keys in code or .env files (in production)
+✅ **Zero Trust Architecture:**
+- **NO credentials in code** - Railway dashboard environment variables ONLY
+- **NO localhost testing** - Production-first development and testing
+- **NO .env files in git** - Gitignored and never committed
+- **NO wildcards in CORS** - Explicit domain whitelist only
+- **NO weak passwords** - 12+ chars with complexity requirements
+
+**Read:** [SECURITY_AND_BEST_PRACTICES.md](SECURITY_AND_BEST_PRACTICES.md) for complete security documentation
 
 ## Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide to Railway.
+**Production Environment:**
+- Backend: Railway (https://alon-assistant.up.railway.app)
+- Frontend: Vercel (https://sam.alontechnologies.com)
+- Database: Railway PostgreSQL (managed)
+- Cache: Railway Redis (managed)
 
-### Quick Deploy to Railway
+**Complete guides:**
+- [DEPLOYMENT.md](DEPLOYMENT.md) - Full deployment instructions
+- [SECURITY_AND_BEST_PRACTICES.md](SECURITY_AND_BEST_PRACTICES.md) - Security workflow
+- [DATABASE_ROTATION_GUIDE.md](DATABASE_ROTATION_GUIDE.md) - Credential rotation
 
-1. Create Railway account
-2. Add PostgreSQL and Redis databases
-3. Set environment variables:
-   ```
-   SECRET_KEY=<generated-key>
-   ANTHROPIC_API_KEY=sk-ant-<your-company-key>
-   ENVIRONMENT=production
-   CORS_ORIGINS=https://your-frontend.vercel.app
-   ```
-4. Deploy backend to Railway
-5. Deploy frontend to Vercel/Netlify with `VITE_API_BASE_URL=https://your-backend.railway.app/api/v1`
+### Critical: Environment Variables
 
-Railway auto-configures `DATABASE_URL` and `REDIS_URL`.
+**NEVER commit credentials to git. Use Railway dashboard ONLY.**
 
-## Development
+Required in Railway:
+```bash
+SECRET_KEY=<generate-with-secrets.token_urlsafe(32)>
+ANTHROPIC_API_KEY=sk-ant-...
+ENVIRONMENT=production
+CORS_ORIGINS=https://sam.alontechnologies.com
+
+# Auto-configured by Railway (don't set manually):
+DATABASE_URL=postgresql://...
+REDIS_URL=redis://...
+```
+
+**See:** [RAILWAY_ENVIRONMENT_SETUP.md](RAILWAY_ENVIRONMENT_SETUP.md)
+
+## Development Workflow
+
+### Production-First Development
+
+```bash
+# 1. Make changes locally
+git checkout -b feature/my-feature
+# Edit code...
+
+# 2. Commit (verify no secrets!)
+git log -p | grep -i "password\|secret\|api"  # Should show nothing
+git add .
+git commit -m "Add feature: description"
+
+# 3. Push to GitHub
+git push origin feature/my-feature
+
+# 4. Railway auto-deploys from main
+# Wait 1-2 minutes
+
+# 5. Test in production
+curl https://alon-assistant.up.railway.app/health
+# Visit https://sam.alontechnologies.com
+
+# 6. Check Railway logs
+# Railway Dashboard → Backend Service → Logs
+
+# 7. Merge when verified
+git checkout main
+git merge feature/my-feature
+git push origin main
+```
 
 ### Database Migrations
 
-Create new migration:
 ```bash
+# 1. Create migration locally
 cd backend
 alembic revision --autogenerate -m "description"
-alembic upgrade head
+
+# 2. Commit migration file
+git add alembic/versions/*.py
+git commit -m "Add migration: description"
+
+# 3. Push to GitHub
+git push origin main
+
+# 4. Railway auto-runs migration on deployment
+# Check logs: "Running alembic upgrade head"
 ```
 
-### Running Tests
+### Testing
 
-```bash
-cd backend
-pytest
-```
+**Test in production environment (Railway):**
+- Deploy to Railway
+- Test at https://sam.alontechnologies.com
+- Check Railway logs for errors
+- Verify security features work (CORS, auth, rate limiting)
 
-### Code Quality
-
-```bash
-# Format code
-black .
-
-# Lint
-flake8 .
-```
+**Why not localhost?** Security features work differently locally.
 
 ## Project Structure
 
@@ -286,55 +303,85 @@ personal AI/
 
 ## Environment Variables Reference
 
-### Backend (.env)
+### ⚠️ Critical: NEVER Commit Credentials to Git
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `SECRET_KEY` | ✅ | - | JWT signing key (32+ chars) |
-| `ANTHROPIC_API_KEY` | ✅ | - | Company's Claude API key |
-| `DATABASE_URL` | No | `sqlite:///./personal_assistant.db` | Database connection string |
-| `REDIS_URL` | No | `redis://localhost:6379/0` | Redis connection string |
-| `CORS_ORIGINS` | No | `http://localhost:5173,...` | Allowed frontend origins (comma-separated) |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | No | `60` | Access token expiration (minutes) |
-| `REFRESH_TOKEN_EXPIRE_DAYS` | No | `30` | Refresh token expiration (days) |
-| `ENVIRONMENT` | No | `development` | Environment (development\|production) |
+**Store ALL credentials in Railway/Vercel dashboards ONLY.**
+
+### Backend (Railway Dashboard → Variables)
+
+| Variable | Required | Production Value | Description |
+|----------|----------|------------------|-------------|
+| `SECRET_KEY` | ✅ | Generate new: `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` | JWT signing key (32+ chars) |
+| `ANTHROPIC_API_KEY` | ✅ | `sk-ant-...` | Company's Claude API key |
+| `ENVIRONMENT` | ✅ | `production` | **Must be "production"** |
+| `CORS_ORIGINS` | ✅ | `https://sam.alontechnologies.com` | Frontend domain (exact match, no wildcards) |
+| `DATABASE_URL` | Auto | Auto-configured by Railway | PostgreSQL connection (Railway provides) |
+| `REDIS_URL` | Auto | Auto-configured by Railway | Redis connection (Railway provides) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | No | `30` | Access token expiration (minutes) |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | No | `7` | Refresh token expiration (days) |
 | `LOG_LEVEL` | No | `INFO` | Logging level |
 
-### Frontend (.env)
+### Frontend (Vercel Dashboard → Environment Variables)
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `VITE_API_BASE_URL` | No | `http://localhost:8000/api/v1` | Backend API URL |
+| Variable | Required | Production Value | Description |
+|----------|----------|------------------|-------------|
+| `VITE_API_BASE_URL` | ✅ | `https://alon-assistant.up.railway.app/api/v1` | Backend API URL |
+
+**See:** [RAILWAY_ENVIRONMENT_SETUP.md](RAILWAY_ENVIRONMENT_SETUP.md) for detailed setup
 
 ## Troubleshooting
 
-### Common Issues
+### Production Issues
 
-**Backend won't start:**
-- Check Python version (3.11+ required)
-- Verify all dependencies installed: `pip install -r requirements.txt`
-- Check SECRET_KEY and ANTHROPIC_API_KEY are set in `.env`
-- Run migrations: `alembic upgrade head`
+**Deployment failed:**
+- Check Railway logs: Railway Dashboard → Backend Service → Logs
+- Verify all required environment variables set
+- Check for syntax errors in code
+- Verify migrations ran successfully
 
 **Frontend can't connect to backend:**
-- Verify backend is running on http://localhost:8000
-- Check `VITE_API_BASE_URL` in frontend `.env`
-- Check CORS_ORIGINS includes frontend URL in backend `.env`
+- Check `VITE_API_BASE_URL` in Vercel environment variables
+- Verify it points to `https://alon-assistant.up.railway.app/api/v1`
+- Check backend is running: `curl https://alon-assistant.up.railway.app/health`
+- Check CORS_ORIGINS in Railway includes frontend domain
 
-**Database errors:**
-- For SQLite: Check file permissions
-- For PostgreSQL: Verify DATABASE_URL format and database exists
-- Run migrations: `alembic upgrade head`
+**CORS errors:**
+- Verify CORS_ORIGINS in Railway exactly matches frontend domain
+- Must include `https://` protocol
+- No wildcards (*)
+- No spaces in comma-separated list
 
-**Redis connection errors:**
-- Verify Redis is running: `redis-cli ping` (should return "PONG")
-- Check REDIS_URL in `.env`
-- Redis is optional - app will work without it (but no token revocation)
+**Database connection errors:**
+- Check Railway PostgreSQL service is running
+- Verify DATABASE_URL auto-configured by Railway
+- Check connection pool settings
+- Review Railway logs for detailed error
+
+**Authentication errors:**
+- Verify SECRET_KEY is set in Railway
+- Check token expiration settings
+- Verify Redis is running (for token blacklist)
+- Check Railway logs for auth errors
 
 **Claude API errors:**
-- Verify ANTHROPIC_API_KEY is valid
-- Check API key has available credits at https://console.anthropic.com/
-- Check rate limits haven't been exceeded
+- Verify ANTHROPIC_API_KEY is set in Railway
+- Check API key is valid at https://console.anthropic.com/
+- Check available credits
+- Review rate limits
+
+**Security headers missing:**
+- Verify `ENVIRONMENT=production` in Railway
+- Check SecurityHeadersMiddleware is applied
+- Test with: `curl -I https://alon-assistant.up.railway.app/health`
+
+### Getting Help
+
+1. **Check Railway logs first:** Railway Dashboard → Service → Logs
+2. **Review documentation:**
+   - [SECURITY_AND_BEST_PRACTICES.md](SECURITY_AND_BEST_PRACTICES.md)
+   - [DEPLOYMENT.md](DEPLOYMENT.md)
+   - [RAILWAY_ENVIRONMENT_SETUP.md](RAILWAY_ENVIRONMENT_SETUP.md)
+3. **Check API docs:** https://alon-assistant.up.railway.app/docs
 
 ## Contributing
 

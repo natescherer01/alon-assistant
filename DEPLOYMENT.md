@@ -48,39 +48,46 @@ Total estimated cost: **$15-20/month** (Railway only)
 
 In your Railway backend service, add these environment variables:
 
+⚠️ **CRITICAL: NEVER commit credentials to git. Set in Railway dashboard ONLY.**
+
+In Railway dashboard → Backend Service → Variables tab:
+
 **REQUIRED:**
 ```bash
-# Generate a secure secret key (32+ characters)
+# Generate a secure secret key (NEVER reuse between environments)
 SECRET_KEY=<generate-with-command-below>
 
 # Your company's Anthropic API key
 ANTHROPIC_API_KEY=sk-ant-your-company-key-here
 
-# Set environment to production
+# MUST be "production" for security features to work
 ENVIRONMENT=production
+
+# Exact production domain (NO wildcards, NO trailing slash)
+CORS_ORIGINS=https://sam.alontechnologies.com
 ```
 
-Generate `SECRET_KEY`:
+Generate `SECRET_KEY` **locally** (never commit):
 ```bash
-python -c 'import secrets; print(secrets.token_urlsafe(32))'
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+# Copy output to Railway dashboard
 ```
 
-**OPTIONAL (use these or accept defaults):**
+**RECOMMENDED (security hardened):**
 ```bash
-# Frontend URL(s) for CORS (comma-separated, NO SPACES)
-CORS_ORIGINS=https://your-app.vercel.app,https://your-domain.com
+# Shorter token lifetime = more secure
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
 
-# Token expiration (defaults shown)
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-REFRESH_TOKEN_EXPIRE_DAYS=30
-
-# Logging
+# Production logging
 LOG_LEVEL=INFO
 ```
 
-**Auto-configured by Railway (don't set these manually):**
-- `DATABASE_URL` - PostgreSQL connection
-- `REDIS_URL` - Redis connection
+**Auto-configured by Railway (NEVER set manually):**
+- `DATABASE_URL` - PostgreSQL connection (Railway provides)
+- `REDIS_URL` - Redis connection (Railway provides)
+
+**See:** [RAILWAY_ENVIRONMENT_SETUP.md](RAILWAY_ENVIRONMENT_SETUP.md) for detailed variable documentation
 
 ### Step 5: Set Root Directory (Important!)
 
@@ -273,20 +280,54 @@ To update environment variables:
 
 ## Security Checklist
 
-Before going live:
+Before going live (CRITICAL):
 
-- [ ] `SECRET_KEY` is set to a secure, random value (32+ chars)
-- [ ] `ANTHROPIC_API_KEY` is set (company key)
-- [ ] `ENVIRONMENT=production`
-- [ ] PostgreSQL is provisioned (Railway auto-configures)
-- [ ] Redis is provisioned (Railway auto-configures)
+### Environment Variables
+- [ ] `SECRET_KEY` generated with `secrets.token_urlsafe(32)` (32+ chars)
+- [ ] `ANTHROPIC_API_KEY` is set (company key from console.anthropic.com)
+- [ ] `ENVIRONMENT=production` (MUST be set for security features)
+- [ ] `CORS_ORIGINS=https://sam.alontechnologies.com` (exact domain, no wildcards)
+- [ ] `ACCESS_TOKEN_EXPIRE_MINUTES=30` (recommended)
+- [ ] `REFRESH_TOKEN_EXPIRE_DAYS=7` (recommended)
+- [ ] PostgreSQL auto-configured by Railway (check Variables tab)
+- [ ] Redis auto-configured by Railway (check Variables tab)
+- [ ] Frontend `VITE_API_BASE_URL=https://alon-assistant.up.railway.app/api/v1`
+
+### Git Security
+- [ ] NO `.env` files committed: `git log -p | grep -i "password\|secret\|api"`
+- [ ] NO credentials in code: `git log -p | grep -i "DATABASE_URL"`
+- [ ] NO hardcoded passwords anywhere in repository
+- [ ] `.gitignore` includes `.env` and `.env.*`
+
+### Deployment Verification
 - [ ] HTTPS is enabled (Railway does automatically)
-- [ ] `CORS_ORIGINS` set to your actual frontend domain(s) only
-- [ ] `ACCESS_TOKEN_EXPIRE_MINUTES=60` (not higher)
-- [ ] Frontend `VITE_API_BASE_URL` points to production backend
-- [ ] No `.env` files in git (`git log -p | grep -i "api"`)
-- [ ] Test signup, login, tasks, chat all work
-- [ ] Check logs for errors
+- [ ] Database migrations ran successfully (check Railway logs)
+- [ ] Health check returns 200: `curl https://alon-assistant.up.railway.app/health`
+- [ ] Security headers present: `curl -I https://alon-assistant.up.railway.app/health`
+  - [ ] `Strict-Transport-Security` header present
+  - [ ] `X-Content-Type-Options: nosniff` present
+  - [ ] `X-Frame-Options: DENY` present
+  - [ ] `Content-Security-Policy` present
+
+### Functional Testing
+- [ ] Test signup: Create new account at https://sam.alontechnologies.com
+- [ ] Test login: Login works, JWT tokens returned
+- [ ] Test tasks: Create, edit, complete, delete tasks
+- [ ] Test chat: AI chat responds correctly
+- [ ] Test logout: Token revoked, can't access API after logout
+- [ ] Test account lockout: 5 failed logins locks account for 30 minutes
+- [ ] Test rate limiting: 100+ requests in 1 minute returns 429
+- [ ] Check Railway logs for errors (Backend Service → Logs)
+
+### Security Features
+- [ ] CORS only allows `https://sam.alontechnologies.com`
+- [ ] Password requirements enforced (12+ chars, complexity, NIST)
+- [ ] Failed login attempts logged (JSON format in Railway logs)
+- [ ] Account lockout working (5 failed attempts)
+- [ ] Token blacklist working (Redis connected)
+- [ ] Rate limiting working (100 req/min per IP)
+
+**See:** [SECURITY_AND_BEST_PRACTICES.md](SECURITY_AND_BEST_PRACTICES.md) for complete security verification
 
 ---
 

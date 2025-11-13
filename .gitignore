@@ -26,6 +26,11 @@ backend/venv/
 *.sqlite3
 personal_assistant.db
 
+# Database backups (contain production data - NEVER commit)
+backup_*.sql
+*.sql.gz
+*.dump
+
 # Node
 node_modules/
 npm-debug.log*

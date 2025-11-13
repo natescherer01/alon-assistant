@@ -1,15 +1,33 @@
 # Railway Production Environment Variables Setup
 
-**CRITICAL:** These environment variables must be set in the Railway dashboard for PRODUCTION deployment.
+⚠️ **CRITICAL SECURITY REQUIREMENT**
 
-Railway uses dashboard environment variables, NOT .env files in the repository.
+**NEVER commit credentials to git. Use Railway dashboard ONLY.**
+
+This document describes how to configure environment variables in Railway for production deployment.
+
+**See also:**
+- [SECURITY_AND_BEST_PRACTICES.md](SECURITY_AND_BEST_PRACTICES.md) - Complete security guide
+- [DEPLOYMENT.md](DEPLOYMENT.md) - Full deployment process
+
+---
+
+## ⚠️ Core Principle: Zero Trust
+
+- **NO credentials in code** - Railway dashboard environment variables ONLY
+- **NO `.env` files in git** - They are gitignored but still risky to create
+- **NO localhost testing** - Test in Railway production environment
+- **NO hardcoded secrets** - Always use `os.getenv()`
+
+---
 
 ## How to Set Environment Variables in Railway
 
-1. Go to your Railway project: https://railway.app
-2. Select your backend service
-3. Click on "Variables" tab
-4. Add each variable below
+1. Go to https://railway.app and login
+2. Select your project: **alon-assistant**
+3. Click on your **backend service** (NOT the database)
+4. Click **"Variables"** tab
+5. Add each variable below (click "+ New Variable")
 
 ---
 
@@ -19,34 +37,53 @@ Railway uses dashboard environment variables, NOT .env files in the repository.
 
 **Purpose:** JWT token signing and encryption
 
-**Generate a strong key:**
+**⚠️ SECURITY CRITICAL:**
+- Generate locally, NEVER commit to git
+- Must be 32+ characters
+- Unique per environment (never reuse)
+- Rotate every 90 days (best practice)
+
+**Generate a strong key locally:**
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-**Set in Railway:**
-```
-SECRET_KEY=<paste_generated_key_here>
-```
+**Set in Railway dashboard:**
+1. Copy the generated key
+2. Railway → Backend Service → Variables
+3. Add variable: `SECRET_KEY=<paste_generated_key_here>`
+4. NEVER commit this value anywhere
 
-**⚠️ WARNING:** Never reuse keys between environments. Generate a unique key for production.
+**⚠️ WARNING:** If you accidentally commit SECRET_KEY to git, rotate immediately!
 
 ---
 
-### 2. DATABASE_URL (Already Set)
+### 2. DATABASE_URL (Auto-Configured - DO NOT SET MANUALLY)
 
 **Purpose:** PostgreSQL connection string
 
-**Note:** Railway automatically provides this as an environment variable.
+**⚠️ CRITICAL:** Railway automatically provides this. DO NOT set manually!
 
-**To find your DATABASE_URL:**
-1. Go to Railway dashboard
-2. Click on your PostgreSQL database service
-3. Go to "Variables" tab
-4. Copy the DATABASE_URL value
-5. Paste it into your backend service's environment variables
+**How it works:**
+1. Railway automatically injects `DATABASE_URL` from PostgreSQL service
+2. Your backend reads it via `os.getenv("DATABASE_URL")`
+3. Connection string includes credentials, host, port, database name
 
-**Do not hardcode this URL anywhere!** Railway manages it automatically.
+**To view your DATABASE_URL (for debugging only):**
+1. Railway dashboard → PostgreSQL service (NOT backend)
+2. Variables tab → DATABASE_URL
+3. **NEVER copy this to git or documentation**
+
+**Credential rotation:**
+- If DATABASE_URL is exposed, create new PostgreSQL service
+- See [DATABASE_ROTATION_GUIDE.md](DATABASE_ROTATION_GUIDE.md)
+
+**Format (for reference only):**
+```
+postgresql://postgres:PASSWORD@HOST:PORT/railway
+```
+
+**DO NOT hardcode this URL anywhere!** Railway manages it automatically.
 
 ---
 
@@ -67,31 +104,54 @@ ENVIRONMENT=production
 
 ---
 
-### 4. CORS_ORIGINS (CRITICAL)
+### 4. CORS_ORIGINS (CRITICAL - Security Feature)
 
-**Purpose:** Controls which domains can access your API
+**Purpose:** Controls which domains can access your API (prevents unauthorized access)
 
-**⚠️ IMPORTANT:** Replace with your actual Vercel frontend domain!
+**⚠️ SECURITY CRITICAL:**
+- MUST be exact production domain
+- NO wildcards (*) allowed
+- NO localhost URLs
+- NO trailing slashes
+- NO spaces in comma-separated list
+
+**Current Production Value:**
+```
+CORS_ORIGINS=https://sam.alontechnologies.com
+```
 
 **Set in Railway:**
+```bash
+# Single domain (current production)
+CORS_ORIGINS=https://sam.alontechnologies.com
+
+# Multiple domains (if needed)
+CORS_ORIGINS=https://sam.alontechnologies.com,https://app.customdomain.com
 ```
-CORS_ORIGINS=https://your-frontend-app.vercel.app
+
+**❌ NEVER use wildcards:**
+```bash
+# WRONG - Allows anyone to access your API!
+CORS_ORIGINS=*
+CORS_ORIGINS=https://*.vercel.app
 ```
 
 **How to find your Vercel domain:**
 1. Go to https://vercel.com/dashboard
 2. Find your frontend project
-3. Copy the production domain (looks like: `your-app-name.vercel.app`)
-4. Use the FULL https:// URL
+3. Copy the production domain
+4. Include `https://` protocol
+5. NO trailing slash
 
-**Example:**
-```
-CORS_ORIGINS=https://alon-ai.vercel.app
-```
+**Testing CORS:**
+```bash
+curl -I -X OPTIONS https://alon-assistant.up.railway.app/api/v1/auth/login \
+  -H "Origin: https://sam.alontechnologies.com" \
+  -H "Access-Control-Request-Method: POST"
 
-**Multiple domains (if needed):**
-```
-CORS_ORIGINS=https://alon-ai.vercel.app,https://custom-domain.com
+# Should return:
+# Access-Control-Allow-Origin: https://sam.alontechnologies.com
+# Access-Control-Allow-Credentials: true
 ```
 
 ---
@@ -120,29 +180,43 @@ REDIS_URL=redis://default:<password>@<host>:<port>
 
 ---
 
-### 7. ACCESS_TOKEN_EXPIRE_MINUTES (Optional)
+### 7. ACCESS_TOKEN_EXPIRE_MINUTES (Recommended for Security)
 
-**Purpose:** How long access tokens are valid
+**Purpose:** How long access tokens are valid before user must refresh
+
+**Security principle:** Shorter = more secure (in case of token theft)
 
 **Recommended for production:**
 ```
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
 
-**Default if not set:** 60 minutes
+**Default if not set:** 60 minutes (less secure)
+
+**Why 30 minutes?**
+- Balance between security and user experience
+- Compromised tokens expire quickly
+- Refresh tokens allow seamless re-authentication
+- NIST recommends short-lived access tokens
 
 ---
 
-### 8. REFRESH_TOKEN_EXPIRE_DAYS (Optional)
+### 8. REFRESH_TOKEN_EXPIRE_DAYS (Recommended for Security)
 
-**Purpose:** How long refresh tokens are valid
+**Purpose:** How long refresh tokens are valid before user must re-login
 
 **Recommended for production:**
 ```
 REFRESH_TOKEN_EXPIRE_DAYS=7
 ```
 
-**Default if not set:** 30 days
+**Default if not set:** 30 days (less secure)
+
+**Why 7 days?**
+- Users re-authenticate weekly
+- Reduces risk of stolen refresh tokens
+- Good balance for active users
+- Inactive users automatically logged out after 7 days
 
 ---
 
