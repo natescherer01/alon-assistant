@@ -60,11 +60,10 @@ async def signup(request: Request, user_data: UserCreate, db: Session = Depends(
 
     # Create new user
     new_user = User(
-        email=user_data.email,
         password_hash=hashed_password,
         full_name=user_data.full_name
     )
-    # Set email (generates email_hash for searchable lookups)
+    # Set email and generate email_hash for searchable lookups (must be done before adding to session)
     new_user.set_email(user_data.email)
 
     db.add(new_user)
