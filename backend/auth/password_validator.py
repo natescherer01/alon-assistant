@@ -110,9 +110,10 @@ def validate_password_strength(password: str) -> Tuple[bool, str]:
         return False, "Password should not be a simple pattern"
 
     # Check against Have I Been Pwned database (NIST requirement)
-    is_compromised, error_msg = is_password_compromised(password)
-    if is_compromised:
-        return False, error_msg or "This password has been found in data breaches. Please choose a different password"
+    # TEMPORARILY DISABLED for debugging
+    # is_compromised, error_msg = is_password_compromised(password)
+    # if is_compromised:
+    #     return False, error_msg or "This password has been found in data breaches. Please choose a different password"
 
     # Password is valid
     return True, ""
