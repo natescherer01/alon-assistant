@@ -25,7 +25,7 @@ prometheus-client==0.19.0
 # Utilities
 python-dotenv==1.0.0
 redis==5.0.1
-requests==2.31.0
+requests==2.31.0  # Required for Have I Been Pwned API in password validator
 
 # AI/ML
 anthropic==0.40.0
