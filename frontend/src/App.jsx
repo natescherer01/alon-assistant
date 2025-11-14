@@ -1,21 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import useAuthStore from './utils/authStore';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
-
-// Create React Query client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
+import AppDataLoader from './components/AppDataLoader';
+import queryClient, { setupPersistence, setupNetworkHandlers } from './lib/queryClient';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -40,15 +33,54 @@ function PublicRoute({ children }) {
 }
 
 function App() {
-  const { checkAuth } = useAuthStore();
+  const { checkAuth, isAuthenticated } = useAuthStore();
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Check authentication status on mount
-    checkAuth();
+    // Initialize app
+    async function initializeApp() {
+      // Check authentication status on mount
+      checkAuth();
+
+      // Set up React Query persistence with encryption
+      await setupPersistence();
+
+      // Set up network event handlers
+      setupNetworkHandlers();
+
+      setIsInitialized(true);
+      console.log('✅ App initialized');
+    }
+
+    initializeApp();
   }, [checkAuth]);
+
+  // Show loading state while initializing
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
+      {/* Preload data after authentication */}
+      {isAuthenticated && (
+        <AppDataLoader
+          onLoadComplete={(stats) => {
+            console.log('📊 Preload stats:', stats);
+          }}
+          onLoadError={(error) => {
+            console.error('❌ Preload error:', error);
+          }}
+        />
+      )}
+
       <Router>
         <Routes>
           {/* Default redirect */}
@@ -94,6 +126,11 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
+
+      {/* React Query DevTools (development only) */}
+      {import.meta.env.DEV && (
+        <ReactQueryDevtools initialIsOpen={false} position="bottom-right" />
+      )}
     </QueryClientProvider>
   );
 }

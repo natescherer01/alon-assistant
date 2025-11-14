@@ -1,28 +1,37 @@
-# FastAPI and server
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
 python-multipart==0.0.6
-pydantic-settings==2.1.0
-email-validator==2.1.0
 
 # Database
-sqlalchemy==2.0.44  # 2.0.44+ required for Python 3.13 compatibility
-alembic==1.13.1
+sqlalchemy==2.0.23
+alembic==1.12.1
+psycopg2-binary==2.9.9
 
-# Authentication & Security
+# Data Validation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-bcrypt==4.0.1  # Pin to 4.0.1 for passlib compatibility
+python-multipart==0.0.6
+cryptography==42.0.0
+
+# Monitoring
+prometheus-client==0.19.0
+
+# Utilities
 python-dotenv==1.0.0
-slowapi==0.1.9  # For rate limiting
-redis==5.0.1  # For token blacklist and caching
-requests==2.31.0  # For Have I Been Pwned API (password breach checking)
 
-# Claude API
-anthropic==0.40.0
+# Testing (dev dependencies)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.1
 
-# CORS
-fastapi-cors==0.0.6
+# Rate Limiting
+slowapi==0.1.9
 
-# For production
-psycopg2-binary==2.9.9  # PostgreSQL driver (optional, use in production)
+# CSRF Protection
+python-multipart==0.0.6
+itsdangerous==2.1.2

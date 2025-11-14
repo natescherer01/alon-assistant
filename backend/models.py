@@ -1,10 +1,11 @@
 """
-SQLAlchemy database models
+SQLAlchemy database models with field-level encryption
 """
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON, Date, CheckConstraint
 from sqlalchemy.orm import relationship
 from database import Base
+from app.db.types import EncryptedString, EncryptedText
 
 
 class User(Base):
@@ -12,9 +13,10 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    password_hash = Column(String, nullable=False)
-    full_name = Column(String)
+    email = Column(EncryptedString(255), unique=True, index=True, nullable=False)
+    email_hash = Column(String(64), unique=True, index=True, nullable=True)  # SHA-256 hash for searchable lookups
+    password_hash = Column(String, nullable=False)  # Already hashed with bcrypt, not encrypted
+    full_name = Column(EncryptedString(255))
     timezone = Column(String, default="UTC")  # User's timezone for date/time display
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -28,6 +30,22 @@ class User(Base):
     tasks = relationship("Task", back_populates="owner", cascade="all, delete-orphan")
     chat_history = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
 
+    def set_email(self, email: str):
+        """
+        Set email and generate searchable hash.
+
+        Args:
+            email: User's email address
+
+        Note:
+            Always use this method instead of directly assigning to self.email
+            to ensure email_hash is updated for searchable lookups.
+        """
+        from app.core.encryption import get_encryption_service
+        self.email = email
+        service = get_encryption_service()
+        self.email_hash = service.generate_searchable_hash(email)
+
 
 class Task(Base):
     """Task model - migrated from JSON structure"""
@@ -36,9 +54,9 @@ class Task(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
-    # Task details
-    title = Column(String, nullable=False)
-    description = Column(Text, default="")
+    # Task details (encrypted for privacy)
+    title = Column(EncryptedString(500), nullable=False)
+    description = Column(EncryptedText, default="")
     deadline = Column(Date, nullable=True)
     intensity = Column(Integer, default=3)
     status = Column(String, default="not_started")
@@ -77,9 +95,9 @@ class ChatMessage(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
-    # Message content
-    message = Column(Text, nullable=False)  # User's message
-    response = Column(Text, nullable=False)  # Claude's response
+    # Message content (encrypted for privacy)
+    message = Column(EncryptedText, nullable=False)  # User's message
+    response = Column(EncryptedText, nullable=False)  # Claude's response
 
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow, index=True)  # Indexed for efficient cleanup queries
