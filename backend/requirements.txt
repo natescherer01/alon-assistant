@@ -26,6 +26,9 @@ prometheus-client==0.19.0
 python-dotenv==1.0.0
 redis==5.0.1
 
+# AI/ML
+anthropic==0.40.0
+
 # Testing (dev dependencies)
 pytest==7.4.3
 pytest-asyncio==0.21.1
