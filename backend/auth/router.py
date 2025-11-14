@@ -20,6 +20,7 @@ from auth.account_lockout import (
 from auth.security_logging import SecurityEvent, get_client_ip, get_user_agent
 from rate_limit import limiter
 from logger import get_logger
+from app.core.encryption import get_encryption_service
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 logger = get_logger(__name__)
@@ -41,8 +42,12 @@ async def signup(request: Request, user_data: UserCreate, db: Session = Depends(
     Raises:
         HTTPException: If email already exists
     """
-    # Check if user already exists
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    # Generate email hash for lookup (can't search encrypted fields)
+    encryption_service = get_encryption_service()
+    email_hash = encryption_service.generate_searchable_hash(user_data.email)
+
+    # Check if user already exists (using email_hash)
+    existing_user = db.query(User).filter(User.email_hash == email_hash).first()
     if existing_user:
         logger.warning(f"Signup attempt with existing email: {user_data.email}")
         raise HTTPException(
@@ -59,6 +64,8 @@ async def signup(request: Request, user_data: UserCreate, db: Session = Depends(
         password_hash=hashed_password,
         full_name=user_data.full_name
     )
+    # Set email (generates email_hash for searchable lookups)
+    new_user.set_email(user_data.email)
 
     db.add(new_user)
     db.commit()
@@ -95,8 +102,12 @@ async def login(request: Request, credentials: UserLogin, db: Session = Depends(
     client_ip = get_client_ip(request)
     user_agent = get_user_agent(request)
 
-    # Find user
-    user = db.query(User).filter(User.email == credentials.email).first()
+    # Generate email hash for lookup (can't search encrypted fields)
+    encryption_service = get_encryption_service()
+    email_hash = encryption_service.generate_searchable_hash(credentials.email)
+
+    # Find user by email_hash
+    user = db.query(User).filter(User.email_hash == email_hash).first()
     if not user:
         # Log failed attempt (don't reveal that user doesn't exist)
         SecurityEvent.log_authentication_attempt(
@@ -259,8 +270,12 @@ async def refresh_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Verify user still exists
-    user = db.query(User).filter(User.email == email).first()
+    # Generate email hash for lookup (can't search encrypted fields)
+    encryption_service = get_encryption_service()
+    email_hash = encryption_service.generate_searchable_hash(email)
+
+    # Verify user still exists (using email_hash)
+    user = db.query(User).filter(User.email_hash == email_hash).first()
     if not user:
         logger.warning(f"Refresh token used for non-existent user: {email}")
         raise HTTPException(
