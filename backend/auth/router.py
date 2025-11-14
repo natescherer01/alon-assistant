@@ -42,40 +42,58 @@ async def signup(request: Request, user_data: UserCreate, db: Session = Depends(
     Raises:
         HTTPException: If email already exists
     """
-    # Generate email hash for lookup (can't search encrypted fields)
-    encryption_service = get_encryption_service()
-    email_hash = encryption_service.generate_searchable_hash(user_data.email)
+    try:
+        logger.info(f"Signup attempt started for email: {user_data.email}")
 
-    # Check if user already exists (using email_hash)
-    existing_user = db.query(User).filter(User.email_hash == email_hash).first()
-    if existing_user:
-        logger.warning(f"Signup attempt with existing email: {user_data.email}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+        # Generate email hash for lookup (can't search encrypted fields)
+        encryption_service = get_encryption_service()
+        email_hash = encryption_service.generate_searchable_hash(user_data.email)
+        logger.info("Email hash generated successfully")
+
+        # Check if user already exists (using email_hash)
+        existing_user = db.query(User).filter(User.email_hash == email_hash).first()
+        if existing_user:
+            logger.warning(f"Signup attempt with existing email: {user_data.email}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        logger.info("User uniqueness check passed")
+
+        # Hash password
+        hashed_password = get_password_hash(user_data.password)
+        logger.info("Password hashed successfully")
+
+        # Create new user
+        new_user = User(
+            password_hash=hashed_password
         )
+        # Set email and generate email_hash for searchable lookups
+        new_user.set_email(user_data.email)
+        # Set encrypted full_name
+        new_user.full_name = user_data.full_name
+        logger.info("User object created with encrypted fields")
 
-    # Hash password
-    hashed_password = get_password_hash(user_data.password)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
 
-    # Create new user
-    new_user = User(
-        password_hash=hashed_password
-    )
-    # Set email and generate email_hash for searchable lookups
-    new_user.set_email(user_data.email)
-    # Set encrypted full_name
-    new_user.full_name = user_data.full_name
+        logger.info(f"New user created: {new_user.email} (ID: {new_user.id})")
 
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+        # Create token pair (access + refresh) and return immediately
+        tokens = create_token_pair(new_user.email)
+        logger.info("Tokens created successfully")
+        return tokens
 
-    logger.info(f"New user created: {new_user.email} (ID: {new_user.id})")
-
-    # Create token pair (access + refresh) and return immediately
-    tokens = create_token_pair(new_user.email)
-    return tokens
+    except HTTPException:
+        # Re-raise HTTP exceptions (like duplicate email)
+        raise
+    except Exception as e:
+        logger.error(f"Signup failed with unexpected error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Signup failed: {str(e)}"
+        )
 
 
 @router.post("/login", response_model=Token)
