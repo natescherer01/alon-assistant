@@ -13,10 +13,10 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(EncryptedString(255), unique=True, index=True, nullable=False)
+    email = Column('email_encrypted', EncryptedString(255), nullable=False)  # Maps to email_encrypted column
     email_hash = Column(String(64), unique=True, index=True, nullable=True)  # SHA-256 hash for searchable lookups
     password_hash = Column(String, nullable=False)  # Already hashed with bcrypt, not encrypted
-    full_name = Column(EncryptedString(255))
+    full_name = Column('full_name_encrypted', EncryptedString(255))  # Maps to full_name_encrypted column
     timezone = Column(String, default="UTC")  # User's timezone for date/time display
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -55,8 +55,8 @@ class Task(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     # Task details (encrypted for privacy)
-    title = Column(EncryptedString(500), nullable=False)
-    description = Column(EncryptedText, default="")
+    title = Column('title_encrypted', EncryptedString(500), nullable=False)  # Maps to title_encrypted column
+    description = Column('description_encrypted', EncryptedText, default="")  # Maps to description_encrypted column
     deadline = Column(Date, nullable=True)
     intensity = Column(Integer, default=3)
     status = Column(String, default="not_started")
@@ -96,8 +96,8 @@ class ChatMessage(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # Message content (encrypted for privacy)
-    message = Column(EncryptedText, nullable=False)  # User's message
-    response = Column(EncryptedText, nullable=False)  # Claude's response
+    message = Column('message_encrypted', EncryptedText, nullable=False)  # User's message - maps to message_encrypted column
+    response = Column('response_encrypted', EncryptedText, nullable=False)  # Claude's response - maps to response_encrypted column
 
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow, index=True)  # Indexed for efficient cleanup queries
