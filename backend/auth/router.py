@@ -60,11 +60,13 @@ async def signup(request: Request, user_data: UserCreate, db: Session = Depends(
 
     # Create new user
     new_user = User(
-        password_hash=hashed_password,
-        full_name=user_data.full_name
+        password_hash=hashed_password
     )
-    # Set email and generate email_hash for searchable lookups (must be done before adding to session)
+    # Set email and generate email_hash for searchable lookups
     new_user.set_email(user_data.email)
+    # Set full_name (both encrypted and plaintext during migration)
+    new_user.full_name = user_data.full_name
+    new_user.full_name_plaintext = user_data.full_name
 
     db.add(new_user)
     db.commit()
