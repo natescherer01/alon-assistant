@@ -13,13 +13,9 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    # Encrypted columns (new)
+    # Encrypted columns
     email = Column('email_encrypted', EncryptedString(255), nullable=False)  # Maps to email_encrypted column
     email_hash = Column(String(64), unique=True, index=True, nullable=True)  # SHA-256 hash for searchable lookups
-    # Legacy plaintext columns (keep during blue-green migration)
-    email_plaintext = Column('email', String(255), nullable=True)  # Old plaintext email column
-    full_name_plaintext = Column('full_name', String(255), nullable=True)  # Old plaintext full_name column
-    # Other fields
     password_hash = Column(String, nullable=False)  # Already hashed with bcrypt, not encrypted
     full_name = Column('full_name_encrypted', EncryptedString(255))  # Maps to full_name_encrypted column
     timezone = Column(String, default="UTC")  # User's timezone for date/time display
@@ -45,14 +41,10 @@ class User(Base):
         Note:
             Always use this method instead of directly assigning to self.email
             to ensure email_hash is updated for searchable lookups.
-
-            During blue-green migration, sets both encrypted and plaintext columns.
         """
         from app.core.encryption import get_encryption_service
-        # Set encrypted email (new)
+        # Set encrypted email
         self.email = email
-        # Set plaintext email (old - for backwards compatibility during migration)
-        self.email_plaintext = email
         # Generate searchable hash
         service = get_encryption_service()
         self.email_hash = service.generate_searchable_hash(email)
