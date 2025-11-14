@@ -1,9 +1,10 @@
-"""
+"""add_encryption_phase1_encrypted_columns
+
 Add encrypted columns - Phase 1 (Blue-Green Migration)
 
-Revision ID: 002_encryption_phase1
-Revises: 001_add_performance_indexes
-Create Date: 2025-11-13 13:00:00.000000
+Revision ID: 35d74489f769
+Revises: 0a61bbb1cba0
+Create Date: 2025-11-13 20:03:10.623727
 
 This is Phase 1 of the encryption migration strategy.
 Adds new encrypted columns alongside existing plaintext columns.
@@ -19,15 +20,17 @@ Security Note:
     Requires ENCRYPTION_KEY to be set in environment/secrets manager.
     Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 """
+from typing import Sequence, Union
+
 from alembic import op
 import sqlalchemy as sa
 
 
-# Revision identifiers
-revision = '002_encryption_phase1'
-down_revision = '001_add_performance_indexes'
-branch_labels = None
-depends_on = None
+# revision identifiers, used by Alembic.
+revision: str = '35d74489f769'
+down_revision: Union[str, None] = '0a61bbb1cba0'
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
@@ -48,7 +51,6 @@ def upgrade() -> None:
     print("Adding encrypted columns to users table...")
 
     # Encrypted email (was VARCHAR, now larger for encryption overhead)
-    # Original: VARCHAR (unlimited in SQLite)
     # Encrypted: VARCHAR(433) = ceil(255 * 1.5 + 50)
     op.add_column('users',
         sa.Column('email_encrypted', sa.String(433), nullable=True))
@@ -63,7 +65,6 @@ def upgrade() -> None:
         sa.Column('email_hash', sa.String(64), nullable=True))
 
     # Add index on email_hash (will be unique after data migration)
-    # Note: Using unique=False initially to avoid conflicts during migration
     op.create_index('ix_users_email_hash', 'users', ['email_hash'], unique=False)
 
     print("✓ Users table updated")
@@ -74,13 +75,11 @@ def upgrade() -> None:
     print("Adding encrypted columns to tasks table...")
 
     # Encrypted title
-    # Original: VARCHAR (unlimited)
     # Encrypted: VARCHAR(800) = ceil(500 * 1.5 + 50)
     op.add_column('tasks',
         sa.Column('title_encrypted', sa.String(800), nullable=True))
 
     # Encrypted description (TEXT field, no length limit)
-    # Fernet handles variable-length data automatically
     op.add_column('tasks',
         sa.Column('description_encrypted', sa.Text, nullable=True))
 
@@ -105,7 +104,6 @@ def upgrade() -> None:
     print("\nNext steps:")
     print("1. Run data migration script: python scripts/encrypt_existing_data.py")
     print("2. Verify all data encrypted: Check email_encrypted, etc. are populated")
-    print("3. Run Phase 2 migration: alembic upgrade head (when Phase 2 ready)")
 
 
 def downgrade() -> None:
