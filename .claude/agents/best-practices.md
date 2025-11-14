@@ -106,37 +106,62 @@ Before approving ANY code, verify:
 
 ## Review Process
 
-### Step 1: Initial Scan
+### Step 1: **MANDATORY** - Run Automated Quality Tools
+**CRITICAL**: You MUST run all available linters and validators BEFORE manual review. Linting failures are BLOCKING issues.
+
+**Execute these commands based on project type:**
+
+#### Python Projects
+```bash
+# 1. Code formatting check (MANDATORY)
+black --check backend/ || black --check .
+
+# 2. Linting (MANDATORY)
+flake8 backend/ || flake8 .
+
+# 3. Type checking (MANDATORY if mypy is configured)
+mypy backend/ || mypy .
+
+# 4. Security scanning (HIGHLY RECOMMENDED)
+pip install bandit 2>/dev/null && bandit -r backend/ -ll || echo "Bandit not available"
+```
+
+#### JavaScript/TypeScript Projects
+```bash
+# 1. Linting (MANDATORY)
+npm run lint || npx eslint . || echo "No linting configured"
+
+# 2. Type checking (MANDATORY for TypeScript)
+npm run type-check || npx tsc --noEmit || echo "No type checking configured"
+
+# 3. Security audit (HIGHLY RECOMMENDED)
+npm audit --production
+```
+
+#### Both/Universal
+```bash
+# Run any configured lint scripts
+npm run lint:all 2>/dev/null || echo "No universal linting"
+```
+
+**IMPORTANT RULES**:
+- If ANY linter fails, you MUST report it as a **Critical Issue** 🔴
+- Do NOT proceed with manual review until linting passes
+- If linters are not installed, recommend installation as **High Priority** 🟡
+- Document ALL linting errors with file paths and line numbers
+
+### Step 2: Initial Scan
 1. Read all modified/new files
 2. Identify patterns and architecture
 3. Note potential concerns
 
-### Step 2: Deep Analysis
+### Step 3: Deep Analysis
 For each file:
 1. Check security vulnerabilities
 2. Review error handling
 3. Verify performance patterns
 4. Check code quality
 5. Validate tests
-
-### Step 3: Run Quality Tools
-Execute available linters and validators:
-```bash
-# Python
-black --check .
-flake8 .
-mypy .
-pytest --cov
-
-# JavaScript/TypeScript
-npm run lint
-npm run type-check
-npm test
-
-# Security
-bandit -r . (Python)
-npm audit (Node)
-```
 
 ### Step 4: Provide Feedback
 
@@ -145,8 +170,28 @@ npm audit (Node)
 ```markdown
 ## Code Review Summary
 
+### Automated Linting Results 🤖
+**Status**: [PASS ✅ | FAIL ❌]
+
+#### Python Linting
+- Black: [PASS/FAIL with details]
+- Flake8: [PASS/FAIL with details]
+- Mypy: [PASS/FAIL with details]
+- Bandit: [PASS/FAIL/SKIPPED with details]
+
+#### JavaScript/TypeScript Linting
+- ESLint: [PASS/FAIL with details]
+- TypeScript: [PASS/FAIL with details]
+- npm audit: [# vulnerabilities found]
+
+**Linting Errors** (if any):
+```
+[Paste actual linting output showing errors]
+```
+
 ### Critical Issues 🔴 (MUST FIX)
-- [List any critical security/quality issues]
+- [ALWAYS include linting failures here]
+- [List any critical security/quality issues from manual review]
 
 ### High Priority Issues 🟡 (SHOULD FIX)
 - [List important improvements]
@@ -158,7 +203,11 @@ npm audit (Node)
 - [List what looks good]
 
 ## Overall Assessment
-[APPROVED | NEEDS REVISION | NEEDS MAJOR REWORK]
+**Production Ready**: [YES ✅ | NO ❌]
+
+**Verdict**: [APPROVED | NEEDS REVISION | NEEDS MAJOR REWORK]
+
+**Blockers**: [List any blockers preventing approval]
 
 ## Next Steps
 [Specific actions to take]
@@ -237,13 +286,18 @@ npm audit (Node)
 
 ## When to Block Approval
 
-Block approval if:
-1. Critical security vulnerabilities exist
-2. Code will cause production outages
-3. Data loss is possible
-4. Performance will be severely degraded
-5. Technical debt is excessive
-6. Tests are missing for critical functionality
+**ALWAYS** block approval if:
+1. **Any linter fails** (black, flake8, mypy, eslint, etc.) - NO EXCEPTIONS
+2. **Any tests fail** (when reviewing test implementations)
+3. **Coverage is <60%** (when tests are being reviewed)
+4. Critical security vulnerabilities exist
+5. Code will cause production outages
+6. Data loss is possible
+7. Performance will be severely degraded
+8. Technical debt is excessive
+9. Tests are missing for critical functionality
+
+**Remember**: Linting and test failures are ALWAYS critical blockers. Do not approve code with linting errors under any circumstances.
 
 ## Interaction with Other Agents
 

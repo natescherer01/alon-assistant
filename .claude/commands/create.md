@@ -164,14 +164,20 @@ Use the best-practices subagent to review the implementation.
 
 Code location: [paths]
 
-The guardian should:
-1. Review code quality
-2. Check for anti-patterns
-3. Verify error handling
-4. Assess production readiness
-5. Identify any issues
+The guardian MUST:
+1. **RUN ALL LINTERS** (black, flake8, mypy, eslint, etc.) - MANDATORY
+2. Review code quality manually
+3. Check for anti-patterns
+4. Verify error handling
+5. Assess production readiness
+6. Identify any issues
 
-Return review with categorized issues (Critical/High/Medium/Low).
+REQUIREMENTS:
+- All linters must PASS before approval
+- Any linting failures are CRITICAL BLOCKERS
+- Return review with linting results and categorized issues
+
+Return: Linting results + review with categorized issues (Critical/High/Medium/Low).
 ```
 
 ### Phase 4: Security Review
@@ -205,18 +211,25 @@ Use the testing-specialist subagent to create comprehensive tests.
 
 Code location: [paths]
 
-The testing specialist should:
-1. Design test strategy
-2. Implement unit tests
-3. Implement integration tests
-4. Add edge case tests
-5. Measure coverage
-6. Document testing approach
+The testing specialist MUST:
+1. **RUN ALL TESTS** with coverage measurement - MANDATORY
+2. Design test strategy
+3. Implement unit tests
+4. Implement integration tests
+5. Add edge case tests
+6. Analyze coverage gaps
+7. Document testing approach
 
-Return test suite and coverage report.
+REQUIREMENTS:
+- All tests must PASS (no failures)
+- Coverage must be ≥80% (or report as HIGH PRIORITY issue)
+- Coverage <60% is a CRITICAL BLOCKER
+- Actual test execution output required
+
+Return: Test run results + coverage report + test quality assessment.
 ```
 
-**Then**: Use best-practices agent to review test quality
+**Then**: Use best-practices agent to review test quality (agent will verify tests actually pass)
 
 ### Phase 6: Final Quality Gate
 
@@ -227,14 +240,23 @@ Use the best-practices subagent for final production-readiness review.
 
 This is the FINAL quality gate before delivery.
 
-The guardian should:
-1. Verify all previous issues resolved
-2. Check overall code quality
-3. Confirm production readiness
-4. Validate documentation
-5. Give final approval or flag blockers
+The guardian MUST:
+1. **RE-RUN ALL LINTERS** to confirm they still pass - MANDATORY
+2. **VERIFY ALL TESTS PASS** (may run tests again) - MANDATORY
+3. Verify all previous issues resolved
+4. Check overall code quality
+5. Confirm production readiness
+6. Validate documentation
+7. Give final approval or flag blockers
 
-Return: APPROVED or LIST OF BLOCKERS
+REQUIREMENTS FOR APPROVAL:
+✅ All linters passing (black, flake8, mypy, eslint, etc.)
+✅ All tests passing with ≥80% coverage
+✅ No critical security issues
+✅ No critical code quality issues
+✅ Documentation complete
+
+Return: [APPROVED ✅] or [BLOCKED ❌ + LIST OF BLOCKERS]
 ```
 
 ## Quality Assurance Rules
@@ -244,21 +266,43 @@ Return: APPROVED or LIST OF BLOCKERS
 You **MUST** use the best-practices agent:
 
 1. ✅ **After architecture design**
-2. ✅ **After implementation complete**
+2. ✅ **After implementation complete** (with LINTING)
 3. ✅ **After security fixes applied**
-4. ✅ **After tests added**
-5. ✅ **Final review before delivery**
+4. ✅ **After tests added** (with TEST EXECUTION)
+5. ✅ **Final review before delivery** (with LINTING + TESTS)
 
 **NEVER skip these checkpoints**. The best-practices agent is your quality gatekeeper.
+
+### **LINTING AND TESTING REQUIREMENTS** 🔒
+
+**CRITICAL RULES - NO EXCEPTIONS**:
+
+1. **LINTING MUST PASS**: All code must pass linting (black, flake8, mypy, eslint, etc.)
+   - Linting failures = CRITICAL BLOCKER
+   - Best-practices agent MUST run linters at every checkpoint
+   - No manual code review proceeds until linting passes
+
+2. **TESTS MUST PASS**: All tests must pass with ≥80% coverage
+   - Test failures = CRITICAL BLOCKER
+   - Coverage <80% = HIGH PRIORITY issue
+   - Coverage <60% = CRITICAL BLOCKER
+   - Testing specialist MUST run tests and measure coverage
+
+3. **VERIFICATION REQUIRED**: Final quality gate must re-verify
+   - Re-run linters to confirm still passing
+   - Re-run tests to confirm still passing
+   - No exceptions, even if "nothing changed"
 
 ### **Blocking Issues**
 
 If ANY checkpoint returns **Critical** issues:
-1. **STOP** the workflow
-2. **Report** issues to user
-3. **Delegate back** to specialist to fix
-4. **Re-review** with best-practices
-5. **Continue** only after critical issues resolved
+1. **STOP** the workflow immediately
+2. **Report** issues to user with details
+3. **Delegate back** to appropriate specialist to fix
+4. **Re-review** with best-practices agent
+5. **Continue** only after ALL critical issues resolved
+
+**Linting or test failures always count as Critical issues.**
 
 ### **Progress Tracking**
 
@@ -332,12 +376,20 @@ A project is COMPLETE when:
 
 ✅ All requirements implemented
 ✅ Architecture reviewed and approved
+✅ **ALL LINTERS PASSING** (black, flake8, mypy, eslint, etc.) - MANDATORY
+✅ **ALL TESTS PASSING** with ≥80% coverage - MANDATORY
 ✅ Code reviewed and approved (Best Practices)
 ✅ Security reviewed with no critical issues
-✅ Tests added with >80% coverage
 ✅ Final quality gate passed
 ✅ Documentation complete
 ✅ Ready for production deployment
+
+**BLOCKERS** - Project is NOT complete if:
+❌ Any linter is failing
+❌ Any tests are failing
+❌ Coverage is <80% (or <60% = critical)
+❌ Critical security vulnerabilities exist
+❌ Critical code quality issues remain
 
 ## Example Orchestration
 

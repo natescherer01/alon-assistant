@@ -1,10 +1,10 @@
 """
 Authentication utilities: JWT tokens and password hashing
 """
+import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Dict
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from config import get_settings
 from auth.token_blacklist import get_token_blacklist
 from logger import get_logger
@@ -12,29 +12,55 @@ from logger import get_logger
 settings = get_settings()
 logger = get_logger(__name__)
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    """
+    Verify a plain password against a bcrypt hash.
+
+    Args:
+        plain_password: Plain text password to verify
+        hashed_password: Bcrypt hash to verify against
+
+    Returns:
+        True if password matches, False otherwise
+    """
+    try:
+        password_bytes = plain_password.encode('utf-8')
+        hashed_bytes = hashed_password.encode('utf-8')
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
+    except Exception:
+        return False
 
 
 def get_password_hash(password: str) -> str:
     """
-    Hash a password
+    Hash password using bcrypt with 12 rounds.
 
     Args:
-        password: Password to hash
+        password: Plain text password to hash
 
     Returns:
-        Hashed password
+        Bcrypt hash string
+
+    Raises:
+        ValueError: If password exceeds 72 bytes after UTF-8 encoding
 
     Note:
-        bcrypt automatically truncates passwords longer than 72 bytes
+        bcrypt has a 72-byte limit. Passwords exceeding this are rejected
+        to prevent truncation-based authentication bypass attacks.
     """
-    return pwd_context.hash(password)
+    password_bytes = password.encode('utf-8')
+
+    # Enforce bcrypt's 72-byte limit
+    if len(password_bytes) > 72:
+        raise ValueError(
+            "Password exceeds maximum length of 72 bytes. "
+            "Please use a shorter password."
+        )
+
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode('utf-8')
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -94,7 +120,7 @@ def create_token_pair(user_email: str) -> Dict[str, str]:
         user_email: User's email address
 
     Returns:
-        Dictionary with access_token and refresh_token
+        Dictionary with access_token, refresh_token, and expires_in
     """
     access_token = create_access_token(data={"sub": user_email})
     refresh_token = create_refresh_token(data={"sub": user_email})
@@ -102,7 +128,8 @@ def create_token_pair(user_email: str) -> Dict[str, str]:
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "expires_in": settings.access_token_expire_minutes * 60  # Convert to seconds
     }
 
 
