@@ -19,6 +19,8 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [showChat, setShowChat] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [savingTasks, setSavingTasks] = useState(new Set());
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadTasks();
@@ -80,9 +82,67 @@ function Dashboard() {
     }
   };
 
-  const handleTaskUpdate = () => {
-    loadTasks();
-    loadNextTask();
+  /**
+   * Handle task updates with optimistic UI updates
+   * @param {Object|null} updatedTask - The updated task object (for optimistic updates)
+   * @param {string|null} taskId - The ID of task to delete (for delete operations)
+   * @param {string} action - The action type: 'update', 'delete', 'complete', 'restore'
+   */
+  const handleTaskUpdate = (updatedTask = null, taskId = null, action = 'update') => {
+    if (updatedTask || taskId) {
+      // Clear any previous errors
+      setError(null);
+
+      // Optimistic update - update state immediately without API refetch
+      setTasks(prevTasks => {
+        if (action === 'delete') {
+          return prevTasks.filter(t => t.id !== taskId);
+        } else if (action === 'update' || action === 'complete' || action === 'restore') {
+          const updated = prevTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+          // Re-sort by deadline after update
+          return sortTasksByDeadline(updated);
+        }
+        return prevTasks;
+      });
+
+      // Update allTasks for count calculations
+      setAllTasks(prevTasks => {
+        if (action === 'delete') {
+          return prevTasks.filter(t => t.id !== taskId);
+        } else if (updatedTask) {
+          return prevTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+        }
+        return prevTasks;
+      });
+
+      // Only reload next task if the updated/deleted task could affect it
+      // (i.e., if task is not completed or if we deleted a task)
+      if (action === 'delete' || updatedTask?.status !== 'completed') {
+        loadNextTask();
+      }
+    } else {
+      // Fallback: full reload (for backwards compatibility or error recovery)
+      loadTasks();
+      loadNextTask();
+    }
+  };
+
+  const handleError = (message, taskId = null) => {
+    setError({ message, taskId });
+    // Auto-dismiss error after 5 seconds
+    setTimeout(() => setError(null), 5000);
+  };
+
+  const markTaskSaving = (taskId, isSaving) => {
+    setSavingTasks(prev => {
+      const next = new Set(prev);
+      if (isSaving) {
+        next.add(taskId);
+      } else {
+        next.delete(taskId);
+      }
+      return next;
+    });
   };
 
   const handleLogout = () => {
@@ -530,6 +590,36 @@ function Dashboard() {
                 )}
               </div>
 
+              {/* Error Banner */}
+              {error && (
+                <div style={{
+                  background: '#FEE2E2',
+                  border: '1px solid #FCA5A5',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <p style={{ color: '#991B1B', margin: 0, fontSize: '14px', fontWeight: '500' }}>
+                    {error.message}
+                  </p>
+                  <button
+                    onClick={() => setError(null)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#991B1B',
+                      cursor: 'pointer',
+                      fontSize: '20px',
+                      padding: '4px 8px',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
               {/* Task List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {isLoading ? (
@@ -568,6 +658,9 @@ function Dashboard() {
                       task={task}
                       onUpdate={handleTaskUpdate}
                       onDelete={handleTaskUpdate}
+                      onError={handleError}
+                      markSaving={markTaskSaving}
+                      isSaving={savingTasks.has(task.id)}
                     />
                   ))
                 )}

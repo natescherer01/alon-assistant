@@ -1,9 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { tasksAPI } from '../api/client';
 
-function TaskItem({ task, onUpdate, onDelete }) {
+function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = false }) {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const isMountedRef = useRef(true);
+  const previousTaskRef = useRef(task);
+
+  // Update previous task ref when task changes
+  useEffect(() => {
+    previousTaskRef.current = task;
+  }, [task]);
+
+  // Cleanup on unmount to prevent state updates
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   const [formData, setFormData] = useState({
     title: task.title,
     description: task.description || '',
@@ -96,45 +110,185 @@ function TaskItem({ task, onUpdate, onDelete }) {
   };
 
   const handleComplete = async () => {
-    if (confirm('Mark this task as completed?')) {
-      setIsCompleting(true);
-      try {
-        await tasksAPI.completeTask(task.id);
-        onUpdate();
-      } catch (error) {
-        alert('Failed to complete task');
-      } finally {
-        setIsCompleting(false);
+    if (!confirm('Mark this task as completed?')) return;
+    if (isSaving) return; // Prevent duplicate requests
+
+    setIsCompleting(true);
+    const previousTask = previousTaskRef.current;
+
+    // Create optimistically updated task
+    const optimisticTask = {
+      ...task,
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    // Mark as saving
+    if (markSaving) markSaving(task.id, true);
+
+    // Optimistically update UI
+    onUpdate(optimisticTask, null, 'complete');
+    setIsCompleting(false);
+
+    try {
+      // Make API call in background
+      const updatedTask = await tasksAPI.completeTask(task.id);
+
+      if (!isMountedRef.current) return;
+
+      // Update with real data from server
+      onUpdate(updatedTask, null, 'complete');
+    } catch (error) {
+      if (!isMountedRef.current) return;
+
+      // Rollback to previous state
+      onUpdate(previousTask, null, 'update');
+
+      // Show error
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to complete task';
+      if (onError) {
+        onError(errorMessage, task.id);
+      } else {
+        alert(errorMessage);
+      }
+
+      setIsCompleting(false);
+    } finally {
+      if (isMountedRef.current && markSaving) {
+        markSaving(task.id, false);
       }
     }
   };
 
   const handleStatusChange = async (newStatus) => {
+    if (isSaving) return; // Prevent duplicate requests
+
+    const previousTask = previousTaskRef.current;
+
+    // Create optimistically updated task
+    const optimisticTask = {
+      ...task,
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    };
+
+    // Mark as saving
+    if (markSaving) markSaving(task.id, true);
+
+    // Optimistically update UI
+    onUpdate(optimisticTask, null, 'update');
+
     try {
-      await tasksAPI.updateTask(task.id, { status: newStatus });
-      onUpdate();
+      // Make API call in background
+      const updatedTask = await tasksAPI.updateTask(task.id, { status: newStatus });
+
+      if (!isMountedRef.current) return;
+
+      // Update with real data from server
+      onUpdate(updatedTask, null, 'update');
     } catch (error) {
-      alert('Failed to update status');
+      if (!isMountedRef.current) return;
+
+      // Rollback to previous state
+      onUpdate(previousTask, null, 'update');
+
+      // Show error
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to update status';
+      if (onError) {
+        onError(errorMessage, task.id);
+      } else {
+        alert(errorMessage);
+      }
+    } finally {
+      if (isMountedRef.current && markSaving) {
+        markSaving(task.id, false);
+      }
     }
   };
 
   const handleDelete = async () => {
-    if (confirm('Delete this task?')) {
-      try {
-        await tasksAPI.deleteTask(task.id);
-        onDelete(task.id);
-      } catch (error) {
-        alert('Failed to delete task');
+    if (!confirm('Delete this task?')) return;
+    if (isSaving) return; // Prevent duplicate requests
+
+    const previousTask = previousTaskRef.current;
+
+    // Mark as saving
+    if (markSaving) markSaving(task.id, true);
+
+    // Optimistically remove from UI
+    onUpdate(null, task.id, 'delete');
+
+    try {
+      // Make API call in background
+      await tasksAPI.deleteTask(task.id);
+
+      if (!isMountedRef.current) return;
+
+      // Task successfully deleted, already removed from UI
+    } catch (error) {
+      if (!isMountedRef.current) return;
+
+      // Restore task to UI
+      onUpdate(previousTask, null, 'update');
+
+      // Show error
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to delete task';
+      if (onError) {
+        onError(errorMessage, task.id);
+      } else {
+        alert(errorMessage);
+      }
+    } finally {
+      if (isMountedRef.current && markSaving) {
+        markSaving(task.id, false);
       }
     }
   };
 
   const handleRestore = async () => {
+    if (isSaving) return; // Prevent duplicate requests
+
+    const previousTask = previousTaskRef.current;
+
+    // Create optimistically updated task
+    const optimisticTask = {
+      ...task,
+      status: 'not_started',
+      updated_at: new Date().toISOString()
+    };
+
+    // Mark as saving
+    if (markSaving) markSaving(task.id, true);
+
+    // Optimistically update UI
+    onUpdate(optimisticTask, null, 'restore');
+
     try {
-      await tasksAPI.restoreTask(task.id);
-      onUpdate();
+      // Make API call in background
+      const updatedTask = await tasksAPI.restoreTask(task.id);
+
+      if (!isMountedRef.current) return;
+
+      // Update with real data from server
+      onUpdate(updatedTask, null, 'restore');
     } catch (error) {
-      alert('Failed to restore task');
+      if (!isMountedRef.current) return;
+
+      // Rollback to previous state
+      onUpdate(previousTask, null, 'update');
+
+      // Show error
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to restore task';
+      if (onError) {
+        onError(errorMessage, task.id);
+      } else {
+        alert(errorMessage);
+      }
+    } finally {
+      if (isMountedRef.current && markSaving) {
+        markSaving(task.id, false);
+      }
     }
   };
 
@@ -161,40 +315,85 @@ function TaskItem({ task, onUpdate, onDelete }) {
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
+
+    // Prevent saving if already saving
+    if (isSaving) return;
+
+    const updateData = {
+      title: formData.title,
+      description: formData.description,
+      intensity: parseInt(formData.intensity),
+      is_recurring: formData.is_recurring,
+    };
+
+    if (formData.project) {
+      updateData.project = formData.project;
+    }
+
+    if (formData.deadline) {
+      updateData.deadline = formData.deadline;
+    }
+
+    if (formData.waiting_on) {
+      updateData.waiting_on = formData.waiting_on;
+    }
+
+    // Only include recurrence data if task is recurring
+    if (formData.is_recurring) {
+      updateData.recurrence_type = formData.recurrence_type;
+      updateData.recurrence_interval = parseInt(formData.recurrence_interval);
+      if (formData.recurrence_end_date) {
+        updateData.recurrence_end_date = formData.recurrence_end_date;
+      }
+    }
+
+    // Save previous state for rollback
+    const previousTask = previousTaskRef.current;
+
+    // Create optimistically updated task
+    const optimisticTask = {
+      ...task,
+      ...updateData,
+      updated_at: new Date().toISOString()
+    };
+
+    // Mark as saving
+    if (markSaving) markSaving(task.id, true);
+
+    // Optimistically update UI
+    onUpdate(optimisticTask, null, 'update');
+    setIsEditing(false);
+
     try {
-      const updateData = {
-        title: formData.title,
-        description: formData.description,
-        intensity: parseInt(formData.intensity),
-        is_recurring: formData.is_recurring,
-      };
+      // Make API call in background
+      const updatedTask = await tasksAPI.updateTask(task.id, updateData);
 
-      if (formData.project) {
-        updateData.project = formData.project;
-      }
+      // Only update if component is still mounted
+      if (!isMountedRef.current) return;
 
-      if (formData.deadline) {
-        updateData.deadline = formData.deadline;
-      }
-
-      if (formData.waiting_on) {
-        updateData.waiting_on = formData.waiting_on;
-      }
-
-      // Only include recurrence data if task is recurring
-      if (formData.is_recurring) {
-        updateData.recurrence_type = formData.recurrence_type;
-        updateData.recurrence_interval = parseInt(formData.recurrence_interval);
-        if (formData.recurrence_end_date) {
-          updateData.recurrence_end_date = formData.recurrence_end_date;
-        }
-      }
-
-      await tasksAPI.updateTask(task.id, updateData);
-      setIsEditing(false);
-      onUpdate();
+      // Update with real data from server
+      onUpdate(updatedTask, null, 'update');
     } catch (error) {
-      alert('Failed to update task: ' + (error.response?.data?.detail || error.message));
+      // Only handle error if component is still mounted
+      if (!isMountedRef.current) return;
+
+      // Rollback to previous state
+      onUpdate(previousTask, null, 'update');
+
+      // Show error to user
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to update task';
+      if (onError) {
+        onError(errorMessage, task.id);
+      } else {
+        alert('Failed to update task: ' + errorMessage);
+      }
+
+      setIsEditing(true); // Re-open edit form
+    } finally {
+      // Clear saving state
+      if (isMountedRef.current && markSaving) {
+        markSaving(task.id, false);
+      }
     }
   };
 
@@ -597,46 +796,50 @@ function TaskItem({ task, onUpdate, onDelete }) {
           <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
             <button
               type="submit"
+              disabled={isSaving}
               style={{
                 flex: 1,
                 padding: '14px',
                 fontSize: '15px',
                 fontWeight: '600',
                 color: '#fff',
-                background: '#0066FF',
+                background: isSaving ? '#9CA3AF' : '#0066FF',
                 border: 'none',
                 borderRadius: '8px',
-                cursor: 'pointer',
+                cursor: isSaving ? 'not-allowed' : 'pointer',
+                opacity: isSaving ? 0.7 : 1,
                 transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = '#0052CC';
+                if (!isSaving) e.target.style.background = '#0052CC';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = '#0066FF';
+                if (!isSaving) e.target.style.background = '#0066FF';
               }}
             >
-              Save Changes
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
             <button
               type="button"
               onClick={handleCancelEdit}
+              disabled={isSaving}
               style={{
                 padding: '14px 20px',
                 fontSize: '15px',
                 fontWeight: '600',
-                color: '#6B7280',
+                color: isSaving ? '#9CA3AF' : '#6B7280',
                 background: 'transparent',
                 border: '1px solid rgba(0, 0, 0, 0.1)',
                 borderRadius: '8px',
-                cursor: 'pointer',
+                cursor: isSaving ? 'not-allowed' : 'pointer',
+                opacity: isSaving ? 0.5 : 1,
                 transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = '#F3F4F6';
+                if (!isSaving) e.target.style.background = '#F3F4F6';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'transparent';
+                if (!isSaving) e.target.style.background = 'transparent';
               }}
             >
               Cancel
@@ -675,6 +878,31 @@ function TaskItem({ task, onUpdate, onDelete }) {
             }}>
               {task.title}
             </h3>
+
+            {isSaving && (
+              <span style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                background: '#DBEAFE',
+                color: '#1E40AF',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}>
+                <span style={{
+                  display: 'inline-block',
+                  width: '12px',
+                  height: '12px',
+                  border: '2px solid #1E40AF',
+                  borderTop: '2px solid transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 0.8s linear infinite',
+                }}></span>
+                Saving...
+              </span>
+            )}
 
             <span style={{
               padding: '4px 10px',

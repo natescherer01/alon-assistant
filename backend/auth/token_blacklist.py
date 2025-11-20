@@ -33,13 +33,13 @@ class TokenBlacklist:
             logger.error(f"Failed to initialize Redis: {e}. Token revocation disabled.")
             self.enabled = False
 
-    def revoke_token(self, token: str, expires_in_minutes: int) -> bool:
+    def revoke_token(self, token: str, expires_in_minutes: int = None) -> bool:
         """
-        Add a token to the blacklist
+        Add a token to the blacklist with TTL matching token's remaining lifetime
 
         Args:
             token: JWT token to revoke
-            expires_in_minutes: Time until token naturally expires
+            expires_in_minutes: Time until token naturally expires (calculated from JWT if not provided)
 
         Returns:
             True if successfully added to blacklist, False otherwise
@@ -49,6 +49,28 @@ class TokenBlacklist:
             return False
 
         try:
+            # If expires_in_minutes not provided, calculate from token
+            if expires_in_minutes is None:
+                from jose import jwt
+                from datetime import datetime
+                try:
+                    # Decode without verification to get exp claim
+                    payload = jwt.decode(
+                        token,
+                        options={"verify_signature": False, "verify_exp": False}
+                    )
+                    exp_timestamp = payload.get("exp")
+                    if exp_timestamp:
+                        current_time = datetime.utcnow().timestamp()
+                        remaining_seconds = int(exp_timestamp - current_time)
+                        expires_in_minutes = max(remaining_seconds // 60, 1)  # At least 1 minute
+                    else:
+                        # Fallback to access token expiration
+                        expires_in_minutes = settings.access_token_expire_minutes
+                except Exception as e:
+                    logger.warning(f"Could not extract exp from token: {e}, using default TTL")
+                    expires_in_minutes = settings.access_token_expire_minutes
+
             # Store token with expiration matching token's natural expiration
             # After the token expires naturally, it will be auto-removed from Redis
             key = f"blacklist:{token}"
@@ -66,25 +88,32 @@ class TokenBlacklist:
     def is_token_revoked(self, token: str) -> bool:
         """
         Check if a token has been revoked
+        FAILS CLOSED: Returns True on errors for security
 
         Args:
             token: JWT token to check
 
         Returns:
-            True if token is revoked, False otherwise
+            True if token is revoked or on error, False if valid
         """
         if not self.enabled:
-            # If Redis is down, allow the token (fail open, not fail closed)
-            # The token will still be validated for expiration and signature
-            return False
+            # SECURITY: Fail closed - if Redis unavailable at startup, deny all tokens
+            logger.warning("Token blacklist check - Redis not available, FAILING CLOSED")
+            return True
 
         try:
             key = f"blacklist:{token}"
-            return self.redis_client.exists(key) > 0
+            result = self.redis_client.exists(key) > 0
+            return result
+        except redis.TimeoutError:
+            logger.error("Redis timeout checking token blacklist - FAILING CLOSED")
+            return True  # Fail closed: treat as revoked on timeout
+        except redis.ConnectionError:
+            logger.error("Redis connection error checking token blacklist - FAILING CLOSED")
+            return True  # Fail closed: treat as revoked on connection error
         except Exception as e:
-            logger.error(f"Failed to check token blacklist: {e}")
-            # Fail open - if Redis is having issues, don't block all requests
-            return False
+            logger.error(f"Failed to check token blacklist - FAILING CLOSED: {e}")
+            return True  # Fail closed: treat as revoked on any error
 
     def revoke_all_user_tokens(self, user_email: str) -> bool:
         """
@@ -120,22 +149,31 @@ class TokenBlacklist:
     def is_user_blacklisted(self, user_email: str) -> bool:
         """
         Check if all tokens for a user have been revoked
+        FAILS CLOSED: Returns True on errors for security
 
         Args:
             user_email: Email of the user
 
         Returns:
-            True if user is blacklisted, False otherwise
+            True if user is blacklisted or on error, False otherwise
         """
         if not self.enabled:
-            return False
+            # SECURITY: Fail closed - if Redis unavailable, deny
+            logger.warning("User blacklist check - Redis not available, FAILING CLOSED")
+            return True
 
         try:
             key = f"user_blacklist:{user_email}"
             return self.redis_client.exists(key) > 0
+        except redis.TimeoutError:
+            logger.error("Redis timeout checking user blacklist - FAILING CLOSED")
+            return True
+        except redis.ConnectionError:
+            logger.error("Redis connection error checking user blacklist - FAILING CLOSED")
+            return True
         except Exception as e:
-            logger.error(f"Failed to check user blacklist: {e}")
-            return False
+            logger.error(f"Failed to check user blacklist - FAILING CLOSED: {e}")
+            return True
 
     def clear_user_blacklist(self, user_email: str) -> bool:
         """
