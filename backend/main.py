@@ -4,6 +4,7 @@ Main application entry point
 """
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from config import get_settings
@@ -82,6 +83,9 @@ app = FastAPI(
 
 # Add security headers middleware (FIRST)
 app.add_middleware(SecurityHeadersMiddleware)
+
+# GZip compression middleware (compress responses > 1KB for 80% bandwidth savings)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # CORS middleware (production-hardened)
 app.add_middleware(
