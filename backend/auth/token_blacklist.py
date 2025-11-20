@@ -88,18 +88,21 @@ class TokenBlacklist:
     def is_token_revoked(self, token: str) -> bool:
         """
         Check if a token has been revoked
-        FAILS CLOSED: Returns True on errors for security
+
+        Behavior:
+        - If Redis not configured at startup (self.enabled=False): FAIL OPEN (return False)
+        - If Redis configured but transient error occurs: FAIL CLOSED (return True)
 
         Args:
             token: JWT token to check
 
         Returns:
-            True if token is revoked or on error, False if valid
+            True if token is revoked or on transient error, False if valid or Redis not configured
         """
         if not self.enabled:
-            # SECURITY: Fail closed - if Redis unavailable at startup, deny all tokens
-            logger.warning("Token blacklist check - Redis not available, FAILING CLOSED")
-            return True
+            # If Redis not configured at startup, fail open - allow tokens
+            # Token will still be validated for expiration and signature
+            return False
 
         try:
             key = f"blacklist:{token}"
@@ -149,18 +152,20 @@ class TokenBlacklist:
     def is_user_blacklisted(self, user_email: str) -> bool:
         """
         Check if all tokens for a user have been revoked
-        FAILS CLOSED: Returns True on errors for security
+
+        Behavior:
+        - If Redis not configured at startup (self.enabled=False): FAIL OPEN (return False)
+        - If Redis configured but transient error occurs: FAIL CLOSED (return True)
 
         Args:
             user_email: Email of the user
 
         Returns:
-            True if user is blacklisted or on error, False otherwise
+            True if user is blacklisted or on transient error, False otherwise
         """
         if not self.enabled:
-            # SECURITY: Fail closed - if Redis unavailable, deny
-            logger.warning("User blacklist check - Redis not available, FAILING CLOSED")
-            return True
+            # If Redis not configured at startup, fail open - allow access
+            return False
 
         try:
             key = f"user_blacklist:{user_email}"
