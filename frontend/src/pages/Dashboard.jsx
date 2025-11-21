@@ -135,6 +135,19 @@ function Dashboard() {
       const next = new Set(prev);
       if (isSaving) {
         next.add(taskId);
+
+        // Safety timeout: auto-clear saving state after 10 seconds if it gets stuck
+        setTimeout(() => {
+          setSavingTasks(current => {
+            if (current.has(taskId)) {
+              console.warn(`Clearing stuck saving state for task ${taskId}`);
+              const updated = new Set(current);
+              updated.delete(taskId);
+              return updated;
+            }
+            return current;
+          });
+        }, 10000);
       } else {
         next.delete(taskId);
       }
@@ -188,6 +201,25 @@ function Dashboard() {
     // Apply search filter
     return filterTasksBySearch(sorted);
   }, [allTasks, filter, projectFilter, searchQuery]);
+
+  // Clean up saving states for tasks that are no longer displayed
+  useEffect(() => {
+    const displayedTaskIds = new Set(displayedTasks.map(t => t.id));
+    setSavingTasks(prevSaving => {
+      const newSaving = new Set(prevSaving);
+      let hasChanges = false;
+
+      // Remove saving state for tasks that are no longer displayed
+      prevSaving.forEach(taskId => {
+        if (!displayedTaskIds.has(taskId)) {
+          newSaving.delete(taskId);
+          hasChanges = true;
+        }
+      });
+
+      return hasChanges ? newSaving : prevSaving;
+    });
+  }, [displayedTasks]);
 
   // Memoized counts for performance
   const counts = useMemo(() => {

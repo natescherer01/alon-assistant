@@ -149,11 +149,128 @@ function ChatInterface({ onTaskUpdate }) {
             justifyContent: 'center',
             textAlign: 'center',
             flexDirection: 'column',
-            gap: '16px',
+            gap: '32px',
+            padding: '48px 24px',
           }}>
-            <p style={{ color: 'rgba(0, 0, 0, 0.4)', fontSize: '18px' }}>
-              Start a conversation with Sam
-            </p>
+            {/* Sam's Avatar with Glow Effect */}
+            <div style={{
+              position: 'relative',
+              animation: 'float 3s ease-in-out infinite',
+            }}>
+              <div style={{
+                position: 'absolute',
+                inset: '-12px',
+                background: 'radial-gradient(circle, rgba(0, 102, 255, 0.15) 0%, transparent 70%)',
+                borderRadius: '50%',
+                filter: 'blur(20px)',
+                animation: 'pulse-glow 2s ease-in-out infinite',
+              }} />
+              <div style={{
+                position: 'relative',
+                width: '120px',
+                height: '120px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                border: '4px solid rgba(0, 102, 255, 0.1)',
+                boxShadow: '0 8px 32px rgba(0, 102, 255, 0.15)',
+              }}>
+                <img
+                  src="/Sam.png"
+                  alt="Sam"
+                  style={{
+                    width: '120px',
+                    height: '120px',
+                    objectFit: 'cover'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Welcome Message */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              maxWidth: '600px',
+            }}>
+              <h2 style={{
+                fontSize: '32px',
+                fontWeight: '700',
+                background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                margin: 0,
+                letterSpacing: '-0.5px',
+              }}>
+                Hey there! I'm Sam
+              </h2>
+              <p style={{
+                color: 'rgba(0, 0, 0, 0.6)',
+                fontSize: '18px',
+                lineHeight: '1.6',
+                margin: 0,
+                fontWeight: '400',
+              }}>
+                Your AI-powered task assistant. Ask me anything or tell me what you'd like to accomplish today.
+              </p>
+            </div>
+
+            {/* Suggested Prompts */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '12px',
+              width: '100%',
+              maxWidth: '800px',
+              marginTop: '8px',
+            }}>
+              {[
+                { icon: '✨', text: 'Create a new task', prompt: 'Create a new task for me' },
+                { icon: '📋', text: 'Show my tasks', prompt: 'What tasks do I have today?' },
+                { icon: '🎯', text: 'What should I focus on?', prompt: 'What should I focus on next?' },
+                { icon: '💡', text: 'Help me organize', prompt: 'Help me organize my tasks' },
+              ].map((suggestion, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setInputMessage(suggestion.prompt)}
+                  style={{
+                    padding: '16px 20px',
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    border: '1px solid rgba(0, 102, 255, 0.15)',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#374151',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(0, 102, 255, 0.05)';
+                    e.currentTarget.style.borderColor = 'rgba(0, 102, 255, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 102, 255, 0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.borderColor = 'rgba(0, 102, 255, 0.15)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                  }}
+                >
+                  <span style={{ fontSize: '20px' }}>{suggestion.icon}</span>
+                  <span>{suggestion.text}</span>
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           messages.map((msg, index) => (
@@ -437,6 +554,26 @@ function ChatInterface({ onTaskUpdate }) {
           50% {
             transform: scale(1.2);
             opacity: 1;
+          }
+        }
+
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+
+        @keyframes pulse-glow {
+          0%, 100% {
+            opacity: 0.5;
+            transform: scale(0.95);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.05);
           }
         }
       `}</style>
