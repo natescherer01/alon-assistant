@@ -281,7 +281,7 @@ function Dashboard() {
       </nav>
 
       {/* Main Content */}
-      <main style={{
+      <main className="dashboard-container" style={{
         flex: 1,
         maxWidth: '1400px',
         width: '100%',
@@ -366,7 +366,7 @@ function Dashboard() {
               pointerEvents: 'none',
             }} />
 
-            <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px' }}>
+            <div className="dashboard-grid" style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px' }}>
               {/* Tasks Section */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {/* Next Task */}

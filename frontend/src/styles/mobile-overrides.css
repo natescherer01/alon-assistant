@@ -1,0 +1,142 @@
+/* Component-Specific Mobile Overrides */
+
+/* Dashboard Grid */
+.dashboard-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 16px !important;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 320px !important;
+    gap: 24px !important;
+  }
+}
+
+.dashboard-container {
+  padding: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .dashboard-container {
+    padding: 24px !important;
+  }
+}
+
+/* Auth Cards (Login/Signup) */
+.auth-card {
+  max-width: 100% !important;
+  margin: 16px !important;
+  padding: 24px !important;
+}
+
+@media (min-width: 640px) {
+  .auth-card {
+    max-width: 480px !important;
+    margin: 32px auto !important;
+    padding: 48px !important;
+  }
+}
+
+/* Chat Container */
+.chat-container {
+  max-width: 100% !important;
+  padding: 12px !important;
+}
+
+@media (min-width: 640px) {
+  .chat-container {
+    padding: 24px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .chat-container {
+    max-width: 1200px !important;
+  }
+}
+
+/* Chat Input */
+.chat-input-container {
+  padding: 12px !important;
+  gap: 8px !important;
+}
+
+@media (min-width: 640px) {
+  .chat-input-container {
+    padding: 16px !important;
+    gap: 12px !important;
+  }
+}
+
+/* Chat Messages */
+.chat-message-bubble {
+  max-width: 85% !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+}
+
+@media (min-width: 640px) {
+  .chat-message-bubble {
+    max-width: 70% !important;
+    padding: 14px 18px !important;
+  }
+}
+
+/* Profile Container */
+.profile-container {
+  max-width: 100% !important;
+  padding: 24px 16px !important;
+}
+
+@media (min-width: 640px) {
+  .profile-container {
+    padding: 48px 24px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .profile-container {
+    max-width: 800px !important;
+  }
+}
+
+/* Profile Card */
+.profile-card {
+  padding: 20px !important;
+}
+
+@media (min-width: 640px) {
+  .profile-card {
+    padding: 32px !important;
+  }
+}
+
+/* Navbar */
+.navbar-container {
+  padding: 12px 16px !important;
+}
+
+@media (min-width: 640px) {
+  .navbar-container {
+    padding: 16px 24px !important;
+  }
+}
+
+/* Task filters - stack on mobile */
+.task-filters {
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+/* Search bar */
+.search-container {
+  padding: 12px !important;
+}
+
+@media (min-width: 640px) {
+  .search-container {
+    padding: 16px !important;
+  }
+}

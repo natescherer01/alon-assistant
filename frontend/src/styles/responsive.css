@@ -1,0 +1,81 @@
+/* Mobile-First Responsive Utilities */
+
+:root {
+  --breakpoint-mobile: 640px;
+  --breakpoint-tablet: 1024px;
+  --spacing-mobile: 16px;
+  --spacing-tablet: 24px;
+  --spacing-desktop: 48px;
+}
+
+/* Container utilities */
+.container-full {
+  max-width: 100% !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .container-full {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-full {
+    max-width: 1400px !important;
+    padding-left: 48px !important;
+    padding-right: 48px !important;
+  }
+}
+
+/* Responsive padding utilities */
+.responsive-padding-sm { padding: 8px !important; }
+.responsive-padding-md { padding: 16px !important; }
+.responsive-padding-lg { padding: 24px !important; }
+
+@media (min-width: 1024px) {
+  .responsive-padding-sm { padding: 12px !important; }
+  .responsive-padding-md { padding: 24px !important; }
+  .responsive-padding-lg { padding: 48px !important; }
+}
+
+/* Form utilities */
+.form-input-mobile {
+  font-size: 16px !important;
+  padding: 12px !important;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .form-input-mobile {
+    padding: 16px !important;
+  }
+}
+
+/* Button utilities */
+.btn-mobile {
+  min-height: 44px !important;
+  padding: 12px 20px !important;
+  font-size: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .btn-mobile {
+    padding: 16px 32px !important;
+  }
+}
+
+/* Card utilities */
+.card-responsive {
+  padding: 16px !important;
+  border-radius: 12px !important;
+}
+
+@media (min-width: 640px) {
+  .card-responsive {
+    padding: 24px !important;
+    border-radius: 16px !important;
+  }
+}
