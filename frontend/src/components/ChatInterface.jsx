@@ -136,10 +136,130 @@ function ChatInterface({ onTaskUpdate }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'rgba(0, 0, 0, 0.4)',
-            fontSize: '16px',
+            flexDirection: 'column',
+            gap: '24px',
+            padding: '48px 24px',
           }}>
-            Loading chat history...
+            {/* Animated Sam Avatar */}
+            <div style={{
+              position: 'relative',
+              animation: 'float 2s ease-in-out infinite',
+            }}>
+              <div style={{
+                position: 'absolute',
+                inset: '-8px',
+                background: 'radial-gradient(circle, rgba(0, 102, 255, 0.2) 0%, transparent 70%)',
+                borderRadius: '50%',
+                filter: 'blur(16px)',
+                animation: 'pulse-glow 1.5s ease-in-out infinite',
+              }} />
+              <div style={{
+                position: 'relative',
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                border: '3px solid rgba(0, 102, 255, 0.15)',
+                boxShadow: '0 4px 20px rgba(0, 102, 255, 0.15)',
+              }}>
+                <img
+                  src="/Sam.png"
+                  alt="Sam"
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    objectFit: 'cover'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Loading Text */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px',
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}>
+                <span style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>
+                  Loading your conversation
+                </span>
+                {/* Animated dots */}
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  alignItems: 'center',
+                }}>
+                  <div style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: '#0066FF',
+                    animation: 'bounce-dot 1.4s ease-in-out infinite',
+                    animationDelay: '0s',
+                  }} />
+                  <div style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: '#0066FF',
+                    animation: 'bounce-dot 1.4s ease-in-out infinite',
+                    animationDelay: '0.2s',
+                  }} />
+                  <div style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: '#0066FF',
+                    animation: 'bounce-dot 1.4s ease-in-out infinite',
+                    animationDelay: '0.4s',
+                  }} />
+                </div>
+              </div>
+
+              <p style={{
+                color: 'rgba(0, 0, 0, 0.5)',
+                fontSize: '14px',
+                margin: 0,
+                fontWeight: '400',
+              }}>
+                Retrieving your chat history with Sam
+              </p>
+            </div>
+
+            {/* Progress indicator */}
+            <div style={{
+              width: '200px',
+              height: '3px',
+              background: 'rgba(0, 102, 255, 0.1)',
+              borderRadius: '3px',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%',
+                width: '40%',
+                background: 'linear-gradient(90deg, #0066FF 0%, #0052CC 100%)',
+                borderRadius: '3px',
+                animation: 'loading-bar 1.5s ease-in-out infinite',
+                boxShadow: '0 0 10px rgba(0, 102, 255, 0.5)',
+              }} />
+            </div>
           </div>
         ) : messages.length === 0 ? (
           <div style={{
@@ -574,6 +694,29 @@ function ChatInterface({ onTaskUpdate }) {
           50% {
             opacity: 1;
             transform: scale(1.05);
+          }
+        }
+
+        @keyframes bounce-dot {
+          0%, 80%, 100% {
+            transform: translateY(0);
+            opacity: 0.7;
+          }
+          40% {
+            transform: translateY(-8px);
+            opacity: 1;
+          }
+        }
+
+        @keyframes loading-bar {
+          0% {
+            transform: translateX(-100%);
+          }
+          50% {
+            transform: translateX(250%);
+          }
+          100% {
+            transform: translateX(-100%);
           }
         }
       `}</style>
