@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../utils/authStore';
 import { tasksAPI } from '../api/client';
@@ -10,22 +10,22 @@ function Dashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
 
-  const [tasks, setTasks] = useState([]);
-  const [allTasks, setAllTasks] = useState([]);
+  const [allTasks, setAllTasks] = useState([]); // Store ALL tasks locally
   const [nextTask, setNextTask] = useState(null);
   const [filter, setFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
   const [projects, setProjects] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Only true on initial load
   const [showChat, setShowChat] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [savingTasks, setSavingTasks] = useState(new Set());
   const [error, setError] = useState(null);
 
+  // Load all tasks ONCE on mount (no dependency on filter!)
   useEffect(() => {
-    loadTasks();
+    loadAllTasks();
     loadNextTask();
-  }, [filter, projectFilter]);
+  }, []); // Empty dependency array = run once on mount
 
   const sortTasksByDeadline = (tasksToSort) => {
     return [...tasksToSort].sort((a, b) => {
@@ -53,21 +53,20 @@ function Dashboard() {
     });
   };
 
-  const loadTasks = async () => {
+  // Load ALL tasks once - no filter parameter, fetch everything
+  const loadAllTasks = async () => {
     setIsLoading(true);
     try {
-      const data = await tasksAPI.getTasks(filter, 7, projectFilter === 'all' ? null : projectFilter);
-      const sortedData = sortTasksByDeadline(data);
-      setTasks(sortedData);
-      // Also load all tasks for accurate counts and project list
+      // Fetch all tasks at once (all statuses: active, completed, deleted, waiting, etc.)
       const allData = await tasksAPI.getTasks('all');
       setAllTasks(allData);
 
-      // Extract unique projects
+      // Extract unique projects from all tasks
       const uniqueProjects = [...new Set(allData.map(t => t.project).filter(p => p))];
       setProjects(uniqueProjects);
     } catch (error) {
       console.error('Failed to load tasks:', error);
+      setError({ message: 'Failed to load tasks. Please refresh the page.' });
     } finally {
       setIsLoading(false);
     }
@@ -86,31 +85,29 @@ function Dashboard() {
    * Handle task updates with optimistic UI updates
    * @param {Object|null} updatedTask - The updated task object (for optimistic updates)
    * @param {string|null} taskId - The ID of task to delete (for delete operations)
-   * @param {string} action - The action type: 'update', 'delete', 'complete', 'restore'
+   * @param {string} action - The action type: 'update', 'delete', 'complete', 'restore', 'add'
    */
   const handleTaskUpdate = (updatedTask = null, taskId = null, action = 'update') => {
     if (updatedTask || taskId) {
       // Clear any previous errors
       setError(null);
 
-      // Optimistic update - update state immediately without API refetch
-      setTasks(prevTasks => {
-        if (action === 'delete') {
-          return prevTasks.filter(t => t.id !== taskId);
-        } else if (action === 'update' || action === 'complete' || action === 'restore') {
-          const updated = prevTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
-          // Re-sort by deadline after update
-          return sortTasksByDeadline(updated);
-        }
-        return prevTasks;
-      });
-
-      // Update allTasks for count calculations
+      // Optimistic update - update allTasks immediately (client-side state)
       setAllTasks(prevTasks => {
         if (action === 'delete') {
           return prevTasks.filter(t => t.id !== taskId);
-        } else if (updatedTask) {
-          return prevTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+        } else if (action === 'add') {
+          // Add new task to the list
+          return [...prevTasks, updatedTask];
+        } else if (action === 'update' || action === 'complete' || action === 'restore') {
+          // Update existing task
+          const taskExists = prevTasks.some(t => t.id === updatedTask.id);
+          if (taskExists) {
+            return prevTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+          } else {
+            // Task doesn't exist yet, add it
+            return [...prevTasks, updatedTask];
+          }
         }
         return prevTasks;
       });
@@ -121,8 +118,8 @@ function Dashboard() {
         loadNextTask();
       }
     } else {
-      // Fallback: full reload (for backwards compatibility or error recovery)
-      loadTasks();
+      // Fallback: full reload (for error recovery)
+      loadAllTasks();
       loadNextTask();
     }
   };
@@ -150,18 +147,55 @@ function Dashboard() {
     navigate('/login');
   };
 
-  const getFilterCounts = () => {
+  // CLIENT-SIDE FILTERING: Memoized filtering for performance with large task lists
+  const displayedTasks = useMemo(() => {
+    let filtered = allTasks;
+
+    // Apply status filter
+    switch (filter) {
+      case 'all':
+        // All active tasks (not completed, not deleted)
+        filtered = filtered.filter(t => t.status !== 'completed' && t.status !== 'deleted');
+        break;
+      case 'waiting':
+        // Only waiting tasks
+        filtered = filtered.filter(t => t.status === 'waiting_on');
+        break;
+      case 'upcoming':
+        // Tasks with deadlines (not completed, not deleted)
+        filtered = filtered.filter(t => t.deadline && t.status !== 'completed' && t.status !== 'deleted');
+        break;
+      case 'completed':
+        // Only completed tasks
+        filtered = filtered.filter(t => t.status === 'completed');
+        break;
+      case 'deleted':
+        // Only deleted tasks
+        filtered = filtered.filter(t => t.status === 'deleted');
+        break;
+      default:
+        filtered = filtered.filter(t => t.status !== 'completed' && t.status !== 'deleted');
+    }
+
+    // Apply project filter
+    if (projectFilter !== 'all') {
+      filtered = filtered.filter(t => t.project === projectFilter);
+    }
+
+    // Sort by deadline
+    const sorted = sortTasksByDeadline(filtered);
+
+    // Apply search filter
+    return filterTasksBySearch(sorted);
+  }, [allTasks, filter, projectFilter, searchQuery]);
+
+  // Memoized counts for performance
+  const counts = useMemo(() => {
     const all = allTasks.filter((t) => t.status !== 'completed' && t.status !== 'deleted').length;
     const waiting = allTasks.filter((t) => t.status === 'waiting_on').length;
     const upcoming = allTasks.filter((t) => t.deadline && t.status !== 'completed' && t.status !== 'deleted').length;
-    // For completed and deleted counts, we'll fetch them separately since allTasks only has active tasks
     return { all, waiting, upcoming };
-  };
-
-  const counts = getFilterCounts();
-
-  // Apply search filter to tasks
-  const displayedTasks = filterTasksBySearch(tasks);
+  }, [allTasks]);
 
   // Get user initials
   const getInitials = (name) => {
