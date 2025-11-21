@@ -301,37 +301,42 @@ function ChatInterface({ onTaskUpdate }) {
               <img src="/Sam.png" alt="Sam" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
             </div>
 
-            {/* Typing Indicator */}
+            {/* Modern Typing Indicator */}
             <div style={{
-              padding: '16px 20px',
-              background: '#F3F4F6',
+              padding: '18px 24px',
+              background: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)',
               borderRadius: '20px 20px 20px 4px',
               display: 'flex',
-              gap: '4px',
+              gap: '6px',
               alignItems: 'center',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
             }}>
-              <span style={{
-                width: '8px',
-                height: '8px',
+              <div style={{
+                width: '10px',
+                height: '10px',
                 borderRadius: '50%',
-                background: '#999',
-                animation: 'bounce 1.4s infinite ease-in-out both',
-                animationDelay: '-0.32s',
+                background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
+                animation: 'pulse 1.5s ease-in-out infinite',
+                animationDelay: '0s',
+                boxShadow: '0 2px 4px rgba(0, 102, 255, 0.3)',
               }} />
-              <span style={{
-                width: '8px',
-                height: '8px',
+              <div style={{
+                width: '10px',
+                height: '10px',
                 borderRadius: '50%',
-                background: '#999',
-                animation: 'bounce 1.4s infinite ease-in-out both',
-                animationDelay: '-0.16s',
+                background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
+                animation: 'pulse 1.5s ease-in-out infinite',
+                animationDelay: '0.2s',
+                boxShadow: '0 2px 4px rgba(0, 102, 255, 0.3)',
               }} />
-              <span style={{
-                width: '8px',
-                height: '8px',
+              <div style={{
+                width: '10px',
+                height: '10px',
                 borderRadius: '50%',
-                background: '#999',
-                animation: 'bounce 1.4s infinite ease-in-out both',
+                background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
+                animation: 'pulse 1.5s ease-in-out infinite',
+                animationDelay: '0.4s',
+                boxShadow: '0 2px 4px rgba(0, 102, 255, 0.3)',
               }} />
             </div>
           </div>
@@ -422,14 +427,16 @@ function ChatInterface({ onTaskUpdate }) {
         </button>
       </form>
 
-      {/* Bounce Animation Styles */}
+      {/* Animation Styles */}
       <style>{`
-        @keyframes bounce {
-          0%, 80%, 100% {
-            transform: scale(0);
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(0.8);
+            opacity: 0.5;
           }
-          40% {
-            transform: scale(1);
+          50% {
+            transform: scale(1.2);
+            opacity: 1;
           }
         }
       `}</style>

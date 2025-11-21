@@ -19,6 +19,7 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [showChat, setShowChat] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [chatKey] = useState(() => 'chat-instance');
   const [savingTasks, setSavingTasks] = useState(new Set());
   const [error, setError] = useState(null);
 
@@ -328,7 +329,7 @@ function Dashboard() {
             }} />
 
             <div style={{ position: 'relative', zIndex: 1, height: '100%' }}>
-              <ChatInterface onTaskUpdate={handleTaskUpdate} />
+              <ChatInterface key={chatKey} onTaskUpdate={handleTaskUpdate} />
             </div>
           </div>
         ) : (
