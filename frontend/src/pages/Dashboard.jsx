@@ -19,7 +19,6 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [showChat, setShowChat] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [chatKey] = useState(() => 'chat-instance');
   const [savingTasks, setSavingTasks] = useState(new Set());
   const [error, setError] = useState(null);
 
@@ -290,50 +289,55 @@ function Dashboard() {
         padding: '24px',
         position: 'relative',
       }}>
-        {showChat ? (
+        {/* Chat View - Keep mounted but hide when not active */}
+        <div style={{
+          height: 'calc(100vh - 120px)',
+          position: 'relative',
+          display: showChat ? 'block' : 'none',
+        }}>
+          {/* Gradient Background for Chat */}
           <div style={{
-            height: 'calc(100vh - 120px)',
-            position: 'relative',
-          }}>
-            {/* Gradient Background for Chat */}
-            <div style={{
-              position: 'absolute',
-              inset: '-24px',
-              zIndex: 0,
-              backgroundImage: `
-                radial-gradient(circle 1200px at 15% 20%,
-                  rgba(64, 64, 176, 0.6) 0%,
-                  rgba(64, 64, 176, 0.3) 30%,
-                  rgba(64, 64, 176, 0.1) 50%,
-                  transparent 70%
-                ),
-                radial-gradient(circle 900px at 5% 70%,
-                  rgba(64, 64, 176, 0.45) 0%,
-                  rgba(64, 64, 176, 0.2) 40%,
-                  transparent 65%
-                ),
-                radial-gradient(circle 1100px at 90% 60%,
-                  rgba(0, 212, 221, 0.5) 0%,
-                  rgba(0, 212, 221, 0.25) 35%,
-                  rgba(0, 212, 221, 0.1) 50%,
-                  transparent 70%
-                ),
-                radial-gradient(circle 800px at 85% 10%,
-                  rgba(0, 212, 221, 0.35) 0%,
-                  rgba(0, 212, 221, 0.15) 40%,
-                  transparent 60%
-                )
-              `,
-              filter: 'blur(180px)',
-              pointerEvents: 'none',
-            }} />
+            position: 'absolute',
+            inset: '-24px',
+            zIndex: 0,
+            backgroundImage: `
+              radial-gradient(circle 1200px at 15% 20%,
+                rgba(64, 64, 176, 0.6) 0%,
+                rgba(64, 64, 176, 0.3) 30%,
+                rgba(64, 64, 176, 0.1) 50%,
+                transparent 70%
+              ),
+              radial-gradient(circle 900px at 5% 70%,
+                rgba(64, 64, 176, 0.45) 0%,
+                rgba(64, 64, 176, 0.2) 40%,
+                transparent 65%
+              ),
+              radial-gradient(circle 1100px at 90% 60%,
+                rgba(0, 212, 221, 0.5) 0%,
+                rgba(0, 212, 221, 0.25) 35%,
+                rgba(0, 212, 221, 0.1) 50%,
+                transparent 70%
+              ),
+              radial-gradient(circle 800px at 85% 10%,
+                rgba(0, 212, 221, 0.35) 0%,
+                rgba(0, 212, 221, 0.15) 40%,
+                transparent 60%
+              )
+            `,
+            filter: 'blur(180px)',
+            pointerEvents: 'none',
+          }} />
 
-            <div style={{ position: 'relative', zIndex: 1, height: '100%' }}>
-              <ChatInterface key={chatKey} onTaskUpdate={handleTaskUpdate} />
-            </div>
+          <div style={{ position: 'relative', zIndex: 1, height: '100%' }}>
+            <ChatInterface onTaskUpdate={handleTaskUpdate} />
           </div>
-        ) : (
-          <div style={{ position: 'relative' }}>
+        </div>
+
+        {/* Tasks View - Keep mounted but hide when not active */}
+        <div style={{
+          position: 'relative',
+          display: showChat ? 'none' : 'block',
+        }}>
             {/* Gradient Background for Tasks */}
             <div style={{
               position: 'absolute',
@@ -696,8 +700,7 @@ function Dashboard() {
               </div>
             </div>
             </div>
-          </div>
-        )}
+        </div>
       </main>
 
       {/* Spin Animation */}
