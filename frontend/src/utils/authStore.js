@@ -4,6 +4,12 @@
 import { create } from 'zustand';
 import { authAPI } from '../api/client';
 
+// Import to reset chat on logout
+let resetChatStore = null;
+export const setChatStoreReset = (resetFn) => {
+  resetChatStore = resetFn;
+};
+
 const useAuthStore = create((set) => ({
   user: null,
   token: localStorage.getItem('token'),
@@ -77,6 +83,11 @@ const useAuthStore = create((set) => ({
       isAuthenticated: false,
       error: null,
     });
+
+    // Reset chat store on logout
+    if (resetChatStore) {
+      resetChatStore();
+    }
   },
 
   clearError: () => {

@@ -1,89 +1,48 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { chatAPI } from '../api/client';
 import useAuthStore from '../utils/authStore';
+import useChatStore from '../utils/chatStore';
 
 function ChatInterface({ onTaskUpdate }) {
   const { user } = useAuthStore();
-  const [messages, setMessages] = useState([]);
+
+  // Use global chat store instead of local state
+  const {
+    messages,
+    isLoadingHistory,
+    isLoadingMessage,
+    loadHistory,
+    sendMessage,
+    clearHistory,
+  } = useChatStore();
+
   const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Load history only once (global store prevents duplicate loads)
   useEffect(() => {
     loadHistory();
-  }, []);
+  }, [loadHistory]);
 
+  // Auto-scroll when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const loadHistory = async () => {
-    try {
-      const history = await chatAPI.getHistory(20);
-      const formattedMessages = history.flatMap((msg) => [
-        { role: 'user', content: msg.message, timestamp: msg.created_at },
-        { role: 'assistant', content: msg.response, timestamp: msg.created_at },
-      ]);
-      setMessages(formattedMessages);
-    } catch (error) {
-      console.error('Failed to load chat history:', error);
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!inputMessage.trim() || isLoading) return;
+    if (!inputMessage.trim() || isLoadingMessage) return;
 
     const userMessage = inputMessage.trim();
     setInputMessage('');
 
-    // Add user message to UI
-    setMessages((prev) => [
-      ...prev,
-      { role: 'user', content: userMessage, timestamp: new Date().toISOString() },
-    ]);
-
-    setIsLoading(true);
-
-    try {
-      const response = await chatAPI.sendMessage(userMessage);
-
-      // Add assistant response to UI
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: response.response,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-
-      // If tasks were updated, notify parent component
-      if (response.task_updates && response.task_updates.length > 0) {
-        onTaskUpdate?.();
-      }
-    } catch (error) {
-      const errorMessage = error.response?.data?.detail || 'Failed to send message';
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'error',
-          content: `Error: ${errorMessage}`,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
+    // Send message (optimistic update handled by store)
+    await sendMessage(userMessage, onTaskUpdate);
   };
 
   const handleClearChat = async () => {
@@ -93,11 +52,9 @@ function ChatInterface({ onTaskUpdate }) {
 
     if (!confirmed) return;
 
-    try {
-      await chatAPI.clearHistory();
-      setMessages([]);
-    } catch (error) {
-      alert('Failed to clear chat history: ' + (error.response?.data?.detail || error.message));
+    const result = await clearHistory();
+    if (!result.success) {
+      alert('Failed to clear chat history: ' + result.error);
     }
   };
 
@@ -517,7 +474,7 @@ function ChatInterface({ onTaskUpdate }) {
         )}
 
         {/* Loading Indicator */}
-        {isLoading && (
+        {isLoadingMessage && (
           <div style={{
             display: 'flex',
             gap: '12px',
@@ -632,7 +589,7 @@ function ChatInterface({ onTaskUpdate }) {
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder="Type your message..."
-          disabled={isLoading}
+          disabled={isLoadingMessage}
           style={{
             flex: 1,
             padding: '12px 16px',
@@ -646,7 +603,7 @@ function ChatInterface({ onTaskUpdate }) {
         />
         <button
           type="submit"
-          disabled={!inputMessage.trim() || isLoading}
+          disabled={!inputMessage.trim() || isLoadingMessage}
           style={{
             padding: '12px 24px',
             fontSize: '15px',
@@ -655,8 +612,8 @@ function ChatInterface({ onTaskUpdate }) {
             background: '#0066FF',
             border: 'none',
             borderRadius: '12px',
-            cursor: (!inputMessage.trim() || isLoading) ? 'not-allowed' : 'pointer',
-            opacity: (!inputMessage.trim() || isLoading) ? 0.5 : 1,
+            cursor: (!inputMessage.trim() || isLoadingMessage) ? 'not-allowed' : 'pointer',
+            opacity: (!inputMessage.trim() || isLoadingMessage) ? 0.5 : 1,
             transition: 'all 0.2s',
           }}
         >
