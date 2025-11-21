@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import useAuthStore from '../utils/authStore';
 import useChatStore from '../utils/chatStore';
+import useConfirm from '../hooks/useConfirm';
 
 function ChatInterface({ onTaskUpdate }) {
   const { user } = useAuthStore();
+  const { ConfirmDialog, confirm, alert } = useConfirm();
 
   // Use global chat store instead of local state
   const {
@@ -46,15 +48,18 @@ function ChatInterface({ onTaskUpdate }) {
   };
 
   const handleClearChat = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to clear all chat history? This action cannot be undone.'
+    const confirmed = await confirm(
+      'Clear chat history?',
+      'Are you sure you want to clear all chat history? This action cannot be undone.',
+      'Clear History',
+      'Cancel'
     );
 
     if (!confirmed) return;
 
     const result = await clearHistory();
     if (!result.success) {
-      alert('Failed to clear chat history: ' + result.error);
+      await alert('Failed to clear chat history', result.error);
     }
   };
 
@@ -69,16 +74,18 @@ function ChatInterface({ onTaskUpdate }) {
   };
 
   return (
-    <div style={{
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      maxWidth: '1200px',
-      margin: '0 auto',
-      width: '100%',
-      padding: '24px',
-    }}>
-      {/* Messages Container */}
+    <>
+      <ConfirmDialog />
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        width: '100%',
+        padding: '24px',
+      }}>
+        {/* Messages Container */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
@@ -678,6 +685,7 @@ function ChatInterface({ onTaskUpdate }) {
         }
       `}</style>
     </div>
+    </>
   );
 }
 

@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { tasksAPI } from '../api/client';
+import useConfirm from '../hooks/useConfirm';
 
 function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = false }) {
+  const { ConfirmDialog, confirm, alert } = useConfirm();
   const [isCompleting, setIsCompleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const isMountedRef = useRef(true);
@@ -110,7 +112,8 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
   };
 
   const handleComplete = async () => {
-    if (!confirm('Mark this task as completed?')) return;
+    const confirmed = await confirm('Complete task?', 'Mark this task as completed?', 'Complete', 'Cancel');
+    if (!confirmed) return;
     if (isSaving) return; // Prevent duplicate requests
 
     setIsCompleting(true);
@@ -150,7 +153,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
       if (onError) {
         onError(errorMessage, task.id);
       } else {
-        alert(errorMessage);
+        await alert('Failed to complete task', errorMessage);
       }
 
       setIsCompleting(false);
@@ -198,7 +201,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
       if (onError) {
         onError(errorMessage, task.id);
       } else {
-        alert(errorMessage);
+        await alert('Failed to update status', errorMessage);
       }
     } finally {
       if (isMountedRef.current && markSaving) {
@@ -208,7 +211,8 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
   };
 
   const handleDelete = async () => {
-    if (!confirm('Delete this task?')) return;
+    const confirmed = await confirm('Delete task?', 'Are you sure you want to delete this task?', 'Delete', 'Cancel');
+    if (!confirmed) return;
     if (isSaving) return; // Prevent duplicate requests
 
     const previousTask = previousTaskRef.current;
@@ -237,7 +241,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
       if (onError) {
         onError(errorMessage, task.id);
       } else {
-        alert(errorMessage);
+        await alert('Failed to delete task', errorMessage);
       }
     } finally {
       if (isMountedRef.current && markSaving) {
@@ -283,7 +287,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
       if (onError) {
         onError(errorMessage, task.id);
       } else {
-        alert(errorMessage);
+        await alert('Failed to restore task', errorMessage);
       }
     } finally {
       if (isMountedRef.current && markSaving) {
@@ -385,7 +389,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
       if (onError) {
         onError(errorMessage, task.id);
       } else {
-        alert('Failed to update task: ' + errorMessage);
+        await alert('Failed to update task', errorMessage);
       }
 
       setIsEditing(true); // Re-open edit form
@@ -412,7 +416,9 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
   // If editing, show edit form
   if (isEditing) {
     return (
-      <div style={{
+      <>
+        <ConfirmDialog />
+        <div style={{
         background: '#fff',
         borderRadius: '16px',
         padding: '24px',
@@ -847,12 +853,15 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
           </div>
         </form>
       </div>
+      </>
     );
   }
 
   // Otherwise show normal task view
   return (
-    <div style={{
+    <>
+      <ConfirmDialog />
+      <div style={{
       background: '#fff',
       borderRadius: '16px',
       padding: '20px',
@@ -1130,6 +1139,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
         </div>
       </div>
     </div>
+    </>
   );
 }
 

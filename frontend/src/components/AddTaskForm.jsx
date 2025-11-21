@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { tasksAPI } from '../api/client';
+import useConfirm from '../hooks/useConfirm';
 
 function AddTaskForm({ onTaskAdded }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +15,8 @@ function AddTaskForm({ onTaskAdded }) {
     recurrence_interval: 1,
     recurrence_end_date: '',
   });
+
+  const { ConfirmDialog, alert } = useConfirm();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,7 +46,8 @@ function AddTaskForm({ onTaskAdded }) {
         }
       }
 
-      await tasksAPI.createTask(taskData);
+      // Create task and get the response
+      const newTask = await tasksAPI.createTask(taskData);
 
       // Reset form
       setFormData({
@@ -59,9 +63,11 @@ function AddTaskForm({ onTaskAdded }) {
       });
 
       setIsOpen(false);
-      onTaskAdded();
+
+      // Pass the new task to parent for optimistic update
+      onTaskAdded(newTask, null, 'add');
     } catch (error) {
-      alert('Failed to create task: ' + (error.response?.data?.detail || error.message));
+      await alert('Failed to create task', error.response?.data?.detail || error.message);
     }
   };
 
@@ -75,8 +81,10 @@ function AddTaskForm({ onTaskAdded }) {
 
   if (!isOpen) {
     return (
-      <button
-        onClick={() => setIsOpen(true)}
+      <>
+        <ConfirmDialog />
+        <button
+          onClick={() => setIsOpen(true)}
         style={{
           width: '100%',
           padding: '16px',
@@ -102,11 +110,14 @@ function AddTaskForm({ onTaskAdded }) {
       >
         + Add New Task
       </button>
+      </>
     );
   }
 
   return (
-    <div style={{
+    <>
+      <ConfirmDialog />
+      <div style={{
       background: '#fff',
       borderRadius: '16px',
       padding: '24px',
@@ -530,6 +541,7 @@ function AddTaskForm({ onTaskAdded }) {
         </div>
       </form>
     </div>
+    </>
   );
 }
 
