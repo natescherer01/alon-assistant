@@ -72,9 +72,12 @@ const useChatStore = create((set, get) => ({
       userMessage,
       // onToken - called for each token received
       (token) => {
-        set((state) => ({
-          streamingContent: state.streamingContent + token,
-        }));
+        console.log('🔤 Token received:', token.substring(0, 30));
+        set((state) => {
+          const newContent = state.streamingContent + token;
+          console.log('📝 Streaming content length:', newContent.length);
+          return { streamingContent: newContent };
+        });
       },
       // onDone - called when streaming is complete
       (taskUpdates) => {

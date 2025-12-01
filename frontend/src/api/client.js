@@ -154,6 +154,8 @@ export const chatAPI = {
 
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
+    console.log('🚀 Starting stream request to:', `${baseUrl}/chat/stream`);
+
     fetch(`${baseUrl}/chat/stream`, {
       method: 'POST',
       headers: {
@@ -164,6 +166,8 @@ export const chatAPI = {
       signal: controller.signal,
     })
       .then(async (response) => {
+        console.log('📡 Stream response received, status:', response.status);
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -174,9 +178,15 @@ export const chatAPI = {
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
+          if (done) {
+            console.log('📭 Stream ended');
+            break;
+          }
+
+          const chunk = decoder.decode(value, { stream: true });
+          console.log('📦 Received chunk:', chunk.substring(0, 100));
+          buffer += chunk;
 
           // Process complete SSE messages
           const lines = buffer.split('\n');
@@ -186,6 +196,7 @@ export const chatAPI = {
             if (line.startsWith('data: ')) {
               try {
                 const data = JSON.parse(line.slice(6));
+                console.log('📨 Parsed SSE event:', data.type, data.type === 'token' ? data.content.substring(0, 20) : '');
 
                 if (data.type === 'token') {
                   onToken(data.content);
@@ -195,7 +206,7 @@ export const chatAPI = {
                   onError(new Error(data.message));
                 }
               } catch (e) {
-                console.error('Failed to parse SSE data:', e);
+                console.error('Failed to parse SSE data:', e, 'Line:', line);
               }
             }
           }
@@ -203,6 +214,7 @@ export const chatAPI = {
       })
       .catch((error) => {
         if (error.name !== 'AbortError') {
+          console.error('❌ Stream error:', error);
           onError(error);
         }
       });
