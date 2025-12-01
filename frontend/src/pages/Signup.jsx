@@ -58,37 +58,6 @@ function Signup() {
 
   return (
     <div style={{ minHeight: '100vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-      {/* Gradient Background */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        zIndex: 0,
-        backgroundImage: `
-          radial-gradient(circle 1200px at 15% 20%,
-            rgba(64, 64, 176, 0.6) 0%,
-            rgba(64, 64, 176, 0.3) 30%,
-            rgba(64, 64, 176, 0.1) 50%,
-            transparent 70%
-          ),
-          radial-gradient(circle 900px at 5% 70%,
-            rgba(64, 64, 176, 0.45) 0%,
-            rgba(64, 64, 176, 0.2) 40%,
-            transparent 65%
-          ),
-          radial-gradient(circle 1100px at 90% 60%,
-            rgba(0, 212, 221, 0.5) 0%,
-            rgba(0, 212, 221, 0.25) 35%,
-            rgba(0, 212, 221, 0.1) 50%,
-            transparent 70%
-          ),
-          radial-gradient(circle 800px at 85% 10%,
-            rgba(0, 212, 221, 0.35) 0%,
-            rgba(0, 212, 221, 0.15) 40%,
-            transparent 60%
-          )
-        `,
-        filter: 'blur(180px)',
-      }} />
 
       {/* Signup Card */}
       <div style={{

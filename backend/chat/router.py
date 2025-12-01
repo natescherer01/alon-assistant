@@ -2,7 +2,10 @@
 Claude AI chat API routes
 """
 from typing import List
+import json
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User, ChatMessage
@@ -167,3 +170,99 @@ async def clear_chat_history(
     db.commit()
 
     return None
+
+
+@router.post("/stream")
+async def chat_with_assistant_stream(
+    request: Request,
+    message_data: ChatMessageCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Stream a response from the Claude AI assistant using Server-Sent Events (SSE)
+
+    Returns a stream of JSON events:
+    - {"type": "token", "content": "..."} - A token of the response
+    - {"type": "done", "task_updates": [...]} - Stream complete with any task updates
+    - {"type": "error", "message": "..."} - An error occurred
+    """
+    logger.info(f"Streaming chat message from user {current_user.email}: {message_data.message[:50]}...")
+
+    try:
+        claude_service = ClaudeService()
+    except ValueError as e:
+        logger.error(f"Failed to initialize Claude service: {e}")
+        async def error_generator():
+            yield f"data: {json.dumps({'type': 'error', 'message': 'AI service not configured'})}\n\n"
+        return StreamingResponse(error_generator(), media_type="text/event-stream")
+
+    async def generate():
+        full_response = ""
+        try:
+            # Stream response from Claude
+            async for token in claude_service.chat_stream(
+                user=current_user,
+                message=message_data.message,
+                db=db
+            ):
+                full_response += token
+                yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+                await asyncio.sleep(0)  # Allow other tasks to run
+
+            # Parse actions from full response
+            actions = claude_service._parse_actions(full_response)
+
+            # Execute any actions Claude suggested
+            modified_tasks = []
+            if actions:
+                modified_tasks = await claude_service.execute_actions(
+                    actions=actions,
+                    user=current_user,
+                    db=db
+                )
+
+            # Clean response for storage
+            import re
+            cleaned_response = full_response
+            cleaned_response = re.sub(r'(?m)^ACTION:.*$\n?', '', cleaned_response)
+            cleaned_response = re.sub(r'\n\s*\n\s*\n', '\n\n', cleaned_response)
+            cleaned_response = cleaned_response.strip()
+
+            # Save to chat history
+            chat_entry = ChatMessage(
+                user_id=current_user.id,
+                message=message_data.message,
+                response=cleaned_response
+            )
+            db.add(chat_entry)
+
+            # Auto-cleanup old messages
+            from datetime import datetime, timedelta
+            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+            db.query(ChatMessage).filter(
+                ChatMessage.user_id == current_user.id,
+                ChatMessage.created_at < thirty_days_ago
+            ).delete()
+
+            db.commit()
+
+            # Convert tasks to response format
+            task_responses = [TaskResponse.from_orm(task).dict() for task in modified_tasks]
+
+            # Send done event with task updates
+            yield f"data: {json.dumps({'type': 'done', 'task_updates': task_responses})}\n\n"
+
+        except Exception as e:
+            logger.error(f"Streaming error for user {current_user.email}: {e}", exc_info=True)
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        }
+    )

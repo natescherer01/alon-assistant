@@ -463,6 +463,55 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
             logger.error(f"Unexpected error in chat: {e}", exc_info=True)
             raise
 
+    async def chat_stream(
+        self,
+        user: User,
+        message: str,
+        db: Session
+    ):
+        """
+        Stream a chat response token by token
+
+        Yields:
+            str: Individual tokens/chunks of the response
+
+        Raises:
+            RateLimitError: If API rate limit is exceeded
+            APIConnectionError: If cannot connect to Anthropic API
+            APIError: If other API error occurs
+        """
+        system_prompt = self.build_system_prompt(user, db)
+
+        try:
+            async with self.client.messages.stream(
+                model=settings.claude_model,
+                max_tokens=2000,
+                system=system_prompt,
+                messages=[
+                    {"role": "user", "content": message}
+                ],
+            ) as stream:
+                async for text in stream.text_stream:
+                    yield text
+
+            logger.info("Claude streaming response completed")
+
+        except RateLimitError as e:
+            logger.error(f"Anthropic rate limit exceeded: {e}")
+            raise
+
+        except APIConnectionError as e:
+            logger.error(f"Anthropic API connection error: {e}")
+            raise
+
+        except APIError as e:
+            logger.error(f"Anthropic API error: {e}")
+            raise
+
+        except Exception as e:
+            logger.error(f"Unexpected error in chat_stream: {e}", exc_info=True)
+            raise
+
     def _parse_actions(self, response: str) -> List[Dict[str, Any]]:
         """
         Parse action commands from Claude's response

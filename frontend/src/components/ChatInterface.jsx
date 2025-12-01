@@ -13,9 +13,12 @@ function ChatInterface({ onTaskUpdate }) {
     messages,
     isLoadingHistory,
     isLoadingMessage,
+    isStreaming,
+    streamingContent,
     loadHistory,
     sendMessage,
     clearHistory,
+    stopStreaming,
   } = useChatStore();
 
   const [inputMessage, setInputMessage] = useState('');
@@ -30,10 +33,10 @@ function ChatInterface({ onTaskUpdate }) {
     loadHistory();
   }, [loadHistory]);
 
-  // Auto-scroll when messages change
+  // Auto-scroll when messages or streaming content change
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, streamingContent]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -480,8 +483,91 @@ function ChatInterface({ onTaskUpdate }) {
           ))
         )}
 
-        {/* Loading Indicator */}
-        {isLoadingMessage && (
+        {/* Streaming Message Display */}
+        {isStreaming && streamingContent && (
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            alignItems: 'flex-start',
+          }}>
+            {/* Assistant Avatar */}
+            <div style={{
+              width: '40px',
+              height: '40px',
+              minWidth: '40px',
+              borderRadius: '50%',
+              background: '#F3F4F6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
+              <img src="/Sam.png" alt="Sam" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
+            </div>
+
+            {/* Streaming Message Bubble */}
+            <div style={{
+              maxWidth: '70%',
+              padding: '14px 18px',
+              background: '#F3F4F6',
+              borderRadius: '20px 20px 20px 4px',
+              fontSize: '14px',
+              lineHeight: '1.5',
+              wordBreak: 'break-word',
+              position: 'relative',
+            }}>
+              <div style={{
+                fontSize: '14px',
+                lineHeight: '1.5',
+              }}>
+                <ReactMarkdown
+                  components={{
+                    p: ({node, ...props}) => <p style={{ margin: '0 0 6px 0', fontSize: '14px' }} {...props} />,
+                    ul: ({node, ...props}) => <ul style={{ margin: '6px 0', paddingLeft: '18px', fontSize: '14px' }} {...props} />,
+                    ol: ({node, ...props}) => <ol style={{ margin: '6px 0', paddingLeft: '18px', fontSize: '14px' }} {...props} />,
+                    li: ({node, ...props}) => <li style={{ margin: '3px 0', fontSize: '14px' }} {...props} />,
+                    strong: ({node, ...props}) => <strong style={{ fontWeight: '600', color: '#1a1a1a', fontSize: '14px' }} {...props} />,
+                    code: ({node, inline, ...props}) => inline ? (
+                      <code style={{
+                        background: 'rgba(0, 0, 0, 0.05)',
+                        padding: '2px 5px',
+                        borderRadius: '3px',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                      }} {...props} />
+                    ) : (
+                      <code style={{
+                        display: 'block',
+                        background: 'rgba(0, 0, 0, 0.05)',
+                        padding: '8px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        margin: '6px 0',
+                      }} {...props} />
+                    ),
+                  }}
+                >
+                  {streamingContent.replace(/^ACTION:.*$\n?/gm, '').trim()}
+                </ReactMarkdown>
+              </div>
+
+              {/* Streaming cursor indicator */}
+              <span style={{
+                display: 'inline-block',
+                width: '2px',
+                height: '16px',
+                background: '#0066FF',
+                marginLeft: '2px',
+                animation: 'blink 1s step-end infinite',
+                verticalAlign: 'text-bottom',
+              }} />
+            </div>
+          </div>
+        )}
+
+        {/* Loading Indicator - shown when waiting for first token */}
+        {isLoadingMessage && !streamingContent && (
           <div style={{
             display: 'flex',
             gap: '12px',
@@ -608,24 +694,50 @@ function ChatInterface({ onTaskUpdate }) {
             color: '#000',
           }}
         />
-        <button
-          type="submit"
-          disabled={!inputMessage.trim() || isLoadingMessage}
-          style={{
-            padding: '12px 24px',
-            fontSize: '15px',
-            fontWeight: '600',
-            color: '#fff',
-            background: '#0066FF',
-            border: 'none',
-            borderRadius: '12px',
-            cursor: (!inputMessage.trim() || isLoadingMessage) ? 'not-allowed' : 'pointer',
-            opacity: (!inputMessage.trim() || isLoadingMessage) ? 0.5 : 1,
-            transition: 'all 0.2s',
-          }}
-        >
-          Send
-        </button>
+        {isStreaming ? (
+          <button
+            type="button"
+            onClick={stopStreaming}
+            style={{
+              padding: '12px 24px',
+              fontSize: '15px',
+              fontWeight: '600',
+              color: '#fff',
+              background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+              border: 'none',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+            Stop
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={!inputMessage.trim() || isLoadingMessage}
+            style={{
+              padding: '12px 24px',
+              fontSize: '15px',
+              fontWeight: '600',
+              color: '#fff',
+              background: '#0066FF',
+              border: 'none',
+              borderRadius: '12px',
+              cursor: (!inputMessage.trim() || isLoadingMessage) ? 'not-allowed' : 'pointer',
+              opacity: (!inputMessage.trim() || isLoadingMessage) ? 0.5 : 1,
+              transition: 'all 0.2s',
+            }}
+          >
+            Send
+          </button>
+        )}
       </form>
 
       {/* Animation Styles */}
@@ -681,6 +793,15 @@ function ChatInterface({ onTaskUpdate }) {
           }
           100% {
             transform: translateX(-100%);
+          }
+        }
+
+        @keyframes blink {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0;
           }
         }
       `}</style>

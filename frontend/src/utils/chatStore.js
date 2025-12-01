@@ -11,8 +11,11 @@ const useChatStore = create((set, get) => ({
   messages: [],
   isLoadingHistory: false,
   isLoadingMessage: false,
+  isStreaming: false, // New: track if currently streaming
+  streamingContent: '', // New: current streaming content
   hasLoadedHistory: false, // Track if we've already loaded history once
   error: null,
+  abortStream: null, // New: function to abort current stream
 
   // Load chat history (only once per session)
   loadHistory: async (force = false) => {
@@ -45,7 +48,7 @@ const useChatStore = create((set, get) => ({
     }
   },
 
-  // Send a message (optimistic update + backend sync)
+  // Send a message with streaming response
   sendMessage: async (userMessage, onTaskUpdate) => {
     const { messages } = get();
 
@@ -59,50 +62,115 @@ const useChatStore = create((set, get) => ({
     set({
       messages: [...messages, userMsg],
       isLoadingMessage: true,
+      isStreaming: true,
+      streamingContent: '',
       error: null,
     });
 
-    try {
-      // Send to backend
-      const response = await chatAPI.sendMessage(userMessage);
+    // Use streaming API
+    const abort = chatAPI.sendMessageStream(
+      userMessage,
+      // onToken - called for each token received
+      (token) => {
+        set((state) => ({
+          streamingContent: state.streamingContent + token,
+        }));
+      },
+      // onDone - called when streaming is complete
+      (taskUpdates) => {
+        const { streamingContent } = get();
 
-      // Add assistant response
-      const assistantMsg = {
-        role: 'assistant',
-        content: response.response,
-        timestamp: new Date().toISOString(),
-      };
+        // Clean the response (remove ACTION lines)
+        let cleanedContent = streamingContent;
+        cleanedContent = cleanedContent.replace(/^ACTION:.*$\n?/gm, '');
+        cleanedContent = cleanedContent.replace(/\n\s*\n\s*\n/g, '\n\n');
+        cleanedContent = cleanedContent.trim();
 
-      set((state) => ({
-        messages: [...state.messages, assistantMsg],
-        isLoadingMessage: false,
-      }));
+        // Add assistant response as a complete message
+        const assistantMsg = {
+          role: 'assistant',
+          content: cleanedContent,
+          timestamp: new Date().toISOString(),
+        };
 
-      // Notify parent if tasks were updated
-      if (response.task_updates && response.task_updates.length > 0) {
-        onTaskUpdate?.();
+        set((state) => ({
+          messages: [...state.messages, assistantMsg],
+          isLoadingMessage: false,
+          isStreaming: false,
+          streamingContent: '',
+          abortStream: null,
+        }));
+
+        // Notify parent if tasks were updated
+        if (taskUpdates && taskUpdates.length > 0) {
+          onTaskUpdate?.();
+        }
+
+        console.log('✅ Streaming message completed');
+      },
+      // onError - called on error
+      (error) => {
+        const errorMessage = error.message || 'Failed to send message';
+
+        // Add error message
+        const errorMsg = {
+          role: 'error',
+          content: `Error: ${errorMessage}`,
+          timestamp: new Date().toISOString(),
+        };
+
+        set((state) => ({
+          messages: [...state.messages, errorMsg],
+          isLoadingMessage: false,
+          isStreaming: false,
+          streamingContent: '',
+          error: errorMessage,
+          abortStream: null,
+        }));
+
+        console.error('❌ Failed to send message:', errorMessage);
+      }
+    );
+
+    // Store abort function
+    set({ abortStream: abort });
+
+    return { success: true };
+  },
+
+  // Stop current stream
+  stopStreaming: () => {
+    const { abortStream, streamingContent } = get();
+
+    if (abortStream) {
+      abortStream();
+
+      // If we have partial content, save it as a message
+      if (streamingContent.trim()) {
+        let cleanedContent = streamingContent;
+        cleanedContent = cleanedContent.replace(/^ACTION:.*$\n?/gm, '');
+        cleanedContent = cleanedContent.replace(/\n\s*\n\s*\n/g, '\n\n');
+        cleanedContent = cleanedContent.trim();
+
+        const assistantMsg = {
+          role: 'assistant',
+          content: cleanedContent + '\n\n*[Response interrupted]*',
+          timestamp: new Date().toISOString(),
+        };
+
+        set((state) => ({
+          messages: [...state.messages, assistantMsg],
+        }));
       }
 
-      console.log('✅ Message sent successfully');
-      return { success: true };
-    } catch (error) {
-      const errorMessage = error.response?.data?.detail || 'Failed to send message';
-
-      // Add error message
-      const errorMsg = {
-        role: 'error',
-        content: `Error: ${errorMessage}`,
-        timestamp: new Date().toISOString(),
-      };
-
-      set((state) => ({
-        messages: [...state.messages, errorMsg],
+      set({
         isLoadingMessage: false,
-        error: errorMessage,
-      }));
+        isStreaming: false,
+        streamingContent: '',
+        abortStream: null,
+      });
 
-      console.error('❌ Failed to send message:', errorMessage);
-      return { success: false, error: errorMessage };
+      console.log('⏹️ Streaming stopped by user');
     }
   },
 
@@ -123,12 +191,20 @@ const useChatStore = create((set, get) => ({
 
   // Reset state (on logout)
   reset: () => {
+    const { abortStream } = get();
+    if (abortStream) {
+      abortStream(); // Abort any ongoing stream
+    }
+
     set({
       messages: [],
       isLoadingHistory: false,
       isLoadingMessage: false,
+      isStreaming: false,
+      streamingContent: '',
       hasLoadedHistory: false,
       error: null,
+      abortStream: null,
     });
     console.log('🔄 Chat store reset');
   },

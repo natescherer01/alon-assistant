@@ -140,6 +140,77 @@ export const chatAPI = {
     return response.data;
   },
 
+  /**
+   * Send a message and stream the response using Server-Sent Events
+   * @param {string} message - The message to send
+   * @param {function} onToken - Callback for each token received
+   * @param {function} onDone - Callback when streaming is complete (receives task_updates)
+   * @param {function} onError - Callback for errors
+   * @returns {function} Cleanup function to abort the stream
+   */
+  sendMessageStream: (message, onToken, onDone, onError) => {
+    const token = localStorage.getItem('token');
+    const controller = new AbortController();
+
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+    fetch(`${baseUrl}/chat/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ message }),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // Process complete SSE messages
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+
+                if (data.type === 'token') {
+                  onToken(data.content);
+                } else if (data.type === 'done') {
+                  onDone(data.task_updates || []);
+                } else if (data.type === 'error') {
+                  onError(new Error(data.message));
+                }
+              } catch (e) {
+                console.error('Failed to parse SSE data:', e);
+              }
+            }
+          }
+        }
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          onError(error);
+        }
+      });
+
+    // Return cleanup function
+    return () => controller.abort();
+  },
+
   getHistory: async (limit = 50) => {
     const response = await apiClient.get('/chat/history', {
       params: { limit },
