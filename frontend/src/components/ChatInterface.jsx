@@ -416,7 +416,7 @@ function ChatInterface({ onTaskUpdate }) {
           ))
         )}
 
-        {/* Streaming Message Display */}
+        {/* Streaming Message Display - Terminal Style */}
         {isStreaming && streamingContent && (
           <div style={{
             display: 'flex',
@@ -438,63 +438,62 @@ function ChatInterface({ onTaskUpdate }) {
               <img src="/Sam.png" alt="Sam" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
             </div>
 
-            {/* Streaming Message Bubble */}
+            {/* Terminal-style Streaming Bubble */}
             <div style={{
               maxWidth: '70%',
               padding: '14px 18px',
-              background: '#F3F4F6',
-              borderRadius: '20px 20px 20px 4px',
-              fontSize: '14px',
-              lineHeight: '1.5',
+              background: '#1a1a2e',
+              borderRadius: '12px',
+              fontSize: '13px',
+              lineHeight: '1.6',
               wordBreak: 'break-word',
               position: 'relative',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
             }}>
+              {/* Terminal header */}
               <div style={{
-                fontSize: '14px',
-                lineHeight: '1.5',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                marginBottom: '10px',
+                paddingBottom: '8px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
               }}>
-                <ReactMarkdown
-                  components={{
-                    p: ({node, ...props}) => <p style={{ margin: '0 0 6px 0', fontSize: '14px' }} {...props} />,
-                    ul: ({node, ...props}) => <ul style={{ margin: '6px 0', paddingLeft: '18px', fontSize: '14px' }} {...props} />,
-                    ol: ({node, ...props}) => <ol style={{ margin: '6px 0', paddingLeft: '18px', fontSize: '14px' }} {...props} />,
-                    li: ({node, ...props}) => <li style={{ margin: '3px 0', fontSize: '14px' }} {...props} />,
-                    strong: ({node, ...props}) => <strong style={{ fontWeight: '600', color: '#1a1a1a', fontSize: '14px' }} {...props} />,
-                    code: ({node, inline, ...props}) => inline ? (
-                      <code style={{
-                        background: 'rgba(0, 0, 0, 0.05)',
-                        padding: '2px 5px',
-                        borderRadius: '3px',
-                        fontSize: '12px',
-                        fontFamily: 'monospace',
-                      }} {...props} />
-                    ) : (
-                      <code style={{
-                        display: 'block',
-                        background: 'rgba(0, 0, 0, 0.05)',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontFamily: 'monospace',
-                        margin: '6px 0',
-                      }} {...props} />
-                    ),
-                  }}
-                >
-                  {streamingContent.replace(/^ACTION:.*$\n?/gm, '').trim()}
-                </ReactMarkdown>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff5f56' }} />
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ffbd2e' }} />
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#27ca40' }} />
+                <span style={{
+                  marginLeft: '8px',
+                  fontSize: '11px',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+                }}>
+                  generating response...
+                </span>
               </div>
 
-              {/* Streaming cursor indicator */}
-              <span style={{
-                display: 'inline-block',
-                width: '2px',
-                height: '16px',
-                background: '#0066FF',
-                marginLeft: '2px',
-                animation: 'blink 1s step-end infinite',
-                verticalAlign: 'text-bottom',
-              }} />
+              {/* Terminal content */}
+              <pre style={{
+                margin: 0,
+                fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+                fontSize: '13px',
+                lineHeight: '1.6',
+                color: '#e0e0e0',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}>
+                {streamingContent.replace(/^ACTION:.*$\n?/gm, '').trim()}
+                <span style={{
+                  display: 'inline-block',
+                  width: '8px',
+                  height: '16px',
+                  background: '#0066FF',
+                  marginLeft: '2px',
+                  animation: 'blink 1s step-end infinite',
+                  verticalAlign: 'text-bottom',
+                }} />
+              </pre>
             </div>
           </div>
         )}
