@@ -3,9 +3,9 @@ Claude AI chat API routes
 """
 from typing import List
 import json
-import asyncio
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import StreamingResponse
+from sse_starlette.sse import EventSourceResponse
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User, ChatMessage
@@ -207,8 +207,7 @@ async def chat_with_assistant_stream(
                 db=db
             ):
                 full_response += token
-                yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
-                await asyncio.sleep(0)  # Allow other tasks to run
+                yield {"data": json.dumps({"type": "token", "content": token})}
 
             # Parse actions from full response
             actions = claude_service._parse_actions(full_response)
@@ -251,20 +250,10 @@ async def chat_with_assistant_stream(
             task_responses = [TaskResponse.from_orm(task).dict() for task in modified_tasks]
 
             # Send done event with task updates
-            yield f"data: {json.dumps({'type': 'done', 'task_updates': task_responses})}\n\n"
+            yield {"data": json.dumps({"type": "done", "task_updates": task_responses})}
 
         except Exception as e:
             logger.error(f"Streaming error for user {current_user.email}: {e}", exc_info=True)
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            yield {"data": json.dumps({"type": "error", "message": str(e)})}
 
-    return StreamingResponse(
-        generate(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache, no-transform",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",  # Disable nginx buffering
-            "Transfer-Encoding": "chunked",
-            "Content-Encoding": "identity",  # Disable compression for streaming
-        }
-    )
+    return EventSourceResponse(generate())
