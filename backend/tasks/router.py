@@ -91,10 +91,12 @@ async def list_tasks(
 
     Optional project filter: filter tasks by project name
     """
+    user_timezone = current_user.timezone or "UTC"
+
     if list_type == "waiting":
         tasks = TaskService.get_waiting_tasks(db, current_user.id)
     elif list_type == "upcoming":
-        tasks = TaskService.get_upcoming_tasks(db, current_user.id, days)
+        tasks = TaskService.get_upcoming_tasks(db, current_user.id, days, user_timezone)
     elif list_type == "completed":
         query = db.query(Task).filter(
             Task.user_id == current_user.id,
@@ -134,7 +136,8 @@ async def get_next_task(
 
     Optional intensity filter: light, medium, heavy
     """
-    task = TaskService.get_next_task(db, current_user.id, intensity_filter)
+    user_timezone = current_user.timezone or "UTC"
+    task = TaskService.get_next_task(db, current_user.id, intensity_filter, user_timezone)
     return task
 
 

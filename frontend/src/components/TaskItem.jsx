@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { tasksAPI } from '../api/client';
 import useConfirm from '../hooks/useConfirm';
+import useAuthStore from '../utils/authStore';
 
 function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = false }) {
+  const { user } = useAuthStore();
   const { ConfirmDialog, confirm, alert } = useConfirm();
   const [isCompleting, setIsCompleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -58,10 +60,22 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
   const formatDeadline = (deadline) => {
     if (!deadline) return null;
 
-    const deadlineDate = new Date(deadline);
-    const today = new Date();
-    const diffTime = deadlineDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Get user's timezone, default to UTC
+    const userTimezone = user?.timezone || 'UTC';
+
+    // Parse deadline as a date (deadline is YYYY-MM-DD format)
+    // Add time to avoid timezone issues when parsing
+    const deadlineDate = new Date(deadline + 'T00:00:00');
+
+    // Get today's date in user's timezone
+    const now = new Date();
+    const todayInUserTz = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+    const today = new Date(todayInUserTz.getFullYear(), todayInUserTz.getMonth(), todayInUserTz.getDate());
+
+    // Calculate difference in days
+    const deadlineDateOnly = new Date(deadlineDate.getFullYear(), deadlineDate.getMonth(), deadlineDate.getDate());
+    const diffTime = deadlineDateOnly - today;
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
       return {
@@ -95,6 +109,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
 
     const interval = task.recurrence_interval || 1;
     const type = task.recurrence_type;
+    const userTimezone = user?.timezone || 'UTC';
 
     let text = 'Repeats ';
     if (interval === 1) {
@@ -104,8 +119,8 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
     }
 
     if (task.recurrence_end_date) {
-      const endDate = new Date(task.recurrence_end_date);
-      text += ` until ${endDate.toLocaleDateString()}`;
+      const endDate = new Date(task.recurrence_end_date + 'T00:00:00');
+      text += ` until ${endDate.toLocaleDateString('en-US', { timeZone: userTimezone })}`;
     }
 
     return text;

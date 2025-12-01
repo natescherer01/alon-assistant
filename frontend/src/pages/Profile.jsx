@@ -561,6 +561,7 @@ function Profile() {
                 borderRadius: '8px',
               }}>
                 {new Date(user.created_at).toLocaleDateString('en-US', {
+                  timeZone: user.timezone || 'UTC',
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'

@@ -3,6 +3,7 @@ Claude AI chat service for conversational task management
 """
 from typing import Dict, List, Any, Optional
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from anthropic import AsyncAnthropic, APIError, RateLimitError, APIConnectionError
 from sqlalchemy.orm import Session
 from config import get_settings
@@ -33,14 +34,21 @@ class ClaudeService:
         self.client = AsyncAnthropic(api_key=settings.anthropic_api_key)
         logger.debug("ClaudeService initialized with system API key")
 
+    def _get_user_now(self, user: User) -> datetime:
+        """Get current datetime in user's timezone"""
+        user_tz = ZoneInfo(user.timezone or "UTC")
+        return datetime.now(user_tz)
+
     def build_system_prompt(self, user: User, db: Session) -> str:
         """
         Build proactive system prompt with user context and urgency analysis
         """
         from datetime import timedelta
 
-        today = datetime.now().date()
-        three_days_ago = datetime.now() - timedelta(days=3)
+        # Use user's timezone for all date calculations
+        user_now = self._get_user_now(user)
+        today = user_now.date()
+        three_days_ago = user_now - timedelta(days=3)
         tomorrow = today + timedelta(days=1)
 
         # Get user's current tasks (exclude completed and deleted)
@@ -57,7 +65,7 @@ class ClaudeService:
         ).order_by(Task.completed_at.desc()).limit(5).all()
 
         # Get recently deleted tasks (last 24 hours) for context
-        one_day_ago = datetime.now() - timedelta(days=1)
+        one_day_ago = user_now - timedelta(days=1)
         recently_deleted = db.query(Task).filter(
             Task.user_id == user.id,
             Task.status == "deleted",
@@ -84,7 +92,7 @@ class ClaudeService:
 
             # Check for stale tasks (not updated in 3+ days)
             if task.updated_at < three_days_ago and task.status != "waiting_on":
-                days_stale = (datetime.now() - task.updated_at).days
+                days_stale = (user_now.replace(tzinfo=None) - task.updated_at).days
                 stale_tasks.append(f"Task #{task.id} '{task.title}' (no updates for {days_stale} days)")
 
             # Check for waiting tasks
@@ -95,7 +103,7 @@ class ClaudeService:
 
                 # Check if waiting too long (>3 days)
                 if task.updated_at < three_days_ago:
-                    days_waiting = (datetime.now() - task.updated_at).days
+                    days_waiting = (user_now.replace(tzinfo=None) - task.updated_at).days
                     waiting_too_long.append(f"⏰ Task #{task.id} '{task.title}' has been waiting for {days_waiting} days - suggest follow-up!")
                 else:
                     waiting_tasks.append(waiting_info)
@@ -156,7 +164,7 @@ class ClaudeService:
 
 Your name is Sam. When users greet you or ask who you are, introduce yourself as Sam, the Alon Assistant.
 
-Today's date: {datetime.now().strftime('%Y-%m-%d')} (Always use this date for any date-related calculations or references)
+Today's date: {today.strftime('%Y-%m-%d')} (User's timezone: {user.timezone or 'UTC'}) - Always use this date for any date-related calculations or references
 
 ## Your Role
 Act as a PROACTIVE, attentive micromanager who:

@@ -86,7 +86,7 @@ function ChatInterface({ onTaskUpdate }) {
         maxWidth: '1200px',
         margin: '0 auto',
         width: '100%',
-        padding: '24px',
+        padding: '24px 12px',
       }}>
         {/* Messages Container */}
       <div style={{

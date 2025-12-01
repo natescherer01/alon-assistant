@@ -3,6 +3,7 @@ Task management service - business logic migrated from personal_assistant/assist
 """
 from datetime import datetime, timedelta
 from typing import List, Optional
+from zoneinfo import ZoneInfo
 import re
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
@@ -11,6 +12,17 @@ from models import Task, User
 
 class TaskService:
     """Task management service for multi-user system"""
+
+    @staticmethod
+    def get_user_now(timezone: str = "UTC") -> datetime:
+        """Get current datetime in specified timezone"""
+        tz = ZoneInfo(timezone or "UTC")
+        return datetime.now(tz)
+
+    @staticmethod
+    def get_user_today(timezone: str = "UTC"):
+        """Get today's date in specified timezone"""
+        return TaskService.get_user_now(timezone).date()
 
     @staticmethod
     def estimate_intensity(text: str) -> int:
@@ -57,18 +69,23 @@ class TaskService:
         return None
 
     @staticmethod
-    def calculate_priority(task: Task) -> float:
+    def calculate_priority(task: Task, timezone: str = "UTC") -> float:
         """
         Calculate priority score for a task (higher = more urgent)
         Migrated from PersonalAssistant.calculate_priority()
+
+        Args:
+            task: The task to calculate priority for
+            timezone: User's timezone for date calculations
         """
         score = 0.0
 
         # Deadline urgency (0-100 points)
         if task.deadline:
             try:
-                deadline_date = datetime.combine(task.deadline, datetime.min.time())
-                days_until = (deadline_date - datetime.now()).days
+                # Use user's timezone for "today" calculation
+                today = TaskService.get_user_today(timezone)
+                days_until = (task.deadline - today).days
 
                 if days_until < 0:
                     score += 100  # Overdue
@@ -100,11 +117,18 @@ class TaskService:
     def get_next_task(
         db: Session,
         user_id: int,
-        intensity_filter: Optional[str] = None
+        intensity_filter: Optional[str] = None,
+        timezone: str = "UTC"
     ) -> Optional[Task]:
         """
         Get the next task to work on based on priority
         Migrated from PersonalAssistant.get_next_task()
+
+        Args:
+            db: Database session
+            user_id: User's ID
+            intensity_filter: Optional filter for task intensity
+            timezone: User's timezone for priority calculations
         """
         # Query available tasks
         query = db.query(Task).filter(
@@ -131,8 +155,11 @@ class TaskService:
         if not available_tasks:
             return None
 
-        # Sort by priority
-        available_tasks.sort(key=TaskService.calculate_priority, reverse=True)
+        # Sort by priority using user's timezone
+        available_tasks.sort(
+            key=lambda t: TaskService.calculate_priority(t, timezone),
+            reverse=True
+        )
         return available_tasks[0]
 
     @staticmethod
@@ -151,12 +178,24 @@ class TaskService:
         return tasks
 
     @staticmethod
-    def get_upcoming_tasks(db: Session, user_id: int, days: int = 7) -> List[Task]:
+    def get_upcoming_tasks(
+        db: Session,
+        user_id: int,
+        days: int = 7,
+        timezone: str = "UTC"
+    ) -> List[Task]:
         """
         Get tasks due in the next N days
         Migrated from PersonalAssistant.get_upcoming_tasks()
+
+        Args:
+            db: Database session
+            user_id: User's ID
+            days: Number of days to look ahead
+            timezone: User's timezone for date calculations
         """
-        cutoff_date = (datetime.now() + timedelta(days=days)).date()
+        today = TaskService.get_user_today(timezone)
+        cutoff_date = today + timedelta(days=days)
 
         tasks = db.query(Task).filter(
             and_(
@@ -194,10 +233,19 @@ class TaskService:
         return suggestions
 
     @staticmethod
-    def format_task_for_display(task: Task, include_details: bool = False) -> str:
+    def format_task_for_display(
+        task: Task,
+        include_details: bool = False,
+        timezone: str = "UTC"
+    ) -> str:
         """
         Format task for display
         Migrated from PersonalAssistant.format_task()
+
+        Args:
+            task: The task to format
+            include_details: Whether to include additional details
+            timezone: User's timezone for date calculations
         """
         intensity_labels = {1: "Very Light", 2: "Light", 3: "Medium", 4: "Heavy", 5: "Very Heavy"}
 
@@ -205,8 +253,9 @@ class TaskService:
 
         if task.deadline:
             try:
-                deadline_date = datetime.combine(task.deadline, datetime.min.time())
-                days_until = (deadline_date - datetime.now()).days
+                # Use user's timezone for "today" calculation
+                today = TaskService.get_user_today(timezone)
+                days_until = (task.deadline - today).days
 
                 if days_until < 0:
                     output += f" (OVERDUE by {abs(days_until)} days!)"

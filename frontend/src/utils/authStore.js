@@ -105,6 +105,12 @@ const useAuthStore = create((set) => ({
       return;
     }
 
+    // Skip API call if user is already loaded (e.g., after login/signup)
+    const currentState = useAuthStore.getState();
+    if (currentState.user && currentState.isAuthenticated) {
+      return;
+    }
+
     try {
       const user = await authAPI.getCurrentUser();
       set({ user, isAuthenticated: true });

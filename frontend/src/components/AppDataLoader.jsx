@@ -15,7 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
-import { tasksAPI, chatAPI, authAPI } from '../api/client';
+import { tasksAPI, chatAPI } from '../api/client';
 
 /**
  * AppDataLoader Component
@@ -41,7 +41,7 @@ function AppDataLoader({ onLoadComplete, onLoadError }) {
       try {
         // Prefetch all critical data in parallel
         await Promise.all([
-          // Tasks (multiple views)
+          // All tasks (used by Dashboard)
           queryClient.prefetchQuery({
             queryKey: queryKeys.tasks.list({ listType: 'all', days: 7 }),
             queryFn: () => tasksAPI.getTasks('all', 7),
@@ -52,13 +52,6 @@ function AppDataLoader({ onLoadComplete, onLoadError }) {
             }
           }),
 
-          // Today's tasks
-          queryClient.prefetchQuery({
-            queryKey: queryKeys.tasks.list({ listType: 'today', days: 1 }),
-            queryFn: () => tasksAPI.getTasks('today', 1),
-            staleTime: 2 * 60 * 1000,
-          }),
-
           // Next task
           queryClient.prefetchQuery({
             queryKey: queryKeys.tasks.next(null),
@@ -66,25 +59,14 @@ function AppDataLoader({ onLoadComplete, onLoadError }) {
             staleTime: 1 * 60 * 1000,
           }),
 
-          // Chat history
+          // Chat history (limit=20 to match chatStore)
           queryClient.prefetchQuery({
-            queryKey: queryKeys.chat.history(50),
-            queryFn: () => chatAPI.getHistory(50),
+            queryKey: queryKeys.chat.history(20),
+            queryFn: () => chatAPI.getHistory(20),
             staleTime: 5 * 60 * 1000,
           }).then(() => {
             if (isMounted) {
               setLoadingState(prev => ({ ...prev, chatHistory: 'success' }));
-            }
-          }),
-
-          // Current user
-          queryClient.prefetchQuery({
-            queryKey: queryKeys.auth.currentUser(),
-            queryFn: () => authAPI.getCurrentUser(),
-            staleTime: 10 * 60 * 1000, // User data changes less frequently
-          }).then(() => {
-            if (isMounted) {
-              setLoadingState(prev => ({ ...prev, currentUser: 'success' }));
             }
           }),
         ]);
@@ -137,12 +119,8 @@ export function useAppDataLoader() {
             queryFn: () => tasksAPI.getTasks('all', 7),
           }),
           queryClient.prefetchQuery({
-            queryKey: queryKeys.chat.history(50),
-            queryFn: () => chatAPI.getHistory(50),
-          }),
-          queryClient.prefetchQuery({
-            queryKey: queryKeys.auth.currentUser(),
-            queryFn: () => authAPI.getCurrentUser(),
+            queryKey: queryKeys.chat.history(20),
+            queryFn: () => chatAPI.getHistory(20),
           }),
         ]);
 

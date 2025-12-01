@@ -1,31 +1,42 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import useAuthStore from '../utils/authStore';
 import { tasksAPI } from '../api/client';
+import { queryKeys } from '../lib/queryKeys';
 import TaskItem from '../components/TaskItem';
 import AddTaskForm from '../components/AddTaskForm';
 import ChatInterface from '../components/ChatInterface';
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const queryClient = useQueryClient();
+  const { logout } = useAuthStore();
 
-  const [allTasks, setAllTasks] = useState([]); // Store ALL tasks locally
-  const [nextTask, setNextTask] = useState(null);
   const [filter, setFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
-  const [projects, setProjects] = useState([]);
-  const [isLoading, setIsLoading] = useState(true); // Only true on initial load
   const [showChat, setShowChat] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [savingTasks, setSavingTasks] = useState(new Set());
   const [error, setError] = useState(null);
 
-  // Load all tasks ONCE on mount (no dependency on filter!)
-  useEffect(() => {
-    loadAllTasks();
-    loadNextTask();
-  }, []); // Empty dependency array = run once on mount
+  // Use React Query - reads from AppDataLoader's cache or fetches if not cached
+  const { data: allTasks = [], isLoading } = useQuery({
+    queryKey: queryKeys.tasks.list({ listType: 'all', days: 7 }),
+    queryFn: () => tasksAPI.getTasks('all', 7),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  const { data: nextTask = null } = useQuery({
+    queryKey: queryKeys.tasks.next(null),
+    queryFn: () => tasksAPI.getNextTask(),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+
+  // Extract unique projects from tasks
+  const projects = useMemo(() => {
+    return [...new Set(allTasks.map(t => t.project).filter(p => p))];
+  }, [allTasks]);
 
   const sortTasksByDeadline = (tasksToSort) => {
     return [...tasksToSort].sort((a, b) => {
@@ -53,36 +64,8 @@ function Dashboard() {
     });
   };
 
-  // Load ALL tasks once - no filter parameter, fetch everything
-  const loadAllTasks = async () => {
-    setIsLoading(true);
-    try {
-      // Fetch all tasks at once (all statuses: active, completed, deleted, waiting, etc.)
-      const allData = await tasksAPI.getTasks('all');
-      setAllTasks(allData);
-
-      // Extract unique projects from all tasks
-      const uniqueProjects = [...new Set(allData.map(t => t.project).filter(p => p))];
-      setProjects(uniqueProjects);
-    } catch (error) {
-      console.error('Failed to load tasks:', error);
-      setError({ message: 'Failed to load tasks. Please refresh the page.' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadNextTask = async () => {
-    try {
-      const data = await tasksAPI.getNextTask();
-      setNextTask(data);
-    } catch (error) {
-      console.error('Failed to load next task:', error);
-    }
-  };
-
   /**
-   * Handle task updates with optimistic UI updates
+   * Handle task updates with optimistic UI updates via React Query cache
    * @param {Object|null} updatedTask - The updated task object (for optimistic updates)
    * @param {string|null} taskId - The ID of task to delete (for delete operations)
    * @param {string} action - The action type: 'update', 'delete', 'complete', 'restore', 'add'
@@ -92,35 +75,33 @@ function Dashboard() {
       // Clear any previous errors
       setError(null);
 
-      // Optimistic update - update allTasks immediately (client-side state)
-      setAllTasks(prevTasks => {
-        if (action === 'delete') {
-          return prevTasks.filter(t => t.id !== taskId);
-        } else if (action === 'add') {
-          // Add new task to the list
-          return [...prevTasks, updatedTask];
-        } else if (action === 'update' || action === 'complete' || action === 'restore') {
-          // Update existing task
-          const taskExists = prevTasks.some(t => t.id === updatedTask.id);
-          if (taskExists) {
-            return prevTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
-          } else {
-            // Task doesn't exist yet, add it
+      // Optimistic update via React Query cache
+      queryClient.setQueryData(
+        queryKeys.tasks.list({ listType: 'all', days: 7 }),
+        (prevTasks = []) => {
+          if (action === 'delete') {
+            return prevTasks.filter(t => t.id !== taskId);
+          } else if (action === 'add') {
             return [...prevTasks, updatedTask];
+          } else if (action === 'update' || action === 'complete' || action === 'restore') {
+            const taskExists = prevTasks.some(t => t.id === updatedTask.id);
+            if (taskExists) {
+              return prevTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+            } else {
+              return [...prevTasks, updatedTask];
+            }
           }
+          return prevTasks;
         }
-        return prevTasks;
-      });
+      );
 
-      // Only reload next task if the updated/deleted task could affect it
-      // (i.e., if task is not completed or if we deleted a task)
+      // Invalidate next task query if the update could affect it
       if (action === 'delete' || updatedTask?.status !== 'completed') {
-        loadNextTask();
+        queryClient.invalidateQueries({ queryKey: queryKeys.tasks.next(null) });
       }
     } else {
-      // Fallback: full reload (for error recovery)
-      loadAllTasks();
-      loadNextTask();
+      // Fallback: full refetch (for error recovery)
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
     }
   };
 
@@ -228,16 +209,6 @@ function Dashboard() {
     const upcoming = allTasks.filter((t) => t.deadline && t.status !== 'completed' && t.status !== 'deleted').length;
     return { all, waiting, upcoming };
   }, [allTasks]);
-
-  // Get user initials
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    const parts = name.split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F5F5F7' }}>
