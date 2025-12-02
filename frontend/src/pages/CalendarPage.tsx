@@ -194,9 +194,9 @@ export default function CalendarPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Loading State */}
             {isLoading && (
-              <div className="space-y-6">
-                <div className="h-8 bg-gray-200 rounded w-64 animate-pulse" />
-                <CalendarSkeletonGrid count={1} />
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-gray-600">Loading calendars...</p>
               </div>
             )}
 
