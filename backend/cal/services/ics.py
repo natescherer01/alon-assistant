@@ -178,12 +178,11 @@ async def sync_ics_events(
             # Parse calendar
             cal = Calendar.from_ical(response.text)
 
-            # Get existing event IDs for deletion detection
+            # Get existing event IDs for deletion detection (include soft-deleted)
             existing_events = {
                 e.provider_event_id: e
                 for e in db.query(CalendarEvent).filter(
                     CalendarEvent.calendar_connection_id == connection.id,
-                    CalendarEvent.deleted_at.is_(None),
                 ).all()
             }
 
@@ -197,16 +196,16 @@ async def sync_ics_events(
                 event_id = str(component.get("uid", uuid4()))
                 seen_event_ids.add(event_id)
 
-                result = _upsert_ics_event(connection, component, event_id, db)
+                result = _upsert_ics_event(connection, component, event_id, existing_events.get(event_id), db)
                 stats["total_events"] += 1
                 if result == "new":
                     stats["new_events"] += 1
                 elif result == "updated":
                     stats["updated_events"] += 1
 
-            # Mark missing events as deleted
+            # Mark missing events as deleted (only non-deleted ones)
             for event_id, event in existing_events.items():
-                if event_id not in seen_event_ids:
+                if event_id not in seen_event_ids and event.deleted_at is None:
                     event.deleted_at = datetime.utcnow()
                     event.sync_status = SyncStatus.DELETED
                     stats["deleted_events"] += 1
@@ -218,6 +217,8 @@ async def sync_ics_events(
             return stats
 
     except Exception as e:
+        # Rollback on error to clean up the transaction state
+        db.rollback()
         logger.error(f"Failed to sync ICS calendar {connection.id}: {e}")
         raise
 
@@ -226,9 +227,18 @@ def _upsert_ics_event(
     connection: CalendarConnection,
     component,
     event_id: str,
+    existing: Optional[CalendarEvent],
     db: Session,
 ) -> str:
-    """Insert or update an ICS event. Returns 'new' or 'updated'."""
+    """Insert or update an ICS event. Returns 'new', 'updated', or 'skipped'.
+
+    Args:
+        connection: Calendar connection
+        component: ICS VEVENT component
+        event_id: The UID from the ICS event
+        existing: Existing CalendarEvent if found, None otherwise
+        db: Database session
+    """
     # Extract event data
     summary = str(component.get("summary", "(No title)"))
     description = str(component.get("description", "")) if component.get("description") else None
@@ -276,12 +286,6 @@ def _upsert_ics_event(
         rrule_str = f"RRULE:{component.get('rrule').to_ical().decode()}"
         is_recurring = True
 
-    # Check for existing event
-    existing = db.query(CalendarEvent).filter(
-        CalendarEvent.calendar_connection_id == connection.id,
-        CalendarEvent.provider_event_id == event_id,
-    ).first()
-
     event_data = {
         "title": summary[:500],  # Limit title length
         "description": description[:2000] if description else None,
@@ -295,7 +299,7 @@ def _upsert_ics_event(
         "is_recurring": is_recurring,
         "recurrence_rule": rrule_str,
         "last_synced_at": datetime.utcnow(),
-        "deleted_at": None,
+        "deleted_at": None,  # Reactivate if previously deleted
     }
 
     if existing:
