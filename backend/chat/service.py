@@ -48,8 +48,12 @@ class ClaudeService:
         # Use user's timezone for all date calculations
         user_now = self._get_user_now(user)
         today = user_now.date()
-        three_days_ago = user_now - timedelta(days=3)
         tomorrow = today + timedelta(days=1)
+
+        # Create timezone-naive versions for database comparisons
+        # (database stores naive datetimes in UTC)
+        user_now_naive = user_now.replace(tzinfo=None)
+        three_days_ago = user_now_naive - timedelta(days=3)
 
         # Get user's current tasks (exclude completed and deleted)
         active_tasks = db.query(Task).filter(
@@ -65,7 +69,7 @@ class ClaudeService:
         ).order_by(Task.completed_at.desc()).limit(5).all()
 
         # Get recently deleted tasks (last 24 hours) for context
-        one_day_ago = user_now - timedelta(days=1)
+        one_day_ago = user_now_naive - timedelta(days=1)
         recently_deleted = db.query(Task).filter(
             Task.user_id == user.id,
             Task.status == "deleted",
@@ -92,7 +96,7 @@ class ClaudeService:
 
             # Check for stale tasks (not updated in 3+ days)
             if task.updated_at < three_days_ago and task.status != "waiting_on":
-                days_stale = (user_now.replace(tzinfo=None) - task.updated_at).days
+                days_stale = (user_now_naive - task.updated_at).days
                 stale_tasks.append(f"Task #{task.id} '{task.title}' (no updates for {days_stale} days)")
 
             # Check for waiting tasks
@@ -103,7 +107,7 @@ class ClaudeService:
 
                 # Check if waiting too long (>3 days)
                 if task.updated_at < three_days_ago:
-                    days_waiting = (user_now.replace(tzinfo=None) - task.updated_at).days
+                    days_waiting = (user_now_naive - task.updated_at).days
                     waiting_too_long.append(f"⏰ Task #{task.id} '{task.title}' has been waiting for {days_waiting} days - suggest follow-up!")
                 else:
                     waiting_tasks.append(waiting_info)
