@@ -1,18 +1,18 @@
 /**
  * Calendar API Client
- * Connects to the alon-cal backend for calendar functionality
+ * Connects to the FastAPI backend for calendar functionality
  */
 import axios from 'axios';
 
-const CALENDAR_API_URL = import.meta.env.VITE_CALENDAR_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const CALENDAR_BASE = `${API_URL}/api/v1/calendar`;
 
 // Create axios instance for calendar API
 const calendarApiClient = axios.create({
-  baseURL: CALENDAR_API_URL,
+  baseURL: CALENDAR_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
 });
 
 // Request interceptor - use same token as main app
@@ -46,52 +46,52 @@ export const calendarAPI = {
    * Fetch all connected calendars
    */
   getCalendars: async () => {
-    const response = await calendarApiClient.get('/api/calendars');
-    return response.data.calendars;
+    const response = await calendarApiClient.get('/calendars');
+    return response.data.calendars || response.data;
   },
 
   /**
    * Disconnect a calendar
    */
   disconnectCalendar: async (id) => {
-    await calendarApiClient.delete(`/api/calendars/${id}`);
+    await calendarApiClient.delete(`/calendars/${id}`);
   },
 
   /**
    * Sync a specific calendar
    */
   syncCalendar: async (id) => {
-    await calendarApiClient.post(`/api/calendars/${id}/sync`);
+    await calendarApiClient.post(`/calendars/${id}/sync`);
   },
 
   /**
    * Sync all calendars
    */
   syncAllCalendars: async () => {
-    await calendarApiClient.post('/api/calendars/sync-all');
+    await calendarApiClient.post('/calendars/sync-all');
   },
 
   /**
    * Get Google OAuth URL
    */
   getGoogleAuthUrl: async () => {
-    const response = await calendarApiClient.get('/api/oauth/google/login');
-    return response.data.authUrl;
+    const response = await calendarApiClient.get('/oauth/google/login');
+    return response.data.auth_url || response.data.authUrl;
   },
 
   /**
    * Get Microsoft OAuth URL
    */
   getMicrosoftAuthUrl: async () => {
-    const response = await calendarApiClient.get('/api/oauth/microsoft/login');
-    return response.data.authUrl;
+    const response = await calendarApiClient.get('/oauth/microsoft/login');
+    return response.data.auth_url || response.data.authUrl;
   },
 
   /**
    * Get OAuth session data
    */
   getOAuthSession: async (sessionId) => {
-    const response = await calendarApiClient.get(`/api/oauth/session/${sessionId}`);
+    const response = await calendarApiClient.get(`/oauth/session/${sessionId}`);
     return response.data;
   },
 
@@ -99,9 +99,9 @@ export const calendarAPI = {
    * Select Google calendars to sync
    */
   selectGoogleCalendars: async (sessionId, selectedCalendarIds) => {
-    const response = await calendarApiClient.post('/api/oauth/google/select', {
-      sessionId,
-      selectedCalendarIds,
+    const response = await calendarApiClient.post('/oauth/google/select', {
+      session_id: sessionId,
+      selected_calendar_ids: selectedCalendarIds,
     });
     return response.data;
   },
@@ -110,9 +110,9 @@ export const calendarAPI = {
    * Select Microsoft calendars to sync
    */
   selectMicrosoftCalendars: async (sessionId, selectedCalendarIds) => {
-    const response = await calendarApiClient.post('/api/oauth/microsoft/select', {
-      sessionId,
-      selectedCalendarIds,
+    const response = await calendarApiClient.post('/oauth/microsoft/select', {
+      session_id: sessionId,
+      selected_calendar_ids: selectedCalendarIds,
     });
     return response.data;
   },
@@ -121,7 +121,7 @@ export const calendarAPI = {
    * Validate ICS subscription URL
    */
   validateIcsUrl: async (url) => {
-    const response = await calendarApiClient.post('/api/calendars/ics/validate', { url });
+    const response = await calendarApiClient.post('/ics/validate', { url });
     return response.data;
   },
 
@@ -129,9 +129,9 @@ export const calendarAPI = {
    * Connect ICS calendar
    */
   connectIcsCalendar: async (url, displayName) => {
-    const response = await calendarApiClient.post('/api/calendars/ics/connect', {
+    const response = await calendarApiClient.post('/ics/connect', {
       url,
-      displayName,
+      display_name: displayName,
     });
     return response.data.connection;
   },
@@ -140,9 +140,9 @@ export const calendarAPI = {
    * Update ICS calendar
    */
   updateIcsCalendar: async (connectionId, url, displayName) => {
-    const response = await calendarApiClient.put(`/api/calendars/ics/${connectionId}`, {
+    const response = await calendarApiClient.put(`/ics/${connectionId}`, {
       url,
-      displayName,
+      display_name: displayName,
     });
     return response.data.connection;
   },
@@ -155,7 +155,7 @@ export const eventsAPI = {
    * Get events within date range
    */
   getEvents: async (start, end) => {
-    const response = await calendarApiClient.get('/api/events', {
+    const response = await calendarApiClient.get('/events', {
       params: {
         start: start.toISOString(),
         end: end.toISOString(),
@@ -168,7 +168,7 @@ export const eventsAPI = {
    * Get upcoming events
    */
   getUpcomingEvents: async (limit = 10) => {
-    const response = await calendarApiClient.get('/api/events/upcoming', {
+    const response = await calendarApiClient.get('/events/upcoming', {
       params: { limit },
     });
     return response.data;
@@ -178,15 +178,15 @@ export const eventsAPI = {
    * Get event by ID
    */
   getEventById: async (id) => {
-    const response = await calendarApiClient.get(`/api/events/${id}`);
-    return response.data.event;
+    const response = await calendarApiClient.get(`/events/${id}`);
+    return response.data.event || response.data;
   },
 
   /**
    * Create event
    */
   createEvent: async (eventData) => {
-    const response = await calendarApiClient.post('/api/events', eventData);
+    const response = await calendarApiClient.post('/events', eventData);
     return response.data;
   },
 
@@ -194,7 +194,7 @@ export const eventsAPI = {
    * Update event
    */
   updateEvent: async (id, eventData) => {
-    const response = await calendarApiClient.put(`/api/events/${id}`, eventData);
+    const response = await calendarApiClient.put(`/events/${id}`, eventData);
     return response.data;
   },
 
@@ -202,14 +202,14 @@ export const eventsAPI = {
    * Delete event
    */
   deleteEvent: async (id) => {
-    await calendarApiClient.delete(`/api/events/${id}`);
+    await calendarApiClient.delete(`/events/${id}`);
   },
 
   /**
    * Retry syncing a failed event
    */
   retrySync: async (id) => {
-    const response = await calendarApiClient.post(`/api/events/${id}/retry-sync`);
+    const response = await calendarApiClient.post(`/events/${id}/retry-sync`);
     return response.data;
   },
 };
