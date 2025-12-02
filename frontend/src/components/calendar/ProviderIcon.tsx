@@ -1,25 +1,23 @@
 interface ProviderIconProps {
   provider: 'GOOGLE' | 'MICROSOFT' | 'APPLE' | 'CALDAV' | 'ICS';
   size?: 'sm' | 'md' | 'lg';
-  className?: string;
 }
 
-const sizeClasses = {
-  sm: 'w-6 h-6 text-xl',
-  md: 'w-8 h-8 text-2xl',
-  lg: 'w-12 h-12 text-4xl',
+const sizes = {
+  sm: { container: 24, icon: 16 },
+  md: { container: 32, icon: 20 },
+  lg: { container: 48, icon: 28 },
 };
 
 /**
  * Display provider logo/icon with proper branding
- * Uses SVG icons for Microsoft and CalDAV with brand colors
+ * Uses inline styles for consistency with Dashboard design
  */
 export default function ProviderIcon({
   provider,
   size = 'md',
-  className = '',
 }: ProviderIconProps) {
-  const sizeClass = sizeClasses[size];
+  const { container, icon } = sizes[size];
 
   const label =
     provider === 'GOOGLE' ? 'Google Calendar' :
@@ -32,12 +30,21 @@ export default function ProviderIcon({
   if (provider === 'MICROSOFT') {
     return (
       <div
-        className={`flex items-center justify-center ${sizeClass} ${className}`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: `${container}px`,
+          height: `${container}px`,
+          background: '#0078D4',
+          borderRadius: '8px',
+          flexShrink: 0,
+        }}
         role="img"
         aria-label={label}
         title={label}
       >
-        <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
+        <svg viewBox="0 0 24 24" fill="none" style={{ width: `${icon}px`, height: `${icon}px` }}>
           <rect width="24" height="24" rx="2" fill="#0078D4"/>
           <path d="M6 8h12v8H6z" fill="#fff"/>
           <path d="M12 8l6 4-6 4-6-4z" fill="#0078D4" opacity="0.8"/>
@@ -48,16 +55,54 @@ export default function ProviderIcon({
     );
   }
 
-  // CalDAV/Exchange icon
-  if (provider === 'CALDAV') {
+  // Google Calendar icon
+  if (provider === 'GOOGLE') {
     return (
       <div
-        className={`flex items-center justify-center ${sizeClass} ${className} bg-gray-100 rounded-lg`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: `${container}px`,
+          height: `${container}px`,
+          background: '#fff',
+          borderRadius: '8px',
+          border: '1px solid #E5E7EB',
+          flexShrink: 0,
+        }}
         role="img"
         aria-label={label}
         title={label}
       >
-        <svg viewBox="0 0 24 24" fill="currentColor" className="w-2/3 h-2/3 text-gray-700">
+        <svg viewBox="0 0 24 24" style={{ width: `${icon}px`, height: `${icon}px` }}>
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+      </div>
+    );
+  }
+
+  // CalDAV/Exchange icon
+  if (provider === 'CALDAV') {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: `${container}px`,
+          height: `${container}px`,
+          background: '#F3F4F6',
+          borderRadius: '8px',
+          flexShrink: 0,
+        }}
+        role="img"
+        aria-label={label}
+        title={label}
+      >
+        <svg viewBox="0 0 24 24" fill="#374151" style={{ width: `${icon}px`, height: `${icon}px` }}>
           <path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z" />
         </svg>
       </div>
@@ -68,7 +113,16 @@ export default function ProviderIcon({
   if (provider === 'ICS') {
     return (
       <div
-        className={`flex items-center justify-center ${sizeClass} ${className} bg-purple-100 rounded-lg`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: `${container}px`,
+          height: `${container}px`,
+          background: '#F3E8FF',
+          borderRadius: '8px',
+          flexShrink: 0,
+        }}
         role="img"
         aria-label={label}
         title={label}
@@ -76,11 +130,11 @@ export default function ProviderIcon({
         <svg
           viewBox="0 0 24 24"
           fill="none"
-          stroke="currentColor"
+          stroke="#7C3AED"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="w-2/3 h-2/3 text-purple-700"
+          style={{ width: `${icon}px`, height: `${icon}px` }}
         >
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
           <line x1="16" y1="2" x2="16" y2="6" />
@@ -91,18 +145,25 @@ export default function ProviderIcon({
     );
   }
 
-  // Fallback to emojis for other providers
-  const icon =
-    provider === 'GOOGLE' ? '📅' : '🍎';
-
+  // Apple Calendar icon
   return (
     <div
-      className={`flex items-center justify-center ${sizeClass} ${className}`}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: `${container}px`,
+        height: `${container}px`,
+        background: '#F3F4F6',
+        borderRadius: '8px',
+        flexShrink: 0,
+        fontSize: `${icon}px`,
+      }}
       role="img"
       aria-label={label}
       title={label}
     >
-      {icon}
+      🍎
     </div>
   );
 }
