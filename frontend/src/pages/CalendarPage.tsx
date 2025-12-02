@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCalendars } from '../hooks/calendar/useCalendars';
 import useAuthStore from '../utils/authStore';
@@ -14,10 +14,12 @@ import LiveClock from '../components/calendar/LiveClock';
 
 /**
  * Calendar page - matches Dashboard styling exactly
+ * Uses React Query for data caching - no loading on subsequent visits
  */
 export default function CalendarPage() {
   const navigate = useNavigate();
   const { logout } = useAuthStore();
+  // useCalendars now uses React Query - data is cached and persists across navigations
   const { calendars, isLoading, error, fetchCalendars } = useCalendars();
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
@@ -27,10 +29,7 @@ export default function CalendarPage() {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    fetchCalendars();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // No useEffect needed - React Query automatically fetches and caches data
 
   const handleOpenConnectModal = () => {
     setShowConnectModal(true);

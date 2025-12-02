@@ -16,6 +16,8 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
 import { tasksAPI, chatAPI } from '../api/client';
+import { calendarApi } from '../api/calendar/calendar';
+import { eventsApi } from '../api/calendar/events';
 
 /**
  * AppDataLoader Component
@@ -29,6 +31,8 @@ function AppDataLoader({ onLoadComplete, onLoadError }) {
     tasks: 'pending',
     chatHistory: 'pending',
     currentUser: 'pending',
+    calendars: 'pending',
+    calendarEvents: 'pending',
   });
 
   useEffect(() => {
@@ -67,6 +71,50 @@ function AppDataLoader({ onLoadComplete, onLoadError }) {
           }).then(() => {
             if (isMounted) {
               setLoadingState(prev => ({ ...prev, chatHistory: 'success' }));
+            }
+          }),
+
+          // Calendar connections
+          queryClient.prefetchQuery({
+            queryKey: queryKeys.calendar.calendars(),
+            queryFn: () => calendarApi.getCalendars(),
+            staleTime: 5 * 60 * 1000, // 5 minutes
+          }).then(() => {
+            if (isMounted) {
+              setLoadingState(prev => ({ ...prev, calendars: 'success' }));
+            }
+          }).catch(() => {
+            // Calendar fetch may fail if no calendars connected - that's OK
+            if (isMounted) {
+              setLoadingState(prev => ({ ...prev, calendars: 'skipped' }));
+            }
+          }),
+
+          // Calendar events for current week
+          queryClient.prefetchQuery({
+            queryKey: queryKeys.calendar.events({ range: 'week' }),
+            queryFn: () => {
+              const now = new Date();
+              const startOfWeek = new Date(now);
+              startOfWeek.setDate(now.getDate() - now.getDay());
+              startOfWeek.setHours(0, 0, 0, 0);
+              const endOfWeek = new Date(startOfWeek);
+              endOfWeek.setDate(startOfWeek.getDate() + 6);
+              endOfWeek.setHours(23, 59, 59, 999);
+              return eventsApi.getEvents({
+                startDate: startOfWeek.toISOString(),
+                endDate: endOfWeek.toISOString(),
+              });
+            },
+            staleTime: 2 * 60 * 1000, // 2 minutes
+          }).then(() => {
+            if (isMounted) {
+              setLoadingState(prev => ({ ...prev, calendarEvents: 'success' }));
+            }
+          }).catch(() => {
+            // Events fetch may fail if no calendars - that's OK
+            if (isMounted) {
+              setLoadingState(prev => ({ ...prev, calendarEvents: 'skipped' }));
             }
           }),
         ]);

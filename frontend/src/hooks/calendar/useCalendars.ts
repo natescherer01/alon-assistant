@@ -1,5 +1,6 @@
-import { create } from 'zustand';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { calendarApi, type Calendar } from '../../api/calendar/calendar';
+import { queryKeys } from '../../lib/queryKeys';
 
 interface ValidationResult {
   valid: boolean;
@@ -8,169 +9,152 @@ interface ValidationResult {
   error?: string;
 }
 
-interface CalendarState {
-  calendars: Calendar[];
-  isLoading: boolean;
-  error: string | null;
+/**
+ * Hook for managing calendar connections
+ * Uses React Query for caching and persistence - data persists across page navigations
+ */
+export function useCalendars() {
+  const queryClient = useQueryClient();
 
-  // Actions
-  fetchCalendars: () => Promise<void>;
-  disconnectCalendar: (id: string) => Promise<void>;
-  syncCalendar: (id: string) => Promise<void>;
-  initiateOAuth: (provider: 'GOOGLE' | 'MICROSOFT') => Promise<void>;
-  validateIcsUrl: (url: string) => Promise<ValidationResult>;
-  connectIcsCalendar: (url: string, displayName?: string) => Promise<void>;
-  updateIcsCalendar: (connectionId: string, url?: string, displayName?: string) => Promise<void>;
-  clearError: () => void;
-  setLoading: (isLoading: boolean) => void;
-}
+  // Fetch calendars with React Query caching
+  const {
+    data: calendars = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.calendar.calendars(),
+    queryFn: () => calendarApi.getCalendars(),
+    staleTime: 5 * 60 * 1000, // 5 minutes - don't refetch if data is fresh
+    gcTime: 30 * 60 * 1000, // 30 minutes cache retention
+    retry: 1,
+  });
 
-export const useCalendars = create<CalendarState>((set, get) => ({
-  calendars: [],
-  isLoading: false,
-  error: null,
-
-  /**
-   * Fetch all calendars from the API
-   */
-  fetchCalendars: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const calendars = await calendarApi.getCalendars();
-      set({ calendars, isLoading: false });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to fetch calendars';
-      set({ error: errorMessage, isLoading: false });
-      throw error;
-    }
-  },
-
-  /**
-   * Disconnect a calendar
-   */
-  disconnectCalendar: async (id: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      await calendarApi.disconnectCalendar(id);
-      // Remove the calendar from the local state
-      const calendars = get().calendars.filter((cal) => cal.id !== id);
-      set({ calendars, isLoading: false });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to disconnect calendar';
-      set({ error: errorMessage, isLoading: false });
-      throw error;
-    }
-  },
-
-  /**
-   * Trigger a manual sync for a calendar
-   */
-  syncCalendar: async (id: string) => {
-    set({ error: null });
-    try {
-      await calendarApi.syncCalendar(id);
-      // Update the lastSyncedAt timestamp
-      const calendars = get().calendars.map((cal) =>
-        cal.id === id ? { ...cal, lastSyncedAt: new Date().toISOString() } : cal
+  // Disconnect calendar mutation
+  const disconnectMutation = useMutation({
+    mutationFn: (id: string) => calendarApi.disconnectCalendar(id),
+    onSuccess: (_, id) => {
+      // Optimistically update the cache
+      queryClient.setQueryData<Calendar[]>(
+        queryKeys.calendar.calendars(),
+        (old) => old?.filter((cal) => cal.id !== id) || []
       );
-      set({ calendars });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to sync calendar';
-      set({ error: errorMessage });
-      throw error;
-    }
-  },
+      // Invalidate calendar events since a calendar was removed
+      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.events() });
+    },
+  });
 
-  /**
-   * Initiate OAuth flow for a provider
-   */
-  initiateOAuth: async (provider: 'GOOGLE' | 'MICROSOFT') => {
-    set({ isLoading: true, error: null });
+  // Sync calendar mutation
+  const syncMutation = useMutation({
+    mutationFn: (id: string) => calendarApi.syncCalendar(id),
+    onSuccess: (_, id) => {
+      // Update lastSyncedAt in cache
+      queryClient.setQueryData<Calendar[]>(
+        queryKeys.calendar.calendars(),
+        (old) =>
+          old?.map((cal) =>
+            cal.id === id ? { ...cal, lastSyncedAt: new Date().toISOString() } : cal
+          ) || []
+      );
+      // Invalidate events to get fresh data
+      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.events() });
+    },
+  });
+
+  // Connect ICS calendar mutation
+  const connectIcsMutation = useMutation({
+    mutationFn: ({ url, displayName }: { url: string; displayName?: string }) =>
+      calendarApi.connectIcsCalendar(url, displayName),
+    onSuccess: (newCalendar) => {
+      // Add new calendar to cache
+      queryClient.setQueryData<Calendar[]>(
+        queryKeys.calendar.calendars(),
+        (old) => [...(old || []), newCalendar]
+      );
+      // Invalidate events to fetch from new calendar
+      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.events() });
+    },
+  });
+
+  // Update ICS calendar mutation
+  const updateIcsMutation = useMutation({
+    mutationFn: ({
+      connectionId,
+      url,
+      displayName,
+    }: {
+      connectionId: string;
+      url?: string;
+      displayName?: string;
+    }) => calendarApi.updateIcsCalendar(connectionId, url, displayName),
+    onSuccess: (updatedCalendar) => {
+      // Update calendar in cache
+      queryClient.setQueryData<Calendar[]>(
+        queryKeys.calendar.calendars(),
+        (old) =>
+          old?.map((cal) => (cal.id === updatedCalendar.id ? updatedCalendar : cal)) || []
+      );
+    },
+  });
+
+  // Initiate OAuth (redirects to provider)
+  const initiateOAuth = async (provider: 'GOOGLE' | 'MICROSOFT') => {
     try {
       const authUrl =
         provider === 'GOOGLE'
           ? await calendarApi.getGoogleAuthUrl()
           : await calendarApi.getMicrosoftAuthUrl();
 
-      // Redirect to OAuth URL
       window.location.href = authUrl;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : `Failed to initiate ${provider} OAuth`;
-      set({ error: errorMessage, isLoading: false });
-      throw error;
+    } catch (err) {
+      throw new Error(`Failed to initiate ${provider} OAuth`);
     }
-  },
+  };
 
-  /**
-   * Clear any error messages
-   */
-  clearError: () => {
-    set({ error: null });
-  },
-
-  /**
-   * Set loading state
-   */
-  setLoading: (isLoading: boolean) => {
-    set({ isLoading });
-  },
-
-  /**
-   * Validate an ICS calendar URL
-   */
-  validateIcsUrl: async (url: string) => {
+  // Validate ICS URL (doesn't need caching)
+  const validateIcsUrl = async (url: string): Promise<ValidationResult> => {
     try {
       const result = await calendarApi.validateIcsUrl(url);
       return result;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to validate ICS URL';
+    } catch (err) {
       return {
         valid: false,
-        error: errorMessage,
+        error: err instanceof Error ? err.message : 'Failed to validate ICS URL',
       };
     }
-  },
+  };
 
-  /**
-   * Connect an ICS calendar
-   */
-  connectIcsCalendar: async (url: string, displayName?: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const calendar = await calendarApi.connectIcsCalendar(url, displayName);
-      // Add the new calendar to the list
-      const calendars = [...get().calendars, calendar];
-      set({ calendars, isLoading: false });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to connect ICS calendar';
-      set({ error: errorMessage, isLoading: false });
-      throw error;
-    }
-  },
+  // Wrapper for fetchCalendars that returns a Promise<void> for backwards compatibility
+  const fetchCalendars = async (): Promise<void> => {
+    await refetch();
+  };
 
-  /**
-   * Update an ICS calendar connection
-   */
-  updateIcsCalendar: async (connectionId: string, url?: string, displayName?: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const updatedCalendar = await calendarApi.updateIcsCalendar(connectionId, url, displayName);
-      // Update the calendar in the list
-      const calendars = get().calendars.map((cal) =>
-        cal.id === connectionId ? updatedCalendar : cal
-      );
-      set({ calendars, isLoading: false });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to update ICS calendar';
-      set({ error: errorMessage, isLoading: false });
-      throw error;
-    }
-  },
-}));
+  return {
+    calendars,
+    isLoading,
+    error: error instanceof Error ? error.message : error ? String(error) : null,
+
+    // Actions
+    fetchCalendars,
+    disconnectCalendar: (id: string) => disconnectMutation.mutateAsync(id),
+    syncCalendar: (id: string) => syncMutation.mutateAsync(id),
+    initiateOAuth,
+    validateIcsUrl,
+    connectIcsCalendar: (url: string, displayName?: string) =>
+      connectIcsMutation.mutateAsync({ url, displayName }),
+    updateIcsCalendar: (connectionId: string, url?: string, displayName?: string) =>
+      updateIcsMutation.mutateAsync({ connectionId, url, displayName }),
+
+    // Loading states for mutations
+    isDisconnecting: disconnectMutation.isPending,
+    isSyncing: syncMutation.isPending,
+    isConnecting: connectIcsMutation.isPending,
+
+    // Clear error (for backwards compatibility - React Query handles this)
+    clearError: () => {},
+    setLoading: () => {},
+  };
+}
+
+// Default export for backwards compatibility
+export default useCalendars;

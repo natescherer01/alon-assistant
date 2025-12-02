@@ -49,6 +49,14 @@ export const queryKeys = {
     all: ['preferences'],
     get: () => [...queryKeys.preferences.all, 'current'],
   },
+
+  // Calendar
+  calendar: {
+    all: ['calendar'],
+    calendars: () => [...queryKeys.calendar.all, 'calendars'],
+    events: (params = {}) => [...queryKeys.calendar.all, 'events', params],
+    eventsForRange: (startDate, endDate) => [...queryKeys.calendar.all, 'events', { startDate, endDate }],
+  },
 };
 
 /**
