@@ -11,7 +11,7 @@ interface ConnectCalendarModalProps {
 
 /**
  * Modal for selecting which calendar provider to connect
- * Initiates OAuth flow when user selects a provider
+ * Styled to match Dashboard design system
  */
 export default function ConnectCalendarModal({
   isOpen,
@@ -21,6 +21,7 @@ export default function ConnectCalendarModal({
   const { error: showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showICSModal, setShowICSModal] = useState(false);
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Handle ESC key to close
@@ -64,9 +65,32 @@ export default function ConnectCalendarModal({
 
   if (!isOpen) return null;
 
+  const providerButtonStyle = (id: string) => ({
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '16px',
+    background: hoveredButton === id ? '#F0F7FF' : '#fff',
+    border: hoveredButton === id ? '2px solid #0066FF' : '2px solid #E5E7EB',
+    borderRadius: '12px',
+    cursor: isLoading ? 'not-allowed' : 'pointer',
+    transition: 'all 0.2s',
+    opacity: isLoading ? 0.5 : 1,
+  });
+
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 50,
+        padding: '16px',
+      }}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -74,62 +98,64 @@ export default function ConnectCalendarModal({
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+        style={{
+          background: '#fff',
+          borderRadius: '16px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          maxWidth: '440px',
+          width: '100%',
+          padding: '24px',
+        }}
         tabIndex={-1}
       >
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 id="modal-title" className="text-2xl font-semibold text-gray-900">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 id="modal-title" style={{ fontSize: '24px', fontWeight: '600', color: '#000', margin: 0 }}>
             Connect Calendar
           </h2>
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              padding: '8px',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              color: '#9CA3AF',
+              opacity: isLoading ? 0.5 : 1,
+              borderRadius: '8px',
+              transition: 'all 0.2s',
+            }}
             aria-label="Close"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg style={{ width: '24px', height: '24px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Description */}
-        <p className="text-gray-600 mb-6">
-          Choose a calendar provider to connect. You'll be redirected to authorize access to
-          your calendar.
+        <p style={{ color: '#666', fontSize: '14px', margin: '0 0 24px 0', lineHeight: '1.5' }}>
+          Choose a calendar provider to connect. You'll be redirected to authorize access to your calendar.
         </p>
 
         {/* Provider Options */}
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* Google Calendar */}
           <button
             onClick={() => handleConnectProvider('GOOGLE')}
             disabled={isLoading}
-            className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onMouseEnter={() => setHoveredButton('google')}
+            onMouseLeave={() => setHoveredButton(null)}
+            style={providerButtonStyle('google')}
           >
             <ProviderIcon provider="GOOGLE" size="lg" />
-            <div className="flex-1 text-left">
-              <h3 className="font-semibold text-gray-900">Google Calendar</h3>
-              <p className="text-sm text-gray-600">Connect your Google account</p>
+            <div style={{ flex: 1, textAlign: 'left' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: '0 0 4px 0' }}>Google Calendar</h3>
+              <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>Connect your Google account</p>
             </div>
-            <svg
-              className="w-5 h-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
+            <svg style={{ width: '20px', height: '20px', color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
 
@@ -137,25 +163,17 @@ export default function ConnectCalendarModal({
           <button
             onClick={() => handleConnectProvider('MICROSOFT')}
             disabled={isLoading}
-            className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onMouseEnter={() => setHoveredButton('microsoft')}
+            onMouseLeave={() => setHoveredButton(null)}
+            style={providerButtonStyle('microsoft')}
           >
             <ProviderIcon provider="MICROSOFT" size="lg" />
-            <div className="flex-1 text-left">
-              <h3 className="font-semibold text-gray-900">Microsoft Outlook</h3>
-              <p className="text-sm text-gray-600">Connect your Microsoft account</p>
+            <div style={{ flex: 1, textAlign: 'left' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: '0 0 4px 0' }}>Microsoft Outlook</h3>
+              <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>Connect your Microsoft account</p>
             </div>
-            <svg
-              className="w-5 h-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
+            <svg style={{ width: '20px', height: '20px', color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
 
@@ -163,71 +181,49 @@ export default function ConnectCalendarModal({
           <button
             onClick={() => setShowICSModal(true)}
             disabled={isLoading}
-            className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onMouseEnter={() => setHoveredButton('ics')}
+            onMouseLeave={() => setHoveredButton(null)}
+            style={providerButtonStyle('ics')}
           >
             <div
-              className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-lg"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '48px',
+                height: '48px',
+                background: '#F3F4F6',
+                borderRadius: '12px',
+              }}
               role="img"
               aria-label="ICS Subscription"
             >
-              <svg
-                className="w-7 h-7 text-gray-700"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
+              <svg style={{ width: '28px', height: '28px', color: '#374151' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <div className="flex-1 text-left">
-              <h3 className="font-semibold text-gray-900">ICS Subscription URL</h3>
-              <p className="text-sm text-gray-600">Subscribe to a read-only calendar feed</p>
+            <div style={{ flex: 1, textAlign: 'left' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: '0 0 4px 0' }}>ICS Subscription URL</h3>
+              <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>Subscribe to a read-only calendar feed</p>
             </div>
-            <svg
-              className="w-5 h-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
+            <svg style={{ width: '20px', height: '20px', color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="mt-6 flex items-center justify-center gap-2 text-gray-600">
-            <svg
-              className="animate-spin h-5 w-5"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <span>Redirecting to authorization...</span>
+          <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#666' }}>
+            <div style={{
+              width: '20px',
+              height: '20px',
+              border: '2px solid #E5E7EB',
+              borderTop: '2px solid #0066FF',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+            }} />
+            <span style={{ fontSize: '14px' }}>Redirecting to authorization...</span>
           </div>
         )}
       </div>
@@ -241,6 +237,14 @@ export default function ConnectCalendarModal({
           onClose();
         }}
       />
+
+      {/* Spin Animation */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
