@@ -1,60 +1,69 @@
-import { InputHTMLAttributes, forwardRef } from 'react';
+import { InputHTMLAttributes, forwardRef, useState } from 'react';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
-  icon?: React.ReactNode;
 }
 
 /**
- * Reusable input component with label, error states, and icons
- * @param label - Input label text
- * @param error - Error message to display
- * @param helperText - Helper text below input
- * @param icon - Optional icon element
+ * Reusable input component with Dashboard styling
  */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, icon, className = '', id, ...props }, ref) => {
+  ({ label, error, helperText, id, disabled, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
+    const [isFocused, setIsFocused] = useState(false);
 
-    const baseStyles = 'w-full px-4 py-2 border rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1';
-    const normalStyles = 'border-gray-300 focus:border-blue-500 focus:ring-blue-500';
-    const errorStyles = 'border-red-500 focus:border-red-500 focus:ring-red-500';
-    const iconStyles = icon ? 'pl-10' : '';
+    const inputStyle: React.CSSProperties = {
+      width: '100%',
+      padding: '12px 16px',
+      fontSize: '15px',
+      border: error
+        ? '1px solid #EF4444'
+        : isFocused
+          ? '1px solid #0066FF'
+          : '1px solid rgba(0, 0, 0, 0.1)',
+      borderRadius: '8px',
+      outline: 'none',
+      transition: 'border-color 0.2s, box-shadow 0.2s',
+      background: disabled ? '#F9FAFB' : '#fff',
+      cursor: disabled ? 'not-allowed' : 'text',
+      boxShadow: isFocused ? '0 0 0 3px rgba(0, 102, 255, 0.1)' : 'none',
+    };
 
     return (
-      <div className="w-full">
+      <div style={{ width: '100%' }}>
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 mb-1"
+            style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: '#000',
+              marginBottom: '8px',
+            }}
           >
             {label}
           </label>
         )}
 
-        <div className="relative">
-          {icon && (
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-              {icon}
-            </div>
-          )}
-
-          <input
-            ref={ref}
-            id={inputId}
-            className={`${baseStyles} ${error ? errorStyles : normalStyles} ${iconStyles} ${className}`}
-            aria-invalid={error ? 'true' : 'false'}
-            aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
-            {...props}
-          />
-        </div>
+        <input
+          ref={ref}
+          id={inputId}
+          disabled={disabled}
+          style={inputStyle}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
+          {...props}
+        />
 
         {error && (
           <p
             id={`${inputId}-error`}
-            className="mt-1 text-sm text-red-600"
+            style={{ marginTop: '4px', fontSize: '13px', color: '#EF4444' }}
             role="alert"
           >
             {error}
@@ -64,7 +73,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {helperText && !error && (
           <p
             id={`${inputId}-helper`}
-            className="mt-1 text-sm text-gray-500"
+            style={{ marginTop: '4px', fontSize: '13px', color: '#666' }}
           >
             {helperText}
           </p>

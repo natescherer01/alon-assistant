@@ -24,8 +24,7 @@ interface CreateEventModalProps {
 }
 
 /**
- * Comprehensive modal for creating calendar events
- * Supports recurring events, attendees, and reminders
+ * Modal for creating calendar events - Dashboard styling
  */
 export default function CreateEventModal({
   isOpen,
@@ -36,11 +35,9 @@ export default function CreateEventModal({
   const { createEvent, isLoading, error: apiError, clearError } = useCreateEvent();
   const { calendars, fetchCalendars } = useCalendars();
 
-  // Section expansion state
   const [showDetails, setShowDetails] = useState(false);
   const [showRecurrence, setShowRecurrence] = useState(false);
 
-  // Form state
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
     description: '',
@@ -60,14 +57,12 @@ export default function CreateEventModal({
   const [errors, setErrors] = useState<EventFormErrors>({});
   const [syncErrorId, setSyncErrorId] = useState<string | null>(null);
 
-  // Fetch calendars on mount
   useEffect(() => {
     if (isOpen) {
       fetchCalendars();
     }
   }, [isOpen, fetchCalendars]);
 
-  // Set default calendar when calendars load
   useEffect(() => {
     if (calendars.length > 0 && !formData.calendarConnectionId) {
       const primaryCalendar = calendars.find((cal) => cal.isPrimary) || calendars[0];
@@ -75,7 +70,6 @@ export default function CreateEventModal({
     }
   }, [calendars, formData.calendarConnectionId]);
 
-  // Handle ESC key to close
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen && !isLoading) {
@@ -131,21 +125,18 @@ export default function CreateEventModal({
 
   const handleInputChange = (field: keyof EventFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error for this field
     if (errors[field as keyof EventFormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   const handleAllDayToggle = () => {
-    const newIsAllDay = !formData.isAllDay;
-    setFormData((prev) => ({ ...prev, isAllDay: newIsAllDay }));
+    setFormData((prev) => ({ ...prev, isAllDay: !prev.isAllDay }));
   };
 
   const validateForm = (): boolean => {
     const newErrors: EventFormErrors = {};
 
-    // Required fields
     if (!formData.title.trim()) {
       newErrors.title = 'Title is required';
     } else if (formData.title.length > 500) {
@@ -168,7 +159,6 @@ export default function CreateEventModal({
       newErrors.endTime = 'End time is required';
     }
 
-    // Validate end is after start
     if (
       formData.startDate &&
       formData.endDate &&
@@ -185,12 +175,10 @@ export default function CreateEventModal({
       newErrors.calendarConnectionId = 'Please select a calendar';
     }
 
-    // Validate description length
     if (formData.description && formData.description.length > 2000) {
       newErrors.general = 'Description must be 2000 characters or less';
     }
 
-    // Validate location length
     if (formData.location && formData.location.length > 500) {
       newErrors.general = 'Location must be 500 characters or less';
     }
@@ -227,18 +215,15 @@ export default function CreateEventModal({
 
       const response = await createEvent(requestData);
 
-      // Track sync failures
       if (response.syncStatus === 'FAILED') {
         setSyncErrorId(response.id);
       } else {
-        // Success - close modal and notify parent
         handleClose();
         if (onSuccess) {
           onSuccess();
         }
       }
     } catch (err) {
-      // Error is handled by the hook
       console.error('Failed to create event:', err);
     }
   };
@@ -247,9 +232,42 @@ export default function CreateEventModal({
 
   const hasNoCalendars = calendars.length === 0;
 
+  const selectStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 16px',
+    fontSize: '15px',
+    border: '1px solid rgba(0, 0, 0, 0.1)',
+    borderRadius: '8px',
+    outline: 'none',
+    background: isLoading || hasNoCalendars ? '#F9FAFB' : '#fff',
+    cursor: isLoading || hasNoCalendars ? 'not-allowed' : 'pointer',
+  };
+
+  const sectionHeaderStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    background: 'transparent',
+    border: 'none',
+    padding: 0,
+    cursor: isLoading ? 'not-allowed' : 'pointer',
+    textAlign: 'left',
+  };
+
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 50,
+        padding: '16px',
+        overflowY: 'auto',
+      }}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -257,140 +275,169 @@ export default function CreateEventModal({
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-lg shadow-xl w-full max-w-2xl my-8"
+        style={{
+          background: '#fff',
+          borderRadius: '16px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          width: '100%',
+          maxWidth: '600px',
+          margin: '32px 0',
+        }}
         tabIndex={-1}
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h2 id="modal-title" className="text-2xl font-semibold text-gray-900">
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '24px',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+        }}>
+          <h2 id="modal-title" style={{ fontSize: '24px', fontWeight: '600', color: '#000', margin: 0 }}>
             Create Event
           </h2>
           <button
             onClick={handleClose}
             disabled={isLoading}
-            className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              padding: '8px',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              color: '#9CA3AF',
+              opacity: isLoading ? 0.5 : 1,
+              borderRadius: '8px',
+            }}
             aria-label="Close"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg style={{ width: '24px', height: '24px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[calc(100vh-300px)] overflow-y-auto">
-          {/* API Error Banner */}
+        <form onSubmit={handleSubmit} style={{ padding: '24px', maxHeight: 'calc(100vh - 300px)', overflowY: 'auto' }}>
+          {/* Error Banners */}
           {(apiError || errors.general) && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg" role="alert">
-              <p className="font-medium">Error</p>
-              <p className="text-sm">{apiError || errors.general}</p>
+            <div style={{
+              background: '#FEE2E2',
+              border: '1px solid #FCA5A5',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              marginBottom: '16px',
+            }}>
+              <p style={{ fontWeight: '500', color: '#991B1B', margin: 0 }}>Error</p>
+              <p style={{ fontSize: '14px', color: '#B91C1C', margin: '4px 0 0 0' }}>{apiError || errors.general}</p>
             </div>
           )}
 
-          {/* Sync Error Banner */}
           {syncErrorId && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg" role="alert">
-              <p className="font-medium">Event created but sync failed</p>
-              <p className="text-sm">The event was saved locally but could not be synced to your calendar provider.</p>
+            <div style={{
+              background: '#FFFBEB',
+              border: '1px solid #FDE68A',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              marginBottom: '16px',
+            }}>
+              <p style={{ fontWeight: '500', color: '#92400E', margin: 0 }}>Event created but sync failed</p>
+              <p style={{ fontSize: '14px', color: '#A16207', margin: '4px 0 0 0' }}>The event was saved locally but could not be synced.</p>
             </div>
           )}
 
-          {/* No Calendars Warning */}
           {hasNoCalendars && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg" role="alert">
-              <p className="font-medium">No calendars connected</p>
-              <p className="text-sm">Please connect a calendar before creating an event.</p>
+            <div style={{
+              background: '#FEE2E2',
+              border: '1px solid #FCA5A5',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              marginBottom: '16px',
+            }}>
+              <p style={{ fontWeight: '500', color: '#991B1B', margin: 0 }}>No calendars connected</p>
+              <p style={{ fontSize: '14px', color: '#B91C1C', margin: '4px 0 0 0' }}>Please connect a calendar before creating an event.</p>
             </div>
           )}
 
-          {/* Section 1: Basic Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+          {/* Basic Information */}
+          <div style={{ marginBottom: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: '0 0 16px 0' }}>Basic Information</h3>
 
-            {/* Title */}
-            <Input
-              label="Title"
-              type="text"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-              error={errors.title}
-              placeholder="Event title"
-              maxLength={500}
-              required
-              disabled={isLoading}
-            />
+            <div style={{ marginBottom: '16px' }}>
+              <Input
+                label="Title"
+                type="text"
+                value={formData.title}
+                onChange={(e) => handleInputChange('title', e.target.value)}
+                error={errors.title}
+                placeholder="Event title"
+                maxLength={500}
+                required
+                disabled={isLoading}
+              />
+            </div>
 
-            {/* Date and Time */}
-            <div className="space-y-3">
-              {/* All-day toggle */}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.isAllDay}
-                  onChange={handleAllDayToggle}
-                  disabled={isLoading}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-gray-700">All-day event</span>
-              </label>
+            {/* All-day toggle */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '16px' }}>
+              <input
+                type="checkbox"
+                checked={formData.isAllDay}
+                onChange={handleAllDayToggle}
+                disabled={isLoading}
+                style={{ width: '16px', height: '16px', accentColor: '#0066FF' }}
+              />
+              <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>All-day event</span>
+            </label>
 
-              {/* Start Date/Time */}
-              <div className="grid grid-cols-2 gap-3">
+            {/* Date/Time Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: formData.isAllDay ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+              <Input
+                label="Start Date"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => handleInputChange('startDate', e.target.value)}
+                error={errors.startDate}
+                required
+                disabled={isLoading}
+              />
+              {!formData.isAllDay && (
                 <Input
-                  label="Start Date"
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => handleInputChange('startDate', e.target.value)}
-                  error={errors.startDate}
+                  label="Start Time"
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => handleInputChange('startTime', e.target.value)}
+                  error={errors.startTime}
                   required
                   disabled={isLoading}
                 />
-                {!formData.isAllDay && (
-                  <Input
-                    label="Start Time"
-                    type="time"
-                    value={formData.startTime}
-                    onChange={(e) => handleInputChange('startTime', e.target.value)}
-                    error={errors.startTime}
-                    required
-                    disabled={isLoading}
-                  />
-                )}
-              </div>
+              )}
+            </div>
 
-              {/* End Date/Time */}
-              <div className="grid grid-cols-2 gap-3">
+            <div style={{ display: 'grid', gridTemplateColumns: formData.isAllDay ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+              <Input
+                label="End Date"
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => handleInputChange('endDate', e.target.value)}
+                error={errors.endDate}
+                required
+                disabled={isLoading}
+              />
+              {!formData.isAllDay && (
                 <Input
-                  label="End Date"
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => handleInputChange('endDate', e.target.value)}
-                  error={errors.endDate}
+                  label="End Time"
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => handleInputChange('endTime', e.target.value)}
+                  error={errors.endTime}
                   required
                   disabled={isLoading}
                 />
-                {!formData.isAllDay && (
-                  <Input
-                    label="End Time"
-                    type="time"
-                    value={formData.endTime}
-                    onChange={(e) => handleInputChange('endTime', e.target.value)}
-                    error={errors.endTime}
-                    required
-                    disabled={isLoading}
-                  />
-                )}
-              </div>
+              )}
             </div>
 
             {/* Timezone */}
             <div>
-              <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="timezone" style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#000', marginBottom: '8px' }}>
                 Timezone
               </label>
               <select
@@ -398,7 +445,7 @@ export default function CreateEventModal({
                 value={formData.timezone}
                 onChange={(e) => handleInputChange('timezone', e.target.value)}
                 disabled={isLoading}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                style={selectStyle}
               >
                 {getCommonTimezones().map((tz) => (
                   <option key={tz} value={tz}>
@@ -409,17 +456,12 @@ export default function CreateEventModal({
             </div>
           </div>
 
-          {/* Section 2: Additional Details (Collapsible) */}
-          <div className="border-t border-gray-200 pt-4">
-            <button
-              type="button"
-              onClick={() => setShowDetails(!showDetails)}
-              className="flex items-center justify-between w-full text-left"
-              disabled={isLoading}
-            >
-              <h3 className="text-lg font-semibold text-gray-900">Additional Details</h3>
+          {/* Additional Details Section */}
+          <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', paddingTop: '16px', marginBottom: '16px' }}>
+            <button type="button" onClick={() => setShowDetails(!showDetails)} disabled={isLoading} style={sectionHeaderStyle}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: 0 }}>Additional Details</h3>
               <svg
-                className={`w-5 h-5 text-gray-500 transition-transform ${showDetails ? 'rotate-180' : ''}`}
+                style={{ width: '20px', height: '20px', color: '#666', transition: 'transform 0.2s', transform: showDetails ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -429,10 +471,9 @@ export default function CreateEventModal({
             </button>
 
             {showDetails && (
-              <div className="mt-4 space-y-4">
-                {/* Description */}
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+              <div style={{ marginTop: '16px' }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <label htmlFor="description" style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#000', marginBottom: '8px' }}>
                     Description
                   </label>
                   <textarea
@@ -443,14 +484,17 @@ export default function CreateEventModal({
                     placeholder="Add a description..."
                     maxLength={2000}
                     rows={4}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    style={{
+                      ...selectStyle,
+                      resize: 'vertical',
+                      minHeight: '100px',
+                    }}
                   />
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p style={{ marginTop: '4px', fontSize: '12px', color: '#666' }}>
                     {formData.description.length}/2000 characters
                   </p>
                 </div>
 
-                {/* Location */}
                 <Input
                   label="Location"
                   type="text"
@@ -464,17 +508,12 @@ export default function CreateEventModal({
             )}
           </div>
 
-          {/* Section 3: Recurrence (Collapsible) */}
-          <div className="border-t border-gray-200 pt-4">
-            <button
-              type="button"
-              onClick={() => setShowRecurrence(!showRecurrence)}
-              className="flex items-center justify-between w-full text-left"
-              disabled={isLoading}
-            >
-              <h3 className="text-lg font-semibold text-gray-900">Recurrence</h3>
+          {/* Recurrence Section */}
+          <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', paddingTop: '16px', marginBottom: '16px' }}>
+            <button type="button" onClick={() => setShowRecurrence(!showRecurrence)} disabled={isLoading} style={sectionHeaderStyle}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: 0 }}>Recurrence</h3>
               <svg
-                className={`w-5 h-5 text-gray-500 transition-transform ${showRecurrence ? 'rotate-180' : ''}`}
+                style={{ width: '20px', height: '20px', color: '#666', transition: 'transform 0.2s', transform: showRecurrence ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -484,7 +523,7 @@ export default function CreateEventModal({
             </button>
 
             {showRecurrence && (
-              <div className="mt-4">
+              <div style={{ marginTop: '16px' }}>
                 <RecurrenceSelector
                   value={formData.recurrence}
                   onChange={(value) => handleInputChange('recurrence', value)}
@@ -494,8 +533,8 @@ export default function CreateEventModal({
             )}
           </div>
 
-          {/* Section 4: Attendees */}
-          <div className="border-t border-gray-200 pt-4">
+          {/* Attendees Section */}
+          <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', paddingTop: '16px', marginBottom: '16px' }}>
             <AttendeeInput
               attendees={formData.attendees}
               onChange={(attendees) => handleInputChange('attendees', attendees)}
@@ -503,9 +542,9 @@ export default function CreateEventModal({
             />
           </div>
 
-          {/* Section 5: Calendar Selection */}
-          <div className="border-t border-gray-200 pt-4">
-            <label htmlFor="calendar" className="block text-sm font-medium text-gray-700 mb-1">
+          {/* Calendar Selection */}
+          <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', paddingTop: '16px', marginBottom: '16px' }}>
+            <label htmlFor="calendar" style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#000', marginBottom: '8px' }}>
               Calendar
             </label>
             <select
@@ -513,7 +552,7 @@ export default function CreateEventModal({
               value={formData.calendarConnectionId}
               onChange={(e) => handleInputChange('calendarConnectionId', e.target.value)}
               disabled={isLoading || hasNoCalendars}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              style={selectStyle}
               required
             >
               <option value="">Select a calendar</option>
@@ -525,23 +564,27 @@ export default function CreateEventModal({
               ))}
             </select>
             {errors.calendarConnectionId && (
-              <p className="mt-1 text-sm text-red-600" role="alert">
-                {errors.calendarConnectionId}
-              </p>
+              <p style={{ marginTop: '4px', fontSize: '13px', color: '#EF4444' }}>{errors.calendarConnectionId}</p>
             )}
           </div>
 
-          {/* Section 6: Reminders Info */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Reminders</h3>
-            <p className="text-sm text-gray-600">
+          {/* Reminders Info */}
+          <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', paddingTop: '16px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: '0 0 8px 0' }}>Reminders</h3>
+            <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>
               A 30-minute reminder will be added automatically.
             </p>
           </div>
         </form>
 
         {/* Footer */}
-        <div className="flex gap-3 justify-end p-6 border-t border-gray-200">
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          justifyContent: 'flex-end',
+          padding: '24px',
+          borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+        }}>
           <Button variant="secondary" onClick={handleClose} disabled={isLoading}>
             Cancel
           </Button>
