@@ -79,45 +79,46 @@ export const calendarApi = {
    * Fetch all connected calendars for the authenticated user
    */
   getCalendars: async (): Promise<Calendar[]> => {
-    const response = await api.get<{ calendars: Calendar[] }>('/api/calendars');
-    return response.data.calendars;
+    const response = await api.get<{ calendars: Calendar[] } | Calendar[]>('/calendars');
+    // Handle both response formats
+    return Array.isArray(response.data) ? response.data : response.data.calendars;
   },
 
   /**
    * Disconnect a calendar by ID
    */
   disconnectCalendar: async (id: string): Promise<void> => {
-    await api.delete(`/api/calendars/${id}`);
+    await api.delete(`/calendars/${id}`);
   },
 
   /**
    * Trigger a manual sync for a calendar
    */
   syncCalendar: async (id: string): Promise<void> => {
-    await api.post(`/api/calendars/${id}/sync`);
+    await api.post(`/calendars/${id}/sync`);
   },
 
   /**
    * Sync all connected calendars
    */
   syncAllCalendars: async (): Promise<void> => {
-    await api.post('/api/calendars/sync-all');
+    await api.post('/calendars/sync-all');
   },
 
   /**
    * Get Google OAuth authorization URL
    */
   getGoogleAuthUrl: async (): Promise<string> => {
-    const response = await api.get<OAuthUrlResponse>('/api/oauth/google/login');
-    return response.data.authUrl;
+    const response = await api.get<{ auth_url?: string; authUrl?: string }>('/oauth/google/login');
+    return response.data.auth_url || response.data.authUrl || '';
   },
 
   /**
    * Get Microsoft OAuth authorization URL
    */
   getMicrosoftAuthUrl: async (): Promise<string> => {
-    const response = await api.get<OAuthUrlResponse>('/api/oauth/microsoft/login');
-    return response.data.authUrl;
+    const response = await api.get<{ auth_url?: string; authUrl?: string }>('/oauth/microsoft/login');
+    return response.data.auth_url || response.data.authUrl || '';
   },
 
   /**
@@ -126,7 +127,7 @@ export const calendarApi = {
    */
   getOAuthSession: async (sessionId: string): Promise<OAuthSessionResponse> => {
     const response = await api.get<OAuthSessionResponse>(
-      `/api/oauth/session/${sessionId}`
+      `/oauth/session/${sessionId}`
     );
     return response.data;
   },
@@ -139,10 +140,10 @@ export const calendarApi = {
     selectedCalendarIds: string[]
   ): Promise<{ success: boolean }> => {
     const response = await api.post<{ success: boolean }>(
-      '/api/oauth/google/select',
+      '/oauth/google/select',
       {
-        sessionId,
-        selectedCalendarIds,
+        session_id: sessionId,
+        selected_calendar_ids: selectedCalendarIds,
       }
     );
     return response.data;
@@ -156,10 +157,10 @@ export const calendarApi = {
     selectedCalendarIds: string[]
   ): Promise<{ success: boolean }> => {
     const response = await api.post<{ success: boolean }>(
-      '/api/oauth/microsoft/select',
+      '/oauth/microsoft/select',
       {
-        sessionId,
-        selectedCalendarIds,
+        session_id: sessionId,
+        selected_calendar_ids: selectedCalendarIds,
       }
     );
     return response.data;
@@ -169,7 +170,7 @@ export const calendarApi = {
    * Get events from all connected calendars within a date range
    */
   getEvents: async (start: Date, end: Date): Promise<CalendarEvent[]> => {
-    const response = await api.get<CalendarEvent[]>('/api/events', {
+    const response = await api.get<CalendarEvent[]>('/events', {
       params: {
         start: start.toISOString(),
         end: end.toISOString(),
@@ -192,7 +193,7 @@ export const calendarApi = {
       calendarName?: string;
       eventCount?: number;
       error?: string;
-    }>('/api/calendars/ics/validate', { url });
+    }>('/ics/validate', { url });
     return response.data;
   },
 
@@ -201,8 +202,8 @@ export const calendarApi = {
    */
   connectIcsCalendar: async (url: string, displayName?: string): Promise<Calendar> => {
     const response = await api.post<{ connection: Calendar }>(
-      '/api/calendars/ics/connect',
-      { url, displayName }
+      '/ics/connect',
+      { url, display_name: displayName }
     );
     return response.data.connection;
   },
@@ -216,8 +217,8 @@ export const calendarApi = {
     displayName?: string
   ): Promise<Calendar> => {
     const response = await api.put<{ connection: Calendar }>(
-      `/api/calendars/ics/${connectionId}`,
-      { url, displayName }
+      `/ics/${connectionId}`,
+      { url, display_name: displayName }
     );
     return response.data.connection;
   },

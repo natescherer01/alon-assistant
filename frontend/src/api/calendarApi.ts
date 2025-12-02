@@ -1,14 +1,14 @@
 import axios from 'axios';
 
-// Calendar API URL - points to the alon-cal backend
-const API_URL = import.meta.env.VITE_CALENDAR_API_URL || 'http://localhost:3001';
+// Calendar API URL - points to the FastAPI backend
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const CALENDAR_BASE = `${API_URL}/api/v1/calendar`;
 
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: CALENDAR_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
 });
 
 // Request interceptor for adding auth token

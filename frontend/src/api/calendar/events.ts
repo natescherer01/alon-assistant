@@ -9,7 +9,7 @@ export const eventsApi = {
    * Create a new calendar event
    */
   createEvent: async (data: CreateEventRequest): Promise<CreateEventResponse> => {
-    const response = await api.post<CreateEventResponse>('/api/events', data);
+    const response = await api.post<CreateEventResponse>('/events', data);
     return response.data;
   },
 
@@ -17,7 +17,7 @@ export const eventsApi = {
    * Update an existing event
    */
   updateEvent: async (id: string, data: Partial<CreateEventRequest>): Promise<CreateEventResponse> => {
-    const response = await api.put<CreateEventResponse>(`/api/events/${id}`, data);
+    const response = await api.put<CreateEventResponse>(`/events/${id}`, data);
     return response.data;
   },
 
@@ -25,14 +25,14 @@ export const eventsApi = {
    * Delete an event
    */
   deleteEvent: async (id: string): Promise<void> => {
-    await api.delete(`/api/events/${id}`);
+    await api.delete(`/events/${id}`);
   },
 
   /**
    * Get event by ID
    */
   getEventById: async (id: string): Promise<any> => {
-    const response = await api.get<{ event: any }>(`/api/events/${id}`);
+    const response = await api.get<{ event: any }>(`/events/${id}`);
     return response.data.event;
   },
 
@@ -40,7 +40,7 @@ export const eventsApi = {
    * Retry syncing a failed event
    */
   retrySync: async (id: string): Promise<CreateEventResponse> => {
-    const response = await api.post<CreateEventResponse>(`/api/events/${id}/retry-sync`);
+    const response = await api.post<CreateEventResponse>(`/events/${id}/retry-sync`);
     return response.data;
   },
 };
