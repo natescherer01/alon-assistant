@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import type { CalendarEvent } from '../../api/calendar/calendar';
 import calendarApi from '../../api/calendar/calendar';
 import { useToast } from '../../hooks/calendar/useToast';
@@ -36,6 +36,10 @@ export default function UnifiedCalendarView({
   const [currentTime, setCurrentTime] = useState(new Date());
   const { error: showError } = useToast();
   const { user } = useAuth();
+
+  // Cache for previously fetched date ranges
+  const eventsCache = useRef<Map<string, CalendarEvent[]>>(new Map());
+  const lastFetchedRange = useRef<string | null>(null);
 
   // Use controlled mode if provided, otherwise use internal state
   const viewMode = controlledViewMode ?? internalViewMode;
@@ -80,14 +84,38 @@ export default function UnifiedCalendarView({
     }
   };
 
-  // Fetch events for current date range
-  const fetchEvents = async () => {
+  // Create a cache key from date range
+  const getDateRangeKey = useCallback((start: Date, end: Date) => {
+    return `${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}`;
+  }, []);
+
+  // Fetch events for current date range (with caching)
+  const fetchEvents = useCallback(async (forceRefresh = false) => {
+    const { start, end } = getDateRange(currentDate, viewMode);
+    const rangeKey = getDateRangeKey(start, end);
+
+    // Check if we already have cached data for this range (and not forcing refresh)
+    if (!forceRefresh && eventsCache.current.has(rangeKey)) {
+      const cachedEvents = eventsCache.current.get(rangeKey)!;
+      setEvents(cachedEvents);
+      onEventsLoaded?.(cachedEvents);
+      setIsLoading(false);
+      return;
+    }
+
+    // Skip if we're already fetching this exact range
+    if (lastFetchedRange.current === rangeKey && !forceRefresh) {
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
+    lastFetchedRange.current = rangeKey;
 
     try {
-      const { start, end } = getDateRange(currentDate, viewMode);
       const fetchedEvents = await calendarApi.getEvents(start, end);
+      // Cache the results
+      eventsCache.current.set(rangeKey, fetchedEvents);
       setEvents(fetchedEvents);
       onEventsLoaded?.(fetchedEvents);
     } catch (err) {
@@ -97,13 +125,12 @@ export default function UnifiedCalendarView({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentDate, viewMode, getDateRangeKey, onEventsLoaded, showError]);
 
   // Fetch events when date or view mode changes
   useEffect(() => {
     fetchEvents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDate, viewMode]);
+  }, [fetchEvents]);
 
   // Update clock every second
   useEffect(() => {
@@ -349,7 +376,7 @@ export default function UnifiedCalendarView({
             </button>
 
             <button
-              onClick={fetchEvents}
+              onClick={() => fetchEvents(true)}
               disabled={isLoading}
               style={navButtonStyle}
               aria-label="Refresh"
@@ -419,7 +446,7 @@ export default function UnifiedCalendarView({
               </h4>
               <p style={{ color: '#B91C1C', fontSize: '14px', margin: '0 0 16px 0' }}>{error}</p>
               <button
-                onClick={fetchEvents}
+                onClick={() => fetchEvents(true)}
                 style={{
                   background: '#DC2626',
                   color: '#fff',

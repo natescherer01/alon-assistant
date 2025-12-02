@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { CalendarEvent } from '../../api/calendar/calendar';
 import {
   getMonthGrid,
@@ -43,6 +43,18 @@ export default function MonthCalendarGrid({
   onCellClick,
   timezone,
 }: MonthCalendarGridProps) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Handle window resize for responsive mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Generate month grid (6-7 weeks × 7 days)
   const monthGrid = useMemo(() => getMonthGrid(month, year), [month, year]);
 
@@ -88,23 +100,45 @@ export default function MonthCalendarGrid({
   }, [monthGrid]);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div style={{
+      background: '#fff',
+      borderRadius: '16px',
+      overflow: 'hidden',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+    }}>
       {/* Weekday Header */}
-      <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
-        {weekdayNames.map((name, index) => (
-          <div
-            key={index}
-            className={`p-2 text-center text-sm font-semibold text-gray-700 border-r border-gray-200 ${
-              index === 0 || index === 6 ? 'bg-gray-100' : ''
-            }`}
-          >
-            {name}
-          </div>
-        ))}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(7, 1fr)',
+        borderBottom: '1px solid #E5E7EB',
+        background: '#F9FAFB',
+      }}>
+        {weekdayNames.map((name, index) => {
+          const isWeekend = index === 0 || index === 6;
+          return (
+            <div
+              key={index}
+              style={{
+                padding: isMobile ? '8px 4px' : '12px 8px',
+                textAlign: 'center',
+                fontSize: isMobile ? '12px' : '14px',
+                fontWeight: '600',
+                color: isWeekend ? '#9CA3AF' : '#374151',
+                borderRight: index < 6 ? '1px solid #E5E7EB' : 'none',
+                background: isWeekend ? '#F3F4F6' : 'transparent',
+              }}
+            >
+              {name}
+            </div>
+          );
+        })}
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(7, 1fr)',
+      }}>
         {monthGrid.flat().map((date, index) => {
           const dateKey = date.toDateString();
           const dayEvents = eventsByDate.get(dateKey) || [];
@@ -123,6 +157,8 @@ export default function MonthCalendarGrid({
               onEventClick={onEventClick}
               onCellClick={onCellClick}
               timezone={timezone}
+              isMobile={isMobile}
+              isLastInRow={(index + 1) % 7 === 0}
             />
           );
         })}
@@ -144,6 +180,8 @@ interface MonthDayCellProps {
   onCellClick?: (date: Date) => void;
   /** User's timezone for displaying events */
   timezone?: string;
+  isMobile: boolean;
+  isLastInRow: boolean;
 }
 
 const MAX_VISIBLE_EVENTS = 2;
@@ -157,8 +195,11 @@ function MonthDayCell({
   onEventClick,
   onCellClick,
   timezone,
+  isMobile,
+  isLastInRow,
 }: MonthDayCellProps) {
   const [showAll, setShowAll] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const visibleEvents = showAll ? events : events.slice(0, MAX_VISIBLE_EVENTS);
   const hiddenCount = events.length - MAX_VISIBLE_EVENTS;
@@ -174,57 +215,111 @@ function MonthDayCell({
     setShowAll(!showAll);
   };
 
+  // Determine background color
+  const getBackgroundColor = () => {
+    if (isToday) return 'rgba(0, 102, 255, 0.05)';
+    if (isHovered && onCellClick) return '#F9FAFB';
+    if (isWeekend) return '#FAFAFA';
+    return '#fff';
+  };
+
   return (
     <div
-      className={`min-h-[100px] md:min-h-[120px] border-r border-b border-gray-200 p-1 md:p-2 transition-colors relative ${
-        isWeekend ? 'bg-gray-50' : 'bg-white'
-      } ${
-        isToday ? 'bg-blue-50 ring-2 ring-inset ring-blue-500' : ''
-      } ${
-        !isCurrentMonth ? 'opacity-40' : ''
-      } ${
-        onCellClick ? 'cursor-pointer hover:bg-gray-50' : ''
-      }`}
+      style={{
+        minHeight: isMobile ? '80px' : '120px',
+        borderRight: isLastInRow ? 'none' : '1px solid #E5E7EB',
+        borderBottom: '1px solid #E5E7EB',
+        padding: isMobile ? '4px' : '8px',
+        transition: 'background 0.15s ease',
+        position: 'relative',
+        background: getBackgroundColor(),
+        opacity: isCurrentMonth ? 1 : 0.4,
+        cursor: onCellClick ? 'pointer' : 'default',
+        boxShadow: isToday ? 'inset 0 0 0 2px #0066FF' : 'none',
+      }}
       onClick={handleCellClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Date Number */}
-      <div className="flex items-center justify-between mb-1">
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '4px',
+      }}>
         <div
-          className={`text-sm md:text-base font-semibold ${
-            isToday
-              ? 'bg-blue-600 text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center'
-              : isCurrentMonth
-              ? 'text-gray-900'
-              : 'text-gray-400'
-          }`}
+          style={{
+            fontSize: isMobile ? '13px' : '14px',
+            fontWeight: '600',
+            ...(isToday ? {
+              background: '#0066FF',
+              color: '#fff',
+              borderRadius: '50%',
+              width: isMobile ? '24px' : '28px',
+              height: isMobile ? '24px' : '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            } : {
+              color: isCurrentMonth ? '#111827' : '#9CA3AF',
+            }),
+          }}
         >
           {date.getDate()}
         </div>
 
         {/* Event count badge for mobile */}
-        {events.length > 0 && (
-          <div className="text-xs text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded-full md:hidden">
+        {isMobile && events.length > 0 && (
+          <div style={{
+            fontSize: '11px',
+            color: '#6B7280',
+            background: '#E5E7EB',
+            padding: '2px 6px',
+            borderRadius: '9999px',
+            fontWeight: '500',
+          }}>
             {events.length}
           </div>
         )}
       </div>
 
       {/* Events */}
-      <div className="space-y-1 overflow-hidden">
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2px',
+        overflow: 'hidden',
+      }}>
         {visibleEvents.map(event => (
           <MonthEventBar
             key={event.id}
             event={event}
             onClick={onEventClick}
             timezone={timezone}
+            isMobile={isMobile}
           />
         ))}
 
         {/* "+X more" indicator */}
         {!showAll && hiddenCount > 0 && (
           <button
-            className="text-xs text-blue-600 hover:text-blue-800 font-medium w-full text-left px-1 py-0.5 hover:bg-blue-50 rounded"
+            style={{
+              fontSize: '12px',
+              color: '#0066FF',
+              fontWeight: '500',
+              width: '100%',
+              textAlign: 'left',
+              padding: '2px 4px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              transition: 'background 0.15s ease',
+            }}
             onClick={handleMoreClick}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 102, 255, 0.08)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
             +{hiddenCount} more
           </button>
@@ -233,8 +328,22 @@ function MonthDayCell({
         {/* "Show less" button */}
         {showAll && events.length > MAX_VISIBLE_EVENTS && (
           <button
-            className="text-xs text-gray-600 hover:text-gray-800 font-medium w-full text-left px-1 py-0.5 hover:bg-gray-100 rounded"
+            style={{
+              fontSize: '12px',
+              color: '#6B7280',
+              fontWeight: '500',
+              width: '100%',
+              textAlign: 'left',
+              padding: '2px 4px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              transition: 'background 0.15s ease',
+            }}
             onClick={handleMoreClick}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#F3F4F6'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
             Show less
           </button>
@@ -252,10 +361,12 @@ interface MonthEventBarProps {
   onClick?: (event: CalendarEvent) => void;
   /** User's timezone for displaying events */
   timezone?: string;
+  isMobile: boolean;
 }
 
-function MonthEventBar({ event, onClick, timezone }: MonthEventBarProps) {
+function MonthEventBar({ event, onClick, timezone, isMobile }: MonthEventBarProps) {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -269,50 +380,79 @@ function MonthEventBar({ event, onClick, timezone }: MonthEventBarProps) {
     }
   };
 
-  const getBorderStyle = () => {
-    if (event.status === 'tentative') return 'border-l-2 border-dashed';
-    if (event.status === 'cancelled') return 'border-l-2';
-    return 'border-l-2';
-  };
-
   const safeColor = getCalendarColor(event.calendarColor, event.provider as Provider);
+  const isCancelled = event.status === 'cancelled';
+  const isTentative = event.status === 'tentative';
 
   return (
-    <div className="relative">
+    <div style={{ position: 'relative' }}>
       <div
-        className={`text-xs px-1 py-0.5 rounded cursor-pointer hover:shadow-md transition-all truncate ${getBorderStyle()} ${
-          event.status === 'cancelled' ? 'opacity-60 line-through' : ''
-        }`}
         style={{
+          fontSize: isMobile ? '11px' : '12px',
+          padding: isMobile ? '2px 4px' : '3px 6px',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
           backgroundColor: safeColor,
-          borderColor: adjustColorBrightness(safeColor, -20),
+          borderLeft: `3px solid ${adjustColorBrightness(safeColor, -20)}`,
+          borderTop: isTentative ? '1px dashed rgba(0,0,0,0.3)' : 'none',
+          borderBottom: isTentative ? '1px dashed rgba(0,0,0,0.3)' : 'none',
+          borderRight: isTentative ? '1px dashed rgba(0,0,0,0.3)' : 'none',
           color: getContrastColor(safeColor),
+          opacity: isCancelled ? 0.6 : 1,
+          textDecoration: isCancelled ? 'line-through' : 'none',
+          boxShadow: isHovered ? '0 2px 8px rgba(0, 0, 0, 0.15)' : 'none',
+          transform: isHovered ? 'translateY(-1px)' : 'none',
         }}
         onClick={handleClick}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
+        onMouseEnter={() => {
+          setShowTooltip(true);
+          setIsHovered(true);
+        }}
+        onMouseLeave={() => {
+          setShowTooltip(false);
+          setIsHovered(false);
+        }}
         role="button"
         tabIndex={0}
         title={sanitizeEventText(event.title, 100)}
       >
-        <div className="flex items-center gap-1">
-          <span className="flex-1 font-medium truncate">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+        }}>
+          <span style={{
+            flex: 1,
+            fontWeight: '500',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
             {event.isAllDay ? '' : `${formatTime(new Date(event.startTime), timezone)} `}
             {sanitizeEventText(event.title, 100) || '(No title)'}
           </span>
           {event.teamsEnabled && (
-            <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Teams meeting">
+            <svg style={{ width: '12px', height: '12px', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor" aria-label="Teams meeting">
               <path d="M19.75 10.5h-2.5V8c0-1.1-.9-2-2-2h-9c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h2v2.5c0 .42.34.75.75.75h10.75c.42 0 .75-.34.75-.75v-10c0-.42-.34-.75-.75-.75zM15.25 20v-8.5h4v8.5h-4zm-1.5-9.5V8h-8v8.5h6.5v-4.5c0-.83.67-1.5 1.5-1.5h0z"/>
             </svg>
           )}
           {event.importance === 'high' && (
-            <span className="text-red-500 font-bold flex-shrink-0" aria-label="High importance">!</span>
+            <span style={{
+              color: '#EF4444',
+              fontWeight: 'bold',
+              flexShrink: 0,
+              textShadow: '0 0 2px rgba(255,255,255,0.8)',
+            }} aria-label="High importance">!</span>
           )}
         </div>
       </div>
 
       {/* Tooltip */}
-      {showTooltip && (
+      {showTooltip && !isMobile && (
         <MonthEventTooltip event={event} timezone={timezone} />
       )}
     </div>
@@ -333,63 +473,125 @@ function MonthEventTooltip({ event, timezone }: MonthEventTooltipProps) {
   const endTime = new Date(event.endTime);
 
   return (
-    <div className="absolute z-50 bg-white border-2 border-gray-300 rounded-lg shadow-xl p-3 min-w-[250px] max-w-[350px] pointer-events-none left-0 top-full mt-1">
-      <div className="space-y-2">
-        <div className="flex items-start gap-2">
-          <div className="flex-1 font-semibold text-gray-900">{event.title || '(No title)'}</div>
+    <div style={{
+      position: 'absolute',
+      zIndex: 50,
+      background: '#fff',
+      border: '1px solid #E5E7EB',
+      borderRadius: '12px',
+      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+      padding: '12px',
+      minWidth: '260px',
+      maxWidth: '350px',
+      pointerEvents: 'none',
+      left: 0,
+      top: '100%',
+      marginTop: '4px',
+    }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* Title and importance */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+          <div style={{ flex: 1, fontWeight: '600', color: '#111827', fontSize: '14px' }}>
+            {event.title || '(No title)'}
+          </div>
           {event.importance === 'high' && (
-            <span className="text-red-500 text-xs font-bold px-1.5 py-0.5 bg-red-50 rounded">High</span>
+            <span style={{
+              color: '#EF4444',
+              fontSize: '11px',
+              fontWeight: '600',
+              padding: '2px 8px',
+              background: '#FEE2E2',
+              borderRadius: '9999px',
+            }}>High</span>
           )}
         </div>
 
+        {/* Time */}
         {event.isAllDay ? (
-          <div className="text-sm text-gray-600">All day</div>
+          <div style={{ fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>All day</div>
         ) : (
-          <div className="text-sm text-gray-600">
+          <div style={{ fontSize: '13px', color: '#6B7280' }}>
             {formatTime(startTime, timezone)} - {formatTime(endTime, timezone)}
           </div>
         )}
 
+        {/* Teams meeting button */}
         {event.teamsEnabled && event.teamsMeetingUrl && (
           <a
             href={event.teamsMeetingUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium pointer-events-auto"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              background: '#0066FF',
+              color: '#fff',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: '500',
+              textDecoration: 'none',
+              pointerEvents: 'auto',
+              transition: 'background 0.15s ease',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="currentColor">
               <path d="M19.75 10.5h-2.5V8c0-1.1-.9-2-2-2h-9c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h2v2.5c0 .42.34.75.75.75h10.75c.42 0 .75-.34.75-.75v-10c0-.42-.34-.75-.75-.75zM15.25 20v-8.5h4v8.5h-4zm-1.5-9.5V8h-8v8.5h6.5v-4.5c0-.83.67-1.5 1.5-1.5h0z"/>
             </svg>
             Join Teams Meeting
           </a>
         )}
 
+        {/* Location */}
         {event.location && (
-          <div className="text-sm text-gray-600 flex items-start gap-1">
-            <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div style={{ fontSize: '13px', color: '#6B7280', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+            <svg style={{ width: '14px', height: '14px', flexShrink: 0, marginTop: '1px', color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             </svg>
-            <span className="break-words">{event.location}</span>
+            <span style={{ wordBreak: 'break-word' }}>{event.location}</span>
           </div>
         )}
 
+        {/* Description */}
         {event.description && (
-          <div className="text-sm text-gray-600 line-clamp-3">{event.description}</div>
+          <div style={{
+            fontSize: '13px',
+            color: '#6B7280',
+            overflow: 'hidden',
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+          }}>{event.description}</div>
         )}
 
+        {/* Attendees */}
         {event.attendees && event.attendees.length > 0 && (
-          <div className="text-sm text-gray-600">
+          <div style={{ fontSize: '13px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <svg style={{ width: '14px', height: '14px', color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
             {event.attendees.length} {event.attendees.length === 1 ? 'attendee' : 'attendees'}
           </div>
         )}
 
+        {/* Outlook categories */}
         {event.outlookCategories && event.outlookCategories.length > 0 && (
-          <div className="flex flex-wrap gap-1">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
             {event.outlookCategories.map((category, index) => (
               <span
                 key={index}
-                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '2px 8px',
+                  borderRadius: '9999px',
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  background: '#F3E8FF',
+                  color: '#7C3AED',
+                }}
               >
                 {category}
               </span>
@@ -397,28 +599,48 @@ function MonthEventTooltip({ event, timezone }: MonthEventTooltipProps) {
           </div>
         )}
 
-        <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+        {/* Calendar info */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          paddingTop: '8px',
+          borderTop: '1px solid #E5E7EB',
+        }}>
           {event.calendarColor && (
             <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: event.calendarColor }}
+              style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: event.calendarColor,
+              }}
             />
           )}
-          <span className="text-xs text-gray-600">{event.calendarName}</span>
+          <span style={{ fontSize: '12px', color: '#6B7280' }}>{event.calendarName}</span>
           {event.provider === 'MICROSOFT' && (
-            <span className="text-xs text-orange-600 font-medium">Outlook</span>
+            <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: '500' }}>Outlook</span>
+          )}
+          {event.provider === 'GOOGLE' && (
+            <span style={{ fontSize: '11px', color: '#4285F4', fontWeight: '500' }}>Google</span>
+          )}
+          {event.provider === 'ICS' && (
+            <span style={{ fontSize: '11px', color: '#9333EA', fontWeight: '500' }}>ICS</span>
           )}
         </div>
 
+        {/* Delegate email */}
         {event.delegateEmail && (
-          <div className="text-xs text-gray-500">From: {event.delegateEmail}</div>
+          <div style={{ fontSize: '11px', color: '#9CA3AF' }}>From: {event.delegateEmail}</div>
         )}
 
+        {/* Status */}
         {event.status && event.status !== 'confirmed' && (
-          <div className="text-xs text-gray-500 capitalize">Status: {event.status}</div>
+          <div style={{ fontSize: '11px', color: '#9CA3AF', textTransform: 'capitalize' }}>
+            Status: {event.status}
+          </div>
         )}
       </div>
     </div>
   );
 }
-
