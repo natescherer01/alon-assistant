@@ -1,0 +1,20 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test Calendar//EN
+CALSCALE:GREGORIAN
+X-WR-CALNAME:Events with Attendees
+BEGIN:VEVENT
+UID:attendees-event-001@example.com
+DTSTART:20250120T140000Z
+DTEND:20250120T150000Z
+SUMMARY:Project Planning Meeting
+DESCRIPTION:Q1 project planning session
+LOCATION:Board Room
+ORGANIZER;CN=John Smith:mailto:john.smith@example.com
+ATTENDEE;CN=Alice Johnson;RSVP=TRUE;ROLE=REQ-PARTICIPANT:mailto:alice@example.com
+ATTENDEE;CN=Bob Williams;RSVP=TRUE;ROLE=REQ-PARTICIPANT:mailto:bob@example.com
+ATTENDEE;CN=Carol Davis;RSVP=FALSE;ROLE=OPT-PARTICIPANT:mailto:carol@example.com
+STATUS:CONFIRMED
+SEQUENCE:0
+END:VEVENT
+END:VCALENDAR

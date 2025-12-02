@@ -1,27 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useCalendars } from '../hooks/calendar/useCalendars';
-import useAuthStore from '../utils/authStore';
-import CalendarSidebar from '../components/calendar/CalendarSidebar';
-import UnifiedCalendarView from '../components/calendar/UnifiedCalendarView';
-import EmptyState from '../components/calendar/EmptyState';
-import ConnectCalendarModal from '../components/calendar/ConnectCalendarModal';
-import CreateEventButton from '../components/calendar/CreateEventButton';
-import CreateEventModal from '../components/calendar/CreateEventModal';
-import EventDetailsModal from '../components/calendar/EventDetailsModal';
-import TodaysPlanPanel from '../components/calendar/TodaysPlanPanel';
-import type { CalendarEvent } from '../api/calendar/calendar';
-import { CalendarSkeletonGrid } from '../components/calendar/CalendarSkeleton';
-import LiveClock from '../components/calendar/LiveClock';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { useCalendars } from '../hooks/useCalendars';
+import UserMenu from '../components/UserMenu';
+import CalendarSidebar from '../components/CalendarSidebar';
+import UnifiedCalendarView from '../components/UnifiedCalendarView';
+import EmptyState from '../components/EmptyState';
+import ConnectCalendarModal from '../components/ConnectCalendarModal';
+import CreateEventButton from '../components/CreateEventButton';
+import CreateEventModal from '../components/CreateEventModal';
+import EventDetailsModal from '../components/EventDetailsModal';
+import TodaysPlanPanel from '../components/TodaysPlanPanel';
+import type { CalendarEvent } from '../api/calendar';
+import { CalendarSkeletonGrid } from '../components/CalendarSkeleton';
+import LiveClock from '../components/LiveClock';
 
 /**
  * Main dashboard page with calendar view and collapsible sidebar
  * Primary focus: UnifiedCalendarView for viewing/managing events
  * Secondary: Collapsible sidebar for calendar connections management
  */
-export default function CalendarPage() {
-  const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+export default function DashboardPage() {
+  const { user } = useAuth();
   const { calendars, isLoading, error, fetchCalendars } = useCalendars();
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
@@ -66,108 +66,30 @@ export default function CalendarPage() {
     setCalendarEvents(events);
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" style={{ background: '#F5F5F7' }}>
-      {/* Header - Matching main app style */}
-      <nav style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        background: 'rgba(255, 255, 255, 0.8)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-      }}>
-        <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          padding: '16px 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <img
-              src="/alon-logo.png"
-              alt="Alon"
-              style={{ height: '36px', cursor: 'pointer' }}
-              onClick={() => navigate('/dashboard')}
-            />
-          </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo and Navigation */}
+            <div className="flex items-center gap-8">
+              <h1 className="text-2xl font-bold text-blue-600">Alon-Cal</h1>
+              <nav className="hidden md:flex gap-6">
+                <Link
+                  to="/dashboard"
+                  className="text-blue-600 font-medium border-b-2 border-blue-600"
+                >
+                  Dashboard
+                </Link>
+              </nav>
+            </div>
 
-          {/* User Section */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Tasks Button */}
-            <button
-              onClick={() => navigate('/dashboard')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-              }}
-            >
-              Tasks
-            </button>
-            {/* Calendar Button (active) */}
-            <button
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#fff',
-                background: '#0066FF',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-              }}
-            >
-              Calendar
-            </button>
-            <button
-              onClick={() => navigate('/profile')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-              }}
-            >
-              Profile
-            </button>
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-              }}
-            >
-              Logout
-            </button>
+            {/* User Menu */}
+            <UserMenu />
           </div>
         </div>
-      </nav>
+      </header>
 
       {/* Main Layout */}
       <div className="flex flex-1 overflow-hidden">
@@ -238,10 +160,10 @@ export default function CalendarPage() {
               <div>
                 <div className="mb-8">
                   <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                    Calendar
+                    Welcome to Alon-Cal, {user?.name || user?.email?.split('@')[0] || 'there'}!
                   </h2>
                   <p className="text-gray-600">
-                    Connect your calendars to see all your events in one place.
+                    Get started by connecting your first calendar.
                   </p>
                 </div>
                 <EmptyState onConnect={handleOpenConnectModal} />
