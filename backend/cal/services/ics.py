@@ -194,12 +194,20 @@ async def sync_ics_events(
                     continue
 
                 event_id = str(component.get("uid", uuid4()))
+
+                # Skip if we've already seen this event ID in this sync
+                # (handles duplicate UIDs in the same ICS feed)
+                if event_id in seen_event_ids:
+                    continue
+
                 seen_event_ids.add(event_id)
 
-                result = _upsert_ics_event(connection, component, event_id, existing_events.get(event_id), db)
+                result, event = _upsert_ics_event(connection, component, event_id, existing_events.get(event_id), db)
                 stats["total_events"] += 1
                 if result == "new":
                     stats["new_events"] += 1
+                    # Track newly created events to handle any future duplicates
+                    existing_events[event_id] = event
                 elif result == "updated":
                     stats["updated_events"] += 1
 
@@ -229,8 +237,8 @@ def _upsert_ics_event(
     event_id: str,
     existing: Optional[CalendarEvent],
     db: Session,
-) -> str:
-    """Insert or update an ICS event. Returns 'new', 'updated', or 'skipped'.
+) -> Tuple[str, Optional[CalendarEvent]]:
+    """Insert or update an ICS event.
 
     Args:
         connection: Calendar connection
@@ -238,6 +246,9 @@ def _upsert_ics_event(
         event_id: The UID from the ICS event
         existing: Existing CalendarEvent if found, None otherwise
         db: Database session
+
+    Returns:
+        Tuple of (result_type, event) where result_type is 'new', 'updated', or 'skipped'
     """
     # Extract event data
     summary = str(component.get("summary", "(No title)"))
@@ -249,7 +260,7 @@ def _upsert_ics_event(
     dtend = component.get("dtend")
 
     if not dtstart:
-        return "skipped"
+        return "skipped", None
 
     start_dt = dtstart.dt
     is_all_day = not hasattr(start_dt, "hour")
@@ -306,7 +317,7 @@ def _upsert_ics_event(
         for key, value in event_data.items():
             setattr(existing, key, value)
         existing.updated_at = datetime.utcnow()
-        return "updated"
+        return "updated", existing
     else:
         event = CalendarEvent(
             calendar_connection_id=connection.id,
@@ -314,4 +325,4 @@ def _upsert_ics_event(
             **event_data,
         )
         db.add(event)
-        return "new"
+        return "new", event
