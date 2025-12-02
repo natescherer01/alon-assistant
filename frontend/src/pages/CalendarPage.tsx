@@ -72,96 +72,44 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" style={{ background: '#F5F5F7' }}>
-      {/* Header - Matching main app style */}
-      <nav style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        background: 'rgba(255, 255, 255, 0.8)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-      }}>
-        <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          padding: '16px 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
+    <div className="min-h-screen bg-light-gray flex flex-col">
+      {/* Header - Matching main app style with glassmorphism */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-black/5 shadow-sm">
+        <div className="max-w-[1400px] mx-auto px-6 py-4 flex justify-between items-center">
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div className="flex items-center">
             <img
               src="/alon-logo.png"
               alt="Alon"
-              style={{ height: '36px', cursor: 'pointer' }}
+              className="h-9 cursor-pointer"
               onClick={() => navigate('/dashboard')}
             />
           </div>
 
           {/* User Section */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="flex items-center gap-3">
             {/* Tasks Button */}
             <button
               onClick={() => navigate('/dashboard')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-              }}
+              className="px-4 py-2 text-sm font-medium text-gray-600 bg-transparent border border-black/10 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Tasks
             </button>
             {/* Calendar Button (active) */}
             <button
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#fff',
-                background: '#0066FF',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-              }}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary border-none rounded-lg"
             >
               Calendar
             </button>
             <button
               onClick={() => navigate('/profile')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-              }}
+              className="px-4 py-2 text-sm font-medium text-gray-600 bg-transparent border border-black/10 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Profile
             </button>
             <button
               onClick={handleLogout}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-              }}
+              className="px-4 py-2 text-sm font-medium text-gray-600 bg-transparent border border-black/10 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Logout
             </button>
