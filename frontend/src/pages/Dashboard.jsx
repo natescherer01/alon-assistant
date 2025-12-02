@@ -241,39 +241,6 @@ function Dashboard() {
               }}
             />
 
-            {/* Navigation Tabs */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#fff',
-                  background: '#0066FF',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                }}
-              >
-                Tasks
-              </button>
-              <button
-                onClick={() => navigate('/calendar')}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#666',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                Calendar
-              </button>
-            </div>
           </div>
 
           {/* User Section */}
@@ -300,6 +267,24 @@ function Dashboard() {
               }}
             >
               {showChat ? 'Tasks' : 'Chat'}
+            </button>
+
+            {/* Calendar Button */}
+            <button
+              onClick={() => navigate('/calendar')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#666',
+                background: 'transparent',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              Calendar
             </button>
 
             {/* Profile Button */}

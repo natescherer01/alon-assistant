@@ -92,49 +92,49 @@ export default function CalendarPage() {
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
-          {/* Logo and Navigation */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
             <img
               src="/alon-logo.png"
               alt="Alon"
               style={{ height: '36px', cursor: 'pointer' }}
               onClick={() => navigate('/dashboard')}
             />
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => navigate('/dashboard')}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#666',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                }}
-              >
-                Tasks
-              </button>
-              <button
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#fff',
-                  background: '#0066FF',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                }}
-              >
-                Calendar
-              </button>
-            </div>
           </div>
 
           {/* User Section */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Tasks Button */}
+            <button
+              onClick={() => navigate('/dashboard')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#666',
+                background: 'transparent',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+              }}
+            >
+              Tasks
+            </button>
+            {/* Calendar Button (active) */}
+            <button
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#fff',
+                background: '#0066FF',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+              }}
+            >
+              Calendar
+            </button>
             <button
               onClick={() => navigate('/profile')}
               style={{
