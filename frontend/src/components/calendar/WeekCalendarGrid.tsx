@@ -154,35 +154,61 @@ export default function WeekCalendarGrid({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div style={{
+      background: '#fff',
+      borderRadius: '16px',
+      overflow: 'hidden',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+    }}>
       {/* Mobile Navigation */}
       {isMobile && (
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px',
+          borderBottom: '1px solid #E5E7EB',
+          background: '#F9FAFB',
+        }}>
           <button
             onClick={handleMobilePrevDay}
-            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+            style={{
+              padding: '8px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
             aria-label="Previous day"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
 
-          <div className="text-center">
-            <div className="text-sm font-medium text-gray-900">
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '14px', fontWeight: '500', color: '#000' }}>
               {getWeekdayName(mobileDay)}
             </div>
-            <div className="text-xs text-gray-600">
+            <div style={{ fontSize: '12px', color: '#666' }}>
               {mobileDay.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
             </div>
           </div>
 
           <button
             onClick={handleMobileNextDay}
-            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+            style={{
+              padding: '8px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
             aria-label="Next day"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -190,32 +216,47 @@ export default function WeekCalendarGrid({
       )}
 
       {/* Calendar Grid Container */}
-      <div className="overflow-auto max-h-[calc(100vh-300px)]">
+      <div style={{ overflow: 'auto', maxHeight: 'calc(100vh - 300px)' }}>
         {/* Header Row - Day Names and Dates */}
         {!isMobile && (
-          <div className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-gray-200 bg-gray-50 sticky top-0 z-20">
-            <div className="p-2 border-r border-gray-200" />
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '80px repeat(7, 1fr)',
+            borderBottom: '1px solid #E5E7EB',
+            background: '#F9FAFB',
+            position: 'sticky',
+            top: 0,
+            zIndex: 20,
+          }}>
+            <div style={{ padding: '8px', borderRight: '1px solid #E5E7EB' }} />
             {displayDays.map(day => {
               const today = isToday(day);
               return (
                 <div
                   key={day.toDateString()}
-                  className={`p-2 text-center border-r border-gray-200 ${
-                    today ? 'bg-blue-50' : ''
-                  }`}
+                  style={{
+                    padding: '8px',
+                    textAlign: 'center',
+                    borderRight: '1px solid #E5E7EB',
+                    background: today ? 'rgba(0, 102, 255, 0.05)' : 'transparent',
+                  }}
                 >
-                  <div className={`text-xs font-medium ${today ? 'text-blue-600' : 'text-gray-600'}`}>
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: today ? '#0066FF' : '#666',
+                  }}>
                     {day.toLocaleDateString('en-US', { weekday: 'short' })}
                   </div>
-                  <div
-                    className={`text-lg font-semibold ${
-                      today ? 'text-blue-600' : 'text-gray-900'
-                    }`}
-                  >
+                  <div style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: today ? '#0066FF' : '#000',
+                  }}>
                     {day.getDate()}
                   </div>
                   {today && (
-                    <div className="text-xs text-blue-600 font-medium">Today</div>
+                    <div style={{ fontSize: '12px', color: '#0066FF', fontWeight: '500' }}>Today</div>
                   )}
                 </div>
               );
@@ -225,9 +266,23 @@ export default function WeekCalendarGrid({
 
         {/* All-Day Events Section */}
         {Array.from(allDayEventsByDay.values()).some(events => events.length > 0) && (
-          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-[80px_repeat(7,1fr)]'} border-b-2 border-gray-300 bg-gray-50 sticky ${isMobile ? 'top-0' : 'top-[73px]'} z-10`}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : '80px repeat(7, 1fr)',
+            borderBottom: '2px solid #D1D5DB',
+            background: '#F9FAFB',
+            position: 'sticky',
+            top: isMobile ? 0 : '73px',
+            zIndex: 10,
+          }}>
             {!isMobile && (
-              <div className="p-2 border-r border-gray-200 text-xs text-gray-600 font-medium">
+              <div style={{
+                padding: '8px',
+                borderRight: '1px solid #E5E7EB',
+                fontSize: '12px',
+                color: '#666',
+                fontWeight: '500',
+              }}>
                 All Day
               </div>
             )}
@@ -239,9 +294,15 @@ export default function WeekCalendarGrid({
               return (
                 <div
                   key={dayKey}
-                  className={`min-h-[60px] p-1 border-r border-gray-200 space-y-1 ${
-                    today ? 'bg-blue-50' : ''
-                  }`}
+                  style={{
+                    minHeight: '60px',
+                    padding: '4px',
+                    borderRight: '1px solid #E5E7EB',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    background: today ? 'rgba(0, 102, 255, 0.05)' : 'transparent',
+                  }}
                 >
                   {allDayEvents.length > 0 ? (
                     allDayEvents.map(event => (
@@ -252,7 +313,9 @@ export default function WeekCalendarGrid({
                       />
                     ))
                   ) : (
-                    <div className="text-xs text-gray-400 text-center py-2">No all-day events</div>
+                    <div style={{ fontSize: '12px', color: '#9CA3AF', textAlign: 'center', padding: '8px' }}>
+                      No all-day events
+                    </div>
                   )}
                 </div>
               );
@@ -261,9 +324,13 @@ export default function WeekCalendarGrid({
         )}
 
         {/* Time Grid */}
-        <div className={`grid ${isMobile ? 'grid-cols-[60px_1fr]' : 'grid-cols-[80px_repeat(7,1fr)]'} relative`}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '60px 1fr' : '80px repeat(7, 1fr)',
+          position: 'relative',
+        }}>
           {/* Time Labels Column */}
-          <div className="border-r border-gray-200">
+          <div style={{ borderRight: '1px solid #E5E7EB' }}>
             {timeSlots.map((slot, index) => {
               // Only show labels on the hour
               const showLabel = slot.minute === 0;
@@ -274,12 +341,20 @@ export default function WeekCalendarGrid({
               return (
                 <div
                   key={slot.index}
-                  className={`h-3 text-right pr-2 ${
-                    isHour ? 'border-t border-gray-200' : isHalfHour ? 'border-t border-gray-100' : ''
-                  }`}
+                  style={{
+                    height: '12px',
+                    textAlign: 'right',
+                    paddingRight: '8px',
+                    borderTop: isHour ? '1px solid #E5E7EB' : isHalfHour ? '1px solid #F3F4F6' : 'none',
+                  }}
                 >
                   {showLabel && (
-                    <span className="text-xs text-gray-500 -mt-2 inline-block">
+                    <span style={{
+                      fontSize: '12px',
+                      color: '#6B7280',
+                      marginTop: '-8px',
+                      display: 'inline-block',
+                    }}>
                       {slot.labelShort}
                     </span>
                   )}
@@ -379,7 +454,11 @@ function DayColumn({
   };
 
   return (
-    <div className={`relative border-r border-gray-200 ${isToday ? 'bg-blue-50/30' : ''}`}>
+    <div style={{
+      position: 'relative',
+      borderRight: '1px solid #E5E7EB',
+      background: isToday ? 'rgba(0, 102, 255, 0.03)' : 'transparent',
+    }}>
       {/* Time slot grid lines - only show hour and half-hour lines */}
       {timeSlots.map((slot, index) => {
         const isHour = index % 4 === 0;
@@ -387,9 +466,10 @@ function DayColumn({
         return (
           <div
             key={slot.index}
-            className={`h-3 ${
-              isHour ? 'border-t border-gray-200' : isHalfHour ? 'border-t border-gray-100' : ''
-            }`}
+            style={{
+              height: '12px',
+              borderTop: isHour ? '1px solid #E5E7EB' : isHalfHour ? '1px solid #F3F4F6' : 'none',
+            }}
           />
         );
       })}
@@ -398,8 +478,13 @@ function DayColumn({
       {sleepBlocks.map((block, i) => (
         <div
           key={`sleep-${i}`}
-          className="absolute inset-x-0 bg-slate-100/40 pointer-events-none z-0"
           style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            background: 'rgba(100, 116, 139, 0.1)',
+            pointerEvents: 'none',
+            zIndex: 0,
             top: `${(block.start / 96) * 100}%`,
             height: `${((block.end - block.start) / 96) * 100}%`,
           }}
@@ -423,7 +508,15 @@ function DayColumn({
       )}
 
       {/* Event blocks */}
-      <div className="absolute inset-0 pointer-events-none overflow-visible">
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        pointerEvents: 'none',
+        overflow: 'visible',
+      }}>
         {events.map(event => (
           <EventBlock
             key={event.id}
@@ -449,11 +542,29 @@ function CurrentTimeIndicator({ slot }: CurrentTimeIndicatorProps) {
 
   return (
     <div
-      className="absolute left-0 right-0 z-10 pointer-events-none"
-      style={{ top: `${topPosition}%` }}
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        zIndex: 10,
+        pointerEvents: 'none',
+        top: `${topPosition}%`,
+      }}
     >
-      <div className="h-0.5 bg-red-500 relative">
-        <div className="absolute -left-1 -top-1 w-2 h-2 bg-red-500 rounded-full" />
+      <div style={{
+        height: '2px',
+        background: '#EF4444',
+        position: 'relative',
+      }}>
+        <div style={{
+          position: 'absolute',
+          left: '-4px',
+          top: '-3px',
+          width: '8px',
+          height: '8px',
+          background: '#EF4444',
+          borderRadius: '50%',
+        }} />
       </div>
     </div>
   );
@@ -484,8 +595,10 @@ function CountdownConnector({
 
   return (
     <div
-      className="absolute z-[5] pointer-events-none"
       style={{
+        position: 'absolute',
+        zIndex: 5,
+        pointerEvents: 'none',
         top: `${startPercent}%`,
         height: `${heightPercent}%`,
         left: '50%',
@@ -494,23 +607,33 @@ function CountdownConnector({
     >
       {/* Simple dashed connector line */}
       <div
-        className="absolute left-1/2 w-0.5 h-full -translate-x-1/2 opacity-60"
         style={{
+          position: 'absolute',
+          left: '50%',
+          width: '2px',
+          height: '100%',
+          transform: 'translateX(-50%)',
+          opacity: 0.6,
           background: `repeating-linear-gradient(180deg, ${eventColor} 0px, ${eventColor} 6px, transparent 6px, transparent 12px)`,
         }}
       />
 
       {/* Small arrow pointing to next event */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 -bottom-1"
-        style={{ color: eventColor }}
+        style={{
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          bottom: '-4px',
+          color: eventColor,
+        }}
       >
         <svg
           width="10"
           height="6"
           viewBox="0 0 10 6"
           fill="currentColor"
-          className="opacity-70"
+          style={{ opacity: 0.7 }}
         >
           <path d="M5 6L0 0h10L5 6z" />
         </svg>
@@ -518,8 +641,16 @@ function CountdownConnector({
 
       {/* Minimal countdown badge */}
       <div
-        className="absolute left-full ml-1.5 px-2 py-0.5 rounded-full text-xs font-medium tabular-nums whitespace-nowrap"
         style={{
+          position: 'absolute',
+          left: '100%',
+          marginLeft: '6px',
+          padding: '2px 8px',
+          borderRadius: '9999px',
+          fontSize: '12px',
+          fontWeight: '500',
+          fontVariantNumeric: 'tabular-nums',
+          whiteSpace: 'nowrap',
           top: '50%',
           transform: 'translateY(-50%)',
           backgroundColor: eventColor,
@@ -569,10 +700,10 @@ function EventBlock({ event, onClick, timezone }: EventBlockProps) {
   const isSmall = event.gridPosition.spanSlots < 2;
 
   // Get border style based on status
-  const getBorderStyle = () => {
-    if (event.status === 'tentative') return 'border-2 border-dashed';
-    if (event.status === 'cancelled') return 'border-2';
-    return 'border-l-4';
+  const getBorderStyle = (): React.CSSProperties => {
+    if (event.status === 'tentative') return { border: '2px dashed' };
+    if (event.status === 'cancelled') return { border: '2px solid' };
+    return { borderLeft: '4px solid' };
   };
 
   // Get calendar color (uses calendar color if available, falls back to provider color)
@@ -581,10 +712,14 @@ function EventBlock({ event, onClick, timezone }: EventBlockProps) {
   return (
     <>
       <div
-        className={`absolute px-1 py-0.5 text-xs rounded-md cursor-pointer transition-all hover:shadow-lg hover:z-20 pointer-events-auto ${getBorderStyle()} ${
-          event.status === 'cancelled' ? 'opacity-60' : ''
-        }`}
         style={{
+          position: 'absolute',
+          padding: '2px 4px',
+          fontSize: '12px',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          pointerEvents: 'auto',
           top: `${top}%`,
           height: `${height}%`,
           width,
@@ -593,6 +728,8 @@ function EventBlock({ event, onClick, timezone }: EventBlockProps) {
           borderColor: adjustColorBrightness(safeColor, -20),
           color: getContrastColor(safeColor),
           minHeight: '20px',
+          opacity: event.status === 'cancelled' ? 0.6 : 1,
+          ...getBorderStyle(),
         }}
         onClick={handleClick}
         onMouseEnter={() => setShowTooltip(true)}
@@ -601,26 +738,33 @@ function EventBlock({ event, onClick, timezone }: EventBlockProps) {
         tabIndex={0}
         aria-label={`${event.title} at ${formatTime(new Date(event.startTime), timezone)}`}
       >
-        <div className="flex items-center gap-1">
-          <div className={`flex-1 font-medium truncate ${event.status === 'cancelled' ? 'line-through' : ''}`}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{
+            flex: 1,
+            fontWeight: '500',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            textDecoration: event.status === 'cancelled' ? 'line-through' : 'none',
+          }}>
             {sanitizeEventText(event.title, 200) || '(No title)'}
           </div>
           {event.teamsEnabled && (
-            <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Teams meeting">
+            <svg style={{ width: '12px', height: '12px', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor" aria-label="Teams meeting">
               <path d="M19.75 10.5h-2.5V8c0-1.1-.9-2-2-2h-9c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h2v2.5c0 .42.34.75.75.75h10.75c.42 0 .75-.34.75-.75v-10c0-.42-.34-.75-.75-.75zM15.25 20v-8.5h4v8.5h-4zm-1.5-9.5V8h-8v8.5h6.5v-4.5c0-.83.67-1.5 1.5-1.5h0z"/>
             </svg>
           )}
           {event.importance === 'high' && (
-            <span className="text-red-500 text-xs font-bold flex-shrink-0" aria-label="High importance">!</span>
+            <span style={{ color: '#EF4444', fontSize: '12px', fontWeight: 'bold', flexShrink: 0 }} aria-label="High importance">!</span>
           )}
         </div>
         {!isSmall && (
           <>
-            <div className="text-xs opacity-90 truncate">
+            <div style={{ fontSize: '11px', opacity: 0.9, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {formatTime(new Date(event.startTime), timezone)}
             </div>
             {event.location && (
-              <div className="text-xs opacity-80 truncate mt-0.5">
+              <div style={{ fontSize: '11px', opacity: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
                 {sanitizeEventText(event.location, 100)}
               </div>
             )}
@@ -660,28 +804,33 @@ function AllDayEventBlock({ event, onClick }: AllDayEventBlockProps) {
 
   return (
     <div
-      className={`px-2 py-1 text-xs rounded cursor-pointer hover:shadow-md transition-all ${
-        event.status === 'cancelled' ? 'opacity-60 line-through' : ''
-      } ${
-        event.status === 'tentative' ? 'border-2 border-dashed' : ''
-      }`}
       style={{
+        padding: '4px 8px',
+        fontSize: '12px',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
         backgroundColor: safeColor,
         color: getContrastColor(safeColor),
+        opacity: event.status === 'cancelled' ? 0.6 : 1,
+        textDecoration: event.status === 'cancelled' ? 'line-through' : 'none',
+        border: event.status === 'tentative' ? '2px dashed' : 'none',
       }}
       onClick={handleClick}
       role="button"
       tabIndex={0}
     >
-      <div className="flex items-center gap-1">
-        <div className="flex-1 font-medium truncate">{sanitizeEventText(event.title, 200) || '(No title)'}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ flex: 1, fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {sanitizeEventText(event.title, 200) || '(No title)'}
+        </div>
         {event.teamsEnabled && (
-          <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Teams meeting">
+          <svg style={{ width: '12px', height: '12px', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor" aria-label="Teams meeting">
             <path d="M19.75 10.5h-2.5V8c0-1.1-.9-2-2-2h-9c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h2v2.5c0 .42.34.75.75.75h10.75c.42 0 .75-.34.75-.75v-10c0-.42-.34-.75-.75-.75zM15.25 20v-8.5h4v8.5h-4zm-1.5-9.5V8h-8v8.5h6.5v-4.5c0-.83.67-1.5 1.5-1.5h0z"/>
           </svg>
         )}
         {event.importance === 'high' && (
-          <span className="text-red-500 font-bold flex-shrink-0" aria-label="High importance">!</span>
+          <span style={{ color: '#EF4444', fontWeight: 'bold', flexShrink: 0 }} aria-label="High importance">!</span>
         )}
       </div>
     </div>
@@ -701,16 +850,34 @@ function EventTooltip({ event, timezone }: EventTooltipProps) {
   const endTime = new Date(event.endTime);
 
   return (
-    <div className="absolute z-50 bg-white border-2 border-gray-300 rounded-lg shadow-xl p-3 min-w-[250px] max-w-[350px] pointer-events-none">
-      <div className="space-y-2">
-        <div className="flex items-start gap-2">
-          <div className="flex-1 font-semibold text-gray-900">{event.title || '(No title)'}</div>
+    <div style={{
+      position: 'absolute',
+      zIndex: 50,
+      background: '#fff',
+      border: '2px solid #D1D5DB',
+      borderRadius: '12px',
+      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+      padding: '12px',
+      minWidth: '250px',
+      maxWidth: '350px',
+      pointerEvents: 'none',
+    }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+          <div style={{ flex: 1, fontWeight: '600', color: '#000' }}>{event.title || '(No title)'}</div>
           {event.importance === 'high' && (
-            <span className="text-red-500 text-xs font-bold px-1.5 py-0.5 bg-red-50 rounded">High</span>
+            <span style={{
+              color: '#EF4444',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              padding: '2px 6px',
+              background: '#FEE2E2',
+              borderRadius: '4px',
+            }}>High</span>
           )}
         </div>
 
-        <div className="text-sm text-gray-600">
+        <div style={{ fontSize: '14px', color: '#666' }}>
           {formatTime(startTime, timezone)} - {formatTime(endTime, timezone)}
         </div>
 
@@ -719,10 +886,22 @@ function EventTooltip({ event, timezone }: EventTooltipProps) {
             href={event.teamsMeetingUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium pointer-events-auto"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              background: '#0066FF',
+              color: '#fff',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '500',
+              textDecoration: 'none',
+              pointerEvents: 'auto',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="currentColor">
               <path d="M19.75 10.5h-2.5V8c0-1.1-.9-2-2-2h-9c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h2v2.5c0 .42.34.75.75.75h10.75c.42 0 .75-.34.75-.75v-10c0-.42-.34-.75-.75-.75zM15.25 20v-8.5h4v8.5h-4zm-1.5-9.5V8h-8v8.5h6.5v-4.5c0-.83.67-1.5 1.5-1.5h0z"/>
             </svg>
             Join Teams Meeting
@@ -730,8 +909,8 @@ function EventTooltip({ event, timezone }: EventTooltipProps) {
         )}
 
         {event.location && (
-          <div className="text-sm text-gray-600 flex items-start gap-1">
-            <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div style={{ fontSize: '14px', color: '#666', display: 'flex', alignItems: 'flex-start', gap: '4px' }}>
+            <svg style={{ width: '16px', height: '16px', flexShrink: 0, marginTop: '2px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             </svg>
             <span>{event.location}</span>
@@ -739,21 +918,37 @@ function EventTooltip({ event, timezone }: EventTooltipProps) {
         )}
 
         {event.description && (
-          <div className="text-sm text-gray-600 line-clamp-3">{event.description}</div>
+          <div style={{
+            fontSize: '14px',
+            color: '#666',
+            overflow: 'hidden',
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+          }}>{event.description}</div>
         )}
 
         {event.attendees && event.attendees.length > 0 && (
-          <div className="text-sm text-gray-600">
+          <div style={{ fontSize: '14px', color: '#666' }}>
             {event.attendees.length} {event.attendees.length === 1 ? 'attendee' : 'attendees'}
           </div>
         )}
 
         {event.outlookCategories && event.outlookCategories.length > 0 && (
-          <div className="flex flex-wrap gap-1">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
             {event.outlookCategories.map((category, index) => (
               <span
                 key={index}
-                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  background: '#F3E8FF',
+                  color: '#7C3AED',
+                }}
               >
                 {category}
               </span>
@@ -761,28 +956,37 @@ function EventTooltip({ event, timezone }: EventTooltipProps) {
           </div>
         )}
 
-        <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          paddingTop: '8px',
+          borderTop: '1px solid #E5E7EB',
+        }}>
           {event.calendarColor && (
             <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: event.calendarColor }}
+              style={{
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
+                backgroundColor: event.calendarColor,
+              }}
             />
           )}
-          <span className="text-xs text-gray-600">{event.calendarName}</span>
+          <span style={{ fontSize: '12px', color: '#666' }}>{event.calendarName}</span>
           {event.provider === 'MICROSOFT' && (
-            <span className="text-xs text-orange-600 font-medium">Outlook</span>
+            <span style={{ fontSize: '12px', color: '#EA580C', fontWeight: '500' }}>Outlook</span>
           )}
         </div>
 
         {event.delegateEmail && (
-          <div className="text-xs text-gray-500">From: {event.delegateEmail}</div>
+          <div style={{ fontSize: '12px', color: '#9CA3AF' }}>From: {event.delegateEmail}</div>
         )}
 
         {event.status && event.status !== 'confirmed' && (
-          <div className="text-xs text-gray-500 capitalize">Status: {event.status}</div>
+          <div style={{ fontSize: '12px', color: '#9CA3AF', textTransform: 'capitalize' }}>Status: {event.status}</div>
         )}
       </div>
     </div>
   );
 }
-

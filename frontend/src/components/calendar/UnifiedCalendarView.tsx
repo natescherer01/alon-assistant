@@ -219,59 +219,107 @@ export default function UnifiedCalendarView({
 
   const countdownInfo = getCountdownInfo();
 
+  // Styles matching Dashboard
+  const buttonStyle = (isActive: boolean): React.CSSProperties => ({
+    padding: '12px 20px',
+    fontSize: '14px',
+    fontWeight: '500',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    background: isActive ? '#0066FF' : '#F3F4F6',
+    color: isActive ? '#fff' : '#000',
+  });
+
+  const navButtonStyle: React.CSSProperties = {
+    padding: '8px',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: isLoading ? 'not-allowed' : 'pointer',
+    opacity: isLoading ? 0.5 : 1,
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header with Navigation */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div style={{
+        background: '#fff',
+        borderRadius: '16px',
+        padding: '16px 24px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+      }}>
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+        }}>
           {/* View Mode Toggle */}
-          <div className="flex gap-2">
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => setViewMode('week')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                viewMode === 'week'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              style={buttonStyle(viewMode === 'week')}
             >
               Week
             </button>
             <button
               onClick={() => setViewMode('month')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                viewMode === 'month'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              style={buttonStyle(viewMode === 'month')}
             >
               Month
             </button>
           </div>
 
           {/* Date Navigation */}
-          <div className="flex items-center gap-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button
               onClick={handlePrevious}
               disabled={isLoading}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              style={navButtonStyle}
               aria-label="Previous"
+              onMouseEnter={(e) => {
+                if (!isLoading) (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.background = 'transparent';
+              }}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
 
-            <div className="min-w-[200px] text-center">
-              <h2 className="text-lg font-semibold text-gray-900">{getHeaderText()}</h2>
-            </div>
+            <h2 style={{
+              minWidth: '200px',
+              textAlign: 'center',
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#000',
+              margin: 0,
+            }}>
+              {getHeaderText()}
+            </h2>
 
             <button
               onClick={handleNext}
               disabled={isLoading}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              style={navButtonStyle}
               aria-label="Next"
+              onMouseEnter={(e) => {
+                if (!isLoading) (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.background = 'transparent';
+              }}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -279,7 +327,23 @@ export default function UnifiedCalendarView({
             <button
               onClick={handleToday}
               disabled={isLoading}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors disabled:opacity-50"
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                background: '#F3F4F6',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                opacity: isLoading ? 0.5 : 1,
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoading) (e.target as HTMLButtonElement).style.background = '#E5E7EB';
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.background = '#F3F4F6';
+              }}
             >
               Today
             </button>
@@ -287,11 +351,21 @@ export default function UnifiedCalendarView({
             <button
               onClick={fetchEvents}
               disabled={isLoading}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              style={navButtonStyle}
               aria-label="Refresh"
+              onMouseEnter={(e) => {
+                if (!isLoading) (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.background = 'transparent';
+              }}
             >
               <svg
-                className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`}
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  animation: isLoading ? 'spin 1s linear infinite' : 'none',
+                }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -310,53 +384,52 @@ export default function UnifiedCalendarView({
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex justify-center items-center py-12">
-          <svg
-            className="animate-spin h-10 w-10 text-blue-600"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
+        <div style={{
+          background: '#fff',
+          borderRadius: '16px',
+          padding: '48px',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            border: '4px solid #F3F4F6',
+            borderTop: '4px solid #0066FF',
+            borderRadius: '50%',
+            margin: '0 auto 16px',
+            animation: 'spin 1s linear infinite',
+          }} />
+          <p style={{ color: '#666', margin: 0 }}>Loading events...</p>
         </div>
       )}
 
       {/* Error State */}
       {error && !isLoading && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <div className="flex items-start gap-3">
-            <svg
-              className="w-6 h-6 text-red-600 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div className="flex-1">
-              <h4 className="text-red-800 font-semibold mb-1">Failed to load events</h4>
-              <p className="text-red-700 text-sm mb-3">{error}</p>
+        <div style={{
+          background: '#FEE2E2',
+          border: '1px solid #FCA5A5',
+          borderRadius: '16px',
+          padding: '24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <span style={{ fontSize: '24px' }}>⚠️</span>
+            <div style={{ flex: 1 }}>
+              <h4 style={{ color: '#991B1B', fontWeight: '600', margin: '0 0 8px 0' }}>
+                Failed to load events
+              </h4>
+              <p style={{ color: '#B91C1C', fontSize: '14px', margin: '0 0 16px 0' }}>{error}</p>
               <button
                 onClick={fetchEvents}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
+                style={{
+                  background: '#DC2626',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                }}
               >
                 Try Again
               </button>
@@ -388,6 +461,14 @@ export default function UnifiedCalendarView({
           )}
         </>
       )}
+
+      {/* Spin Animation */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
