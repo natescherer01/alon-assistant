@@ -1,7 +1,7 @@
 """
 Account security functions: lockout, failed attempts tracking
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from models import User
 import logging
@@ -17,7 +17,7 @@ def is_account_locked(user: User) -> bool:
         return False
 
     # Check if lockout period has expired
-    if datetime.utcnow() >= user.locked_until:
+    if datetime.now(timezone.utc) >= user.locked_until:
         return False
 
     return True
@@ -27,7 +27,7 @@ def get_lockout_time_remaining(user: User) -> int:
     if not user.locked_until:
         return 0
 
-    remaining = (user.locked_until - datetime.utcnow()).total_seconds()
+    remaining = (user.locked_until - datetime.now(timezone.utc)).total_seconds()
     return max(0, int(remaining))
 
 def record_failed_login(db: Session, user: User) -> int:
@@ -38,10 +38,10 @@ def record_failed_login(db: Session, user: User) -> int:
         Number of failed attempts
     """
     user.failed_login_attempts += 1
-    user.last_failed_login = datetime.utcnow()
+    user.last_failed_login = datetime.now(timezone.utc)
 
     if user.failed_login_attempts >= MAX_FAILED_ATTEMPTS:
-        user.locked_until = datetime.utcnow() + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+        user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
         logger.warning(
             f"Account locked due to {user.failed_login_attempts} failed attempts: {user.email}"
         )

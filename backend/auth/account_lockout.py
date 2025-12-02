@@ -3,7 +3,7 @@ Account lockout mechanism for brute force protection
 
 Implements progressive lockout based on failed login attempts
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from models import User
 from logger import get_logger
@@ -29,7 +29,7 @@ def is_account_locked(user: User) -> bool:
         return False
 
     # Check if lockout period has expired
-    if user.locked_until > datetime.utcnow():
+    if user.locked_until > datetime.now(timezone.utc):
         return True
 
     # Lockout expired, clear it
@@ -49,7 +49,7 @@ def get_lockout_time_remaining(user: User) -> int:
     if not user.locked_until:
         return 0
 
-    remaining = (user.locked_until - datetime.utcnow()).total_seconds()
+    remaining = (user.locked_until - datetime.now(timezone.utc)).total_seconds()
     return max(0, int(remaining))
 
 
@@ -65,11 +65,11 @@ def increment_failed_attempts(db: Session, user: User) -> int:
         Current number of failed attempts
     """
     user.failed_login_attempts += 1
-    user.last_failed_login = datetime.utcnow()
+    user.last_failed_login = datetime.now(timezone.utc)
 
     # Lock account if threshold reached
     if user.failed_login_attempts >= MAX_FAILED_ATTEMPTS:
-        user.locked_until = datetime.utcnow() + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+        user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
         logger.warning(
             f"Account locked for user {user.email} after {user.failed_login_attempts} failed attempts"
         )
@@ -91,7 +91,7 @@ def reset_failed_attempts(db: Session, user: User):
     user.failed_login_attempts = 0
     user.locked_until = None
     user.last_failed_login = None
-    user.last_successful_login = datetime.utcnow()
+    user.last_successful_login = datetime.now(timezone.utc)
 
     db.commit()
 

@@ -7,6 +7,8 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import CalendarPage from './pages/CalendarPage';
+import OAuthCallbackPage from './pages/OAuthCallbackPage';
 import AppDataLoader from './components/AppDataLoader';
 import queryClient, { setupPersistence, setupNetworkHandlers } from './lib/queryClient';
 
@@ -118,6 +120,24 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Calendar routes */}
+          <Route
+            path="/calendar"
+            element={
+              <ProtectedRoute>
+                <CalendarPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calendar/oauth/callback"
+            element={
+              <ProtectedRoute>
+                <OAuthCallbackPage />
               </ProtectedRoute>
             }
           />

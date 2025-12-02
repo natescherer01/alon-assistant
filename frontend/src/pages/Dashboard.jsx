@@ -231,14 +231,50 @@ function Dashboard() {
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
-          {/* Logo */}
-          <img
-            src="/alon-logo.png"
-            alt="Alon"
-            style={{
-              height: '36px',
-            }}
-          />
+          {/* Logo and Navigation Tabs */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <img
+              src="/alon-logo.png"
+              alt="Alon"
+              style={{
+                height: '36px',
+              }}
+            />
+
+            {/* Navigation Tabs */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: '#0066FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                }}
+              >
+                Tasks
+              </button>
+              <button
+                onClick={() => navigate('/calendar')}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                Calendar
+              </button>
+            </div>
+          </div>
 
           {/* User Section */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

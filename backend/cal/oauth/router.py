@@ -144,7 +144,8 @@ async def handle_google_callback(
     Exchanges authorization code for tokens, fetches available calendars,
     and redirects to frontend with session ID for calendar selection.
     """
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+    frontend_url = cors_origins.split(",")[0].strip()  # Use first CORS origin as frontend URL
 
     # Handle OAuth errors
     if error:
@@ -404,7 +405,8 @@ async def handle_microsoft_callback(
     Exchanges authorization code for tokens, fetches available calendars,
     and redirects to frontend with session ID for calendar selection.
     """
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+    frontend_url = cors_origins.split(",")[0].strip()  # Use first CORS origin as frontend URL
 
     # Handle OAuth errors
     if error:
