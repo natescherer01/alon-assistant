@@ -29,6 +29,7 @@ from cal.dependencies import (
 )
 from cal.oauth.router import router as oauth_router
 from cal.services.webhook import router as webhook_router
+from cal.ics.router import router as ics_router
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,7 @@ router = APIRouter(tags=["Calendar"])
 # Include sub-routers
 router.include_router(oauth_router)
 router.include_router(webhook_router)
+router.include_router(ics_router)
 
 
 # =============================================================================

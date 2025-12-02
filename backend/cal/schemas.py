@@ -491,7 +491,7 @@ class ICSValidateRequest(BaseModel):
 class ICSValidateResponse(BaseModel):
     """Response from ICS URL validation"""
     valid: bool
-    name: Optional[str] = None
+    calendar_name: Optional[str] = Field(default=None, alias="calendarName")
     event_count: Optional[int] = Field(default=None, alias="eventCount")
     error: Optional[str] = None
 
@@ -501,15 +501,19 @@ class ICSValidateResponse(BaseModel):
 class ICSConnectRequest(BaseModel):
     """Request to connect an ICS calendar"""
     url: str = Field(min_length=1)
-    name: str = Field(min_length=1, max_length=255)
+    display_name: Optional[str] = Field(default=None, max_length=255, alias="display_name")
     color: Optional[str] = Field(default=None, max_length=7)
+
+    model_config = {"populate_by_name": True}
 
 
 class ICSUpdateRequest(BaseModel):
     """Request to update an ICS calendar"""
-    name: Optional[str] = Field(default=None, max_length=255)
+    display_name: Optional[str] = Field(default=None, max_length=255, alias="display_name")
     color: Optional[str] = Field(default=None, max_length=7)
     url: Optional[str] = None
+
+    model_config = {"populate_by_name": True}
 
 
 # ============================================================================
