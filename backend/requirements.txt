@@ -31,6 +31,16 @@ requests==2.31.0  # Required for Have I Been Pwned API in password validator
 # AI/ML
 anthropic==0.40.0
 
+# Calendar Integration
+google-api-python-client>=2.108.0
+google-auth>=2.23.4
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.1
+msal>=1.24.1
+icalendar>=5.0.11
+APScheduler>=3.10.4
+python-dateutil>=2.8.2
+
 # Testing (dev dependencies)
 pytest==7.4.3
 pytest-asyncio==0.21.1

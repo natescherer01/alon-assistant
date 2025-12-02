@@ -13,6 +13,7 @@ from database import init_db
 from auth.router import router as auth_router
 from tasks.router import router as tasks_router
 from chat.router import router as chat_router
+from cal.router import router as calendar_router
 from logger import get_logger
 from rate_limit import setup_rate_limiting
 
@@ -106,6 +107,7 @@ limiter = setup_rate_limiting(app)
 app.include_router(auth_router, prefix=settings.api_prefix)
 app.include_router(tasks_router, prefix=settings.api_prefix)
 app.include_router(chat_router, prefix=settings.api_prefix)
+app.include_router(calendar_router, prefix=f"{settings.api_prefix}/calendar")
 
 
 @app.on_event("startup")
@@ -135,6 +137,14 @@ async def startup_event():
         else:
             logger.info("✓ Company Anthropic API key configured")
 
+        # Start calendar background scheduler
+        try:
+            from cal.services.jobs import start_scheduler
+            start_scheduler()
+            logger.info("✓ Calendar background scheduler started")
+        except Exception as e:
+            logger.warning(f"⚠️  Calendar scheduler failed to start: {e}")
+
     except Exception as e:
         logger.error(f"❌ Startup failed: {e}", exc_info=True)
         raise
@@ -144,6 +154,14 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on shutdown"""
     logger.info("🛑 Application shutting down...")
+
+    # Stop calendar background scheduler
+    try:
+        from cal.services.jobs import stop_scheduler
+        stop_scheduler()
+        logger.info("✓ Calendar background scheduler stopped")
+    except Exception as e:
+        logger.warning(f"⚠️  Failed to stop calendar scheduler: {e}")
 
 
 @app.get("/")
