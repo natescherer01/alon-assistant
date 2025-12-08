@@ -6,7 +6,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 # GZipMiddleware disabled - it buffers SSE streams
 # from fastapi.middleware.gzip import GZipMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from config import get_settings
 from database import init_db
@@ -21,58 +20,65 @@ settings = get_settings()
 logger = get_logger(__name__)
 
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+class SecurityHeadersMiddleware:
     """
     OWASP-compliant security headers middleware (2025)
 
-    Based on OWASP Secure Headers Project recommendations
+    Implemented as pure ASGI middleware to avoid BaseHTTPMiddleware issues
+    with exception handling and CORS header propagation.
     """
 
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
+    def __init__(self, app):
+        self.app = app
 
-        # X-Frame-Options: Prevent clickjacking
-        response.headers["X-Frame-Options"] = "DENY"
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        # X-Content-Type-Options: Prevent MIME sniffing
-        response.headers["X-Content-Type-Options"] = "nosniff"
+        async def send_with_headers(message):
+            if message["type"] == "http.response.start":
+                headers = dict(message.get("headers", []))
 
-        # X-XSS-Protection: DEPRECATED - Set to 0 per OWASP 2025
-        # Modern browsers deprecated this header; it can introduce vulnerabilities
-        response.headers["X-XSS-Protection"] = "0"
+                # Add security headers
+                security_headers = [
+                    (b"x-frame-options", b"DENY"),
+                    (b"x-content-type-options", b"nosniff"),
+                    (b"x-xss-protection", b"0"),
+                    (b"referrer-policy", b"strict-origin-when-cross-origin"),
+                    (b"permissions-policy", b"geolocation=(), microphone=(), camera=(), payment=()"),
+                ]
 
-        # Content Security Policy: Primary XSS defense
-        # Allow connection to Railway backend from Vercel frontend
-        csp_directives = [
-            "default-src 'self'",
-            "script-src 'self' 'unsafe-inline'",  # Needed for React
-            "style-src 'self' 'unsafe-inline'",   # Needed for inline styles
-            "img-src 'self' data: https:",
-            "font-src 'self' data:",
-            "connect-src 'self' https://alon-assistant.up.railway.app",  # PRODUCTION backend
-            "frame-ancestors 'none'",
-            "base-uri 'self'",
-            "form-action 'self'"
-        ]
-        response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
+                # CSP header
+                csp_directives = [
+                    "default-src 'self'",
+                    "script-src 'self' 'unsafe-inline'",
+                    "style-src 'self' 'unsafe-inline'",
+                    "img-src 'self' data: https:",
+                    "font-src 'self' data:",
+                    "connect-src 'self' https://alon-assistant.up.railway.app",
+                    "frame-ancestors 'none'",
+                    "base-uri 'self'",
+                    "form-action 'self'"
+                ]
+                security_headers.append(
+                    (b"content-security-policy", "; ".join(csp_directives).encode())
+                )
 
-        # Strict-Transport-Security: Force HTTPS (production only)
-        if settings.environment == "production":
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains; preload"
-            )
+                # HSTS for production
+                if settings.environment == "production":
+                    security_headers.append(
+                        (b"strict-transport-security", b"max-age=31536000; includeSubDomains; preload")
+                    )
 
-        # Referrer-Policy: Control referrer information
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+                # Merge with existing headers
+                existing_headers = list(message.get("headers", []))
+                existing_headers.extend(security_headers)
+                message["headers"] = existing_headers
 
-        # Permissions-Policy: Restrict browser features
-        response.headers["Permissions-Policy"] = (
-            "geolocation=(), microphone=(), camera=(), payment=()"
-        )
+            await send(message)
 
-        # DO NOT include Expect-CT (deprecated per OWASP 2025)
-
-        return response
+        await self.app(scope, receive, send_with_headers)
 
 
 # Create FastAPI app
