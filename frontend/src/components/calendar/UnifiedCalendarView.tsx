@@ -113,7 +113,9 @@ export default function UnifiedCalendarView({
     lastFetchedRange.current = rangeKey;
 
     try {
+      console.log('[UnifiedCalendarView] Fetching events for range:', start.toISOString(), 'to', end.toISOString());
       const fetchedEvents = await calendarApi.getEvents(start, end);
+      console.log('[UnifiedCalendarView] Fetched events:', fetchedEvents.length, fetchedEvents);
       // Cache the results
       eventsCache.current.set(rangeKey, fetchedEvents);
       setEvents(fetchedEvents);
@@ -273,7 +275,7 @@ export default function UnifiedCalendarView({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, minHeight: 0 }}>
       {/* Header with Navigation */}
       <div style={{
         background: '#fff',
@@ -467,7 +469,7 @@ export default function UnifiedCalendarView({
 
       {/* Calendar Grid Views */}
       {!isLoading && !error && (
-        <>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'auto' }}>
           {viewMode === 'week' ? (
             <WeekCalendarGrid
               events={events}
@@ -486,7 +488,7 @@ export default function UnifiedCalendarView({
               timezone={timezone}
             />
           )}
-        </>
+        </div>
       )}
 
       {/* Spin Animation */}

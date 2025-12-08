@@ -213,15 +213,18 @@ export default function CalendarPage() {
         {/* Main Content Area */}
         <main style={{
           flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
           overflowY: 'auto',
           marginLeft: !isLoading && calendars.length > 0 ? (isSidebarCollapsed ? '64px' : '288px') : '0',
           marginRight: !isLoading && calendars.length > 0 ? (isTodaysPlanExpanded ? '320px' : '48px') : '0',
           transition: 'all 0.3s ease',
         }}>
           <div style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            padding: '24px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '16px',
           }}>
             {/* Loading State */}
             {isLoading && (
@@ -340,24 +343,27 @@ export default function CalendarPage() {
 
             {/* Calendar View - Show when calendars are connected */}
             {!isLoading && !error && calendars.length > 0 && (
-              <div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 {/* Header with Clock and Create Button */}
                 <div style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: '24px',
+                  marginBottom: '16px',
+                  flexShrink: 0,
                 }}>
                   <LiveClock />
                   <CreateEventButton onClick={() => setShowCreateEventModal(true)} />
                 </div>
 
                 {/* Unified Calendar View */}
-                <UnifiedCalendarView
-                  key={refreshKey}
-                  onEventClick={handleEventClick}
-                  onEventsLoaded={handleEventsLoaded}
-                />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <UnifiedCalendarView
+                    key={refreshKey}
+                    onEventClick={handleEventClick}
+                    onEventsLoaded={handleEventsLoaded}
+                  />
+                </div>
               </div>
             )}
           </div>

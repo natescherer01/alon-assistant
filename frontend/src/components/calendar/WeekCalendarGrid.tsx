@@ -81,10 +81,13 @@ export default function WeekCalendarGrid({
   const timeSlots = useMemo(() => getTimeSlots(), []);
 
   // Group events by day with grid positions (timezone-aware)
-  const eventsByDay = useMemo(
-    () => groupEventsByDay(events, displayDays, timezone),
-    [events, displayDays, timezone]
-  );
+  const eventsByDay = useMemo(() => {
+    const grouped = groupEventsByDay(events, displayDays, timezone);
+    console.log('[WeekCalendarGrid] Events received:', events.length, events);
+    console.log('[WeekCalendarGrid] Display days:', displayDays.map(d => d.toDateString()));
+    console.log('[WeekCalendarGrid] Events by day:', Object.fromEntries(grouped));
+    return grouped;
+  }, [events, displayDays, timezone]);
 
   // Separate all-day events from timed events
   const allDayEventsByDay = useMemo(() => {
@@ -159,6 +162,10 @@ export default function WeekCalendarGrid({
       borderRadius: '16px',
       overflow: 'hidden',
       boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: 0,
     }}>
       {/* Mobile Navigation */}
       {isMobile && (
@@ -216,7 +223,7 @@ export default function WeekCalendarGrid({
       )}
 
       {/* Calendar Grid Container */}
-      <div style={{ overflow: 'auto', maxHeight: 'calc(100vh - 300px)' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'auto' }}>
         {/* Header Row - Day Names and Dates */}
         {!isMobile && (
           <div style={{
@@ -328,6 +335,7 @@ export default function WeekCalendarGrid({
           display: 'grid',
           gridTemplateColumns: isMobile ? '60px 1fr' : '80px repeat(7, 1fr)',
           position: 'relative',
+          flex: 1,
         }}>
           {/* Time Labels Column */}
           <div style={{ borderRight: '1px solid #E5E7EB' }}>
