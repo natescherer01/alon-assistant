@@ -27,6 +27,7 @@ from cal.dependencies import (
     get_calendar_user, get_calendar_connection, decrypt_token,
     get_client_ip, get_user_agent,
 )
+from cal.utils.recurrence import get_events_with_recurrence_expansion
 from cal.oauth.router import router as oauth_router
 from cal.services.webhook import router as webhook_router
 from cal.ics.router import router as ics_router
@@ -314,6 +315,7 @@ async def get_events(
 ):
     """
     Get events within a date range from all connected calendars.
+    Recurring events are automatically expanded into individual instances.
     """
     # Validate date range
     if start >= end:
@@ -331,38 +333,53 @@ async def get_events(
             detail=f"Date range too large. Maximum {max_days} days allowed.",
         )
 
+    from sqlalchemy import or_
+
+    # Query for:
+    # 1. Non-recurring events that OVERLAP with the date range
+    # 2. ALL recurring events (they'll be expanded into instances)
     events = db.query(CalendarEvent).join(CalendarConnection).filter(
         CalendarConnection.user_id == calendar_user.id,
         CalendarConnection.is_connected == True,
         CalendarConnection.deleted_at.is_(None),
-        CalendarEvent.start_time >= start,
-        CalendarEvent.end_time <= end,
         CalendarEvent.sync_status == SyncStatus.SYNCED,
         CalendarEvent.deleted_at.is_(None),
-    ).order_by(CalendarEvent.start_time).all()
+        or_(
+            # Non-recurring events that overlap with range
+            # (event starts before range ends AND event ends after range starts)
+            (CalendarEvent.is_recurring == False) &
+            (CalendarEvent.start_time < end) &
+            (CalendarEvent.end_time > start),
+            # All recurring events (will be expanded)
+            CalendarEvent.is_recurring == True,
+        ),
+    ).all()
+
+    # Expand recurring events into instances
+    expanded_events = get_events_with_recurrence_expansion(events, start, end)
 
     return [
         EventResponse(
-            id=e.id,
-            title=e.title,
-            description=e.description,
-            location=e.location,
-            start_time=e.start_time,
-            end_time=e.end_time,
-            is_all_day=e.is_all_day,
-            timezone=e.timezone,
-            status=e.status,
-            is_recurring=e.is_recurring,
-            recurrence_rule=e.recurrence_rule,
-            attendees=e.attendees,
-            reminders=e.reminders,
-            html_link=e.html_link,
-            calendar_id=e.calendar_connection_id,
-            provider=e.calendar_connection.provider,
-            calendar_name=e.calendar_connection.calendar_name,
-            calendar_color=e.calendar_connection.calendar_color,
+            id=e['id'],
+            title=e['title'],
+            description=e['description'],
+            location=e['location'],
+            start_time=e['start_time'],
+            end_time=e['end_time'],
+            is_all_day=e['is_all_day'],
+            timezone=e['timezone'],
+            status=e['status'],
+            is_recurring=e['is_recurring'],
+            recurrence_rule=e['recurrence_rule'],
+            attendees=e['attendees'],
+            reminders=e['reminders'],
+            html_link=e['html_link'],
+            calendar_id=e['calendar_connection_id'],
+            provider=e['calendar_connection'].provider,
+            calendar_name=e['calendar_connection'].calendar_name,
+            calendar_color=e['calendar_connection'].calendar_color,
         )
-        for e in events
+        for e in expanded_events
     ]
 
 
@@ -374,39 +391,55 @@ async def get_upcoming_events(
 ):
     """
     Get upcoming events starting from now.
+    Recurring events are automatically expanded into individual instances.
     """
+    from sqlalchemy import or_
+
     now = datetime.utcnow()
     end_date = now + timedelta(days=30)
 
+    # Query for non-recurring events in range AND all recurring events
     events = db.query(CalendarEvent).join(CalendarConnection).filter(
         CalendarConnection.user_id == calendar_user.id,
         CalendarConnection.is_connected == True,
         CalendarConnection.deleted_at.is_(None),
-        CalendarEvent.start_time >= now,
-        CalendarEvent.start_time <= end_date,
         CalendarEvent.sync_status == SyncStatus.SYNCED,
         CalendarEvent.deleted_at.is_(None),
-    ).order_by(CalendarEvent.start_time).limit(limit).all()
+        or_(
+            # Non-recurring events within range
+            (CalendarEvent.is_recurring == False) &
+            (CalendarEvent.start_time >= now) &
+            (CalendarEvent.start_time <= end_date),
+            # All recurring events (will be expanded)
+            CalendarEvent.is_recurring == True,
+        ),
+    ).all()
+
+    # Expand recurring events into instances
+    expanded_events = get_events_with_recurrence_expansion(events, now, end_date)
+
+    # Limit results after expansion
+    limited_events = expanded_events[:limit]
 
     return {
         "events": [
             {
-                "id": str(e.id),
-                "title": e.title,
-                "startTime": e.start_time.isoformat(),
-                "endTime": e.end_time.isoformat(),
-                "isAllDay": e.is_all_day,
-                "location": e.location,
+                "id": e['id'],
+                "title": e['title'],
+                "startTime": e['start_time'].isoformat(),
+                "endTime": e['end_time'].isoformat(),
+                "isAllDay": e['is_all_day'],
+                "location": e['location'],
                 "calendar": {
-                    "provider": e.calendar_connection.provider.value,
-                    "name": e.calendar_connection.calendar_name,
-                    "color": e.calendar_connection.calendar_color,
+                    "provider": e['calendar_connection'].provider.value,
+                    "name": e['calendar_connection'].calendar_name,
+                    "color": e['calendar_connection'].calendar_color,
                 },
             }
-            for e in events
+            for e in limited_events
         ],
         "meta": {
-            "total": len(events),
+            "total": len(expanded_events),
             "limit": limit,
         },
     }
