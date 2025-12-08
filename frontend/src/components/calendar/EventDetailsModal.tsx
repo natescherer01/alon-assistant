@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Input } from './Input';
-import { Button } from './Button';
 import AttendeeInput from './AttendeeInput';
-import RecurrenceSelector from './RecurrenceSelector';
-import TeamsMeetingBadge from './TeamsMeetingBadge';
-import ImportanceBadge from './ImportanceBadge';
-import OutlookCategoriesBadges from './OutlookCategoriesBadges';
 import { eventsApi } from '../../api/calendar/events';
 import { useCalendars } from '../../hooks/calendar/useCalendars';
 import {
@@ -17,7 +11,12 @@ import {
   getCommonTimezones,
   formatTimezone,
 } from '../../utils/calendar/dateTime';
-import type { EventFormData, EventFormErrors, CreateEventRequest, AttendeeInput as AttendeeInputType, ReminderInput } from '../../types/event';
+import {
+  getCalendarColor,
+  getProviderName,
+  type Provider,
+} from '../../utils/calendar/calendarColors';
+import type { EventFormData, EventFormErrors, CreateEventRequest, ReminderInput } from '../../types/event';
 
 interface EventDetailsModalProps {
   isOpen: boolean;
@@ -70,7 +69,7 @@ export default function EventDetailsModal({
   onEventDeleted,
 }: EventDetailsModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
-  const { calendars, fetchCalendars } = useCalendars();
+  const { fetchCalendars } = useCalendars();
 
   // State management
   const [event, setEvent] = useState<EventDetails | null>(null);
@@ -80,6 +79,17 @@ export default function EventDetailsModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Hover states
+  const [closeHovered, setCloseHovered] = useState(false);
+  const [editHovered, setEditHovered] = useState(false);
+  const [deleteHovered, setDeleteHovered] = useState(false);
+  const [saveHovered, setSaveHovered] = useState(false);
+  const [cancelHovered, setCancelHovered] = useState(false);
+  const [confirmDeleteHovered, setConfirmDeleteHovered] = useState(false);
+  const [cancelDeleteHovered, setCancelDeleteHovered] = useState(false);
+  const [linkHovered, setLinkHovered] = useState(false);
+  const [teamsHovered, setTeamsHovered] = useState(false);
 
   // Form state for edit mode
   const [formData, setFormData] = useState<EventFormData>({
@@ -150,8 +160,8 @@ export default function EventDetailsModal({
         endTime: eventData.isAllDay ? '23:59' : toLocalTime(eventData.endTime),
         isAllDay: eventData.isAllDay,
         timezone: eventData.timezone || getUserTimezone(),
-        calendarConnectionId: '', // Will be set from calendar data
-        recurrence: null, // Recurrence editing not supported yet
+        calendarConnectionId: '',
+        recurrence: null,
         attendees: eventData.attendees || [],
         reminders: eventData.reminders || [],
       });
@@ -195,7 +205,6 @@ export default function EventDetailsModal({
   const handleCancelEdit = () => {
     setIsEditMode(false);
     setFormErrors({});
-    // Reset form data to original event data
     if (event) {
       setFormData({
         title: event.title || '',
@@ -297,12 +306,9 @@ export default function EventDetailsModal({
       };
 
       await eventsApi.updateEvent(eventId, updateData);
-
-      // Reload event details
       await loadEventDetails();
       setIsEditMode(false);
 
-      // Notify parent
       if (onEventUpdated) {
         onEventUpdated();
       }
@@ -330,8 +336,6 @@ export default function EventDetailsModal({
 
     try {
       await eventsApi.deleteEvent(eventId);
-
-      // Close modal and notify parent
       handleClose();
       if (onEventDeleted) {
         onEventDeleted();
@@ -377,39 +381,80 @@ export default function EventDetailsModal({
     return `${dateStr} at ${timeStr}${timezone ? ` (${timezone})` : ''}`;
   };
 
-  const getStatusBadgeStyles = (status?: string) => {
+  const getStatusBadgeStyle = (status?: string): React.CSSProperties => {
+    const baseStyle: React.CSSProperties = {
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '4px 10px',
+      borderRadius: '6px',
+      fontSize: '11px',
+      fontWeight: '600',
+      letterSpacing: '0.3px',
+      textTransform: 'uppercase',
+    };
+
     switch (status) {
       case 'CONFIRMED':
-        return 'bg-green-100 text-green-800';
+        return { ...baseStyle, background: 'rgba(34, 197, 94, 0.1)', color: '#16A34A' };
       case 'TENTATIVE':
-        return 'bg-yellow-100 text-yellow-800';
+        return { ...baseStyle, background: 'rgba(234, 179, 8, 0.1)', color: '#CA8A04' };
       case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
+        return { ...baseStyle, background: 'rgba(239, 68, 68, 0.1)', color: '#DC2626' };
       default:
-        return 'bg-gray-100 text-gray-800';
+        return { ...baseStyle, background: 'rgba(107, 114, 128, 0.1)', color: '#6B7280' };
     }
   };
 
-  const getRSVPBadgeStyles = (responseStatus?: string) => {
+  const getRSVPBadgeStyle = (responseStatus?: string): React.CSSProperties => {
+    const baseStyle: React.CSSProperties = {
+      padding: '2px 8px',
+      borderRadius: '4px',
+      fontSize: '11px',
+      fontWeight: '500',
+    };
+
     switch (responseStatus) {
       case 'accepted':
-        return 'bg-green-100 text-green-700';
+        return { ...baseStyle, background: 'rgba(34, 197, 94, 0.1)', color: '#16A34A' };
       case 'declined':
-        return 'bg-red-100 text-red-700';
+        return { ...baseStyle, background: 'rgba(239, 68, 68, 0.1)', color: '#DC2626' };
       case 'tentative':
-        return 'bg-yellow-100 text-yellow-700';
+        return { ...baseStyle, background: 'rgba(234, 179, 8, 0.1)', color: '#CA8A04' };
       default:
-        return 'bg-gray-100 text-gray-700';
+        return { ...baseStyle, background: 'rgba(107, 114, 128, 0.1)', color: '#6B7280' };
     }
+  };
+
+  const getProviderBadgeStyle = (provider: string): React.CSSProperties => {
+    const styles: Record<string, React.CSSProperties> = {
+      GOOGLE: { background: 'rgba(66, 133, 244, 0.1)', color: '#4285F4' },
+      MICROSOFT: { background: 'rgba(0, 120, 212, 0.1)', color: '#0078D4' },
+      ICS: { background: 'rgba(107, 114, 128, 0.1)', color: '#6B7280' },
+    };
+    return styles[provider] || styles.ICS;
   };
 
   const isReadOnly = event?.calendar.provider === 'ICS' || event?.calendar.isReadOnly;
+  const calendarColor = event ? getCalendarColor(event.calendar.color, event.calendar.provider as Provider) : '#6B7280';
 
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 50,
+        padding: '16px',
+        overflowY: 'auto',
+      }}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -417,67 +462,147 @@ export default function EventDetailsModal({
     >
       <div
         ref={modalRef}
-        className="bg-white rounded-lg shadow-xl w-full max-w-3xl my-8"
+        style={{
+          background: '#fff',
+          borderRadius: '16px',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)',
+          width: '100%',
+          maxWidth: '600px',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
         tabIndex={-1}
       >
         {/* Header */}
-        <div className="flex justify-between items-start p-6 border-b border-gray-200">
-          <div className="flex-1">
+        <div style={{
+          padding: '20px 24px',
+          borderBottom: '1px solid #E5E7EB',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '16px',
+        }}>
+          {/* Calendar Color Indicator */}
+          <div style={{
+            width: '4px',
+            height: '100%',
+            minHeight: '48px',
+            borderRadius: '2px',
+            background: calendarColor,
+            flexShrink: 0,
+          }} />
+
+          <div style={{ flex: 1, minWidth: 0 }}>
             {isEditMode ? (
-              <Input
+              <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
-                error={formErrors.title}
                 placeholder="Event title"
-                className="text-2xl font-semibold"
                 disabled={isSaving}
+                style={{
+                  width: '100%',
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: '#000',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  outline: 'none',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#0066FF'}
+                onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
               />
             ) : (
-              <div className="space-y-2">
-                <h2 id="modal-title" className="text-2xl font-semibold text-gray-900">
+              <>
+                <h2
+                  id="modal-title"
+                  style={{
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    color: '#000',
+                    margin: 0,
+                    lineHeight: 1.3,
+                  }}
+                >
                   {isLoading ? 'Loading...' : event?.title}
                 </h2>
                 {event?.status && (
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${getStatusBadgeStyles(
-                      event.status
-                    )}`}
-                  >
-                    {event.status}
-                  </span>
+                  <div style={{ marginTop: '8px' }}>
+                    <span style={getStatusBadgeStyle(event.status)}>
+                      {event.status}
+                    </span>
+                  </div>
                 )}
-              </div>
+              </>
+            )}
+            {formErrors.title && (
+              <p style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px' }}>
+                {formErrors.title}
+              </p>
             )}
           </div>
+
+          {/* Close Button */}
           <button
             onClick={handleClose}
             disabled={isSaving || isDeleting}
-            className="ml-4 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+            onMouseEnter={() => setCloseHovered(true)}
+            onMouseLeave={() => setCloseHovered(false)}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              border: 'none',
+              background: closeHovered ? '#F3F4F6' : 'transparent',
+              cursor: isSaving || isDeleting ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              opacity: isSaving || isDeleting ? 0.5 : 1,
+              transition: 'all 0.2s',
+            }}
             aria-label="Close"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg style={{ width: '20px', height: '20px', color: '#6B7280' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6 max-h-[calc(100vh-300px)] overflow-y-auto">
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '24px',
+        }}>
           {/* Error Banner */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg" role="alert">
-              <p className="font-medium">Error</p>
-              <p className="text-sm">{error}</p>
+            <div style={{
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '10px',
+              padding: '12px 16px',
+              marginBottom: '20px',
+            }}>
+              <p style={{ fontSize: '14px', fontWeight: '500', color: '#DC2626', margin: 0 }}>
+                {error}
+              </p>
               {error.includes('try again') && (
                 <button
                   onClick={loadEventDetails}
-                  className="mt-2 text-sm font-medium underline hover:no-underline"
+                  style={{
+                    marginTop: '8px',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#DC2626',
+                    background: 'none',
+                    border: 'none',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                  }}
                 >
                   Retry
                 </button>
@@ -485,81 +610,149 @@ export default function EventDetailsModal({
             </div>
           )}
 
-          {/* Delete Confirmation Dialog */}
+          {/* Delete Confirmation */}
           {showDeleteConfirm && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-900 px-4 py-3 rounded-lg">
-              <p className="font-medium">Are you sure you want to delete this event?</p>
-              <p className="text-sm mt-1">This action cannot be undone.</p>
-              <div className="mt-3 flex gap-2">
-                <Button
-                  variant="danger"
+            <div style={{
+              background: 'rgba(234, 179, 8, 0.08)',
+              border: '1px solid rgba(234, 179, 8, 0.2)',
+              borderRadius: '10px',
+              padding: '16px',
+              marginBottom: '20px',
+            }}>
+              <p style={{ fontSize: '14px', fontWeight: '500', color: '#92400E', margin: 0 }}>
+                Are you sure you want to delete this event?
+              </p>
+              <p style={{ fontSize: '13px', color: '#92400E', marginTop: '4px', opacity: 0.8 }}>
+                This action cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                <button
                   onClick={handleConfirmDelete}
-                  isLoading={isDeleting}
                   disabled={isDeleting}
+                  onMouseEnter={() => setConfirmDeleteHovered(true)}
+                  onMouseLeave={() => setConfirmDeleteHovered(false)}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#fff',
+                    background: confirmDeleteHovered && !isDeleting ? '#DC2626' : '#EF4444',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: isDeleting ? 'not-allowed' : 'pointer',
+                    opacity: isDeleting ? 0.7 : 1,
+                    transition: 'all 0.2s',
+                  }}
                 >
-                  Delete Event
-                </Button>
-                <Button variant="secondary" onClick={handleCancelDelete} disabled={isDeleting}>
+                  {isDeleting ? 'Deleting...' : 'Delete Event'}
+                </button>
+                <button
+                  onClick={handleCancelDelete}
+                  disabled={isDeleting}
+                  onMouseEnter={() => setCancelDeleteHovered(true)}
+                  onMouseLeave={() => setCancelDeleteHovered(false)}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#666',
+                    background: cancelDeleteHovered && !isDeleting ? '#E5E7EB' : '#F3F4F6',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: isDeleting ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
                   Cancel
-                </Button>
+                </button>
               </div>
             </div>
           )}
 
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '48px 0',
+            }}>
               <svg
-                className="animate-spin h-8 w-8 text-blue-600"
-                xmlns="http://www.w3.org/2000/svg"
+                style={{ width: '32px', height: '32px', color: '#0066FF', animation: 'spin 1s linear infinite' }}
                 fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
                 <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                 />
               </svg>
             </div>
           ) : event && !isEditMode ? (
-            <>
-              {/* Time Section */}
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                  When
-                </h3>
-                <div className="flex items-start gap-3">
-                  <svg
-                    className="w-5 h-5 text-gray-400 mt-0.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <div>
-                    <p className="text-gray-900">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* When Section */}
+              <div style={{
+                background: '#FAFBFC',
+                borderRadius: '12px',
+                padding: '16px',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    background: 'rgba(0, 102, 255, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <svg style={{ width: '18px', height: '18px', color: '#0066FF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '14px', fontWeight: '500', color: '#000', margin: 0 }}>
                       {formatDateTime(event.startTime, event.isAllDay, event.timezone)}
                     </p>
-                    <p className="text-gray-600 text-sm">
+                    <p style={{ fontSize: '13px', color: '#666', marginTop: '4px' }}>
                       to {formatDateTime(event.endTime, event.isAllDay, event.timezone)}
                     </p>
                     {event.isAllDay && (
-                      <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                      <span style={{
+                        display: 'inline-flex',
+                        marginTop: '8px',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        background: 'rgba(0, 102, 255, 0.1)',
+                        color: '#0066FF',
+                      }}>
                         All-day event
+                      </span>
+                    )}
+                    {event.isRecurring && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        marginTop: '8px',
+                        marginLeft: event.isAllDay ? '8px' : 0,
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        background: 'rgba(147, 51, 234, 0.1)',
+                        color: '#9333EA',
+                      }}>
+                        <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Recurring
                       </span>
                     )}
                   </div>
@@ -568,76 +761,181 @@ export default function EventDetailsModal({
 
               {/* Location */}
               {event.location && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    Location
-                  </h3>
-                  <div className="flex items-start gap-3">
-                    <svg
-                      className="w-5 h-5 text-gray-400 mt-0.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <svg style={{ width: '18px', height: '18px', color: '#EF4444' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <p className="text-gray-900">{event.location}</p>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '12px', fontWeight: '600', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                      Location
+                    </p>
+                    <p style={{ fontSize: '14px', color: '#000', margin: 0 }}>
+                      {event.location}
+                    </p>
                   </div>
                 </div>
               )}
 
               {/* Description */}
               {event.description && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    Description
-                  </h3>
-                  <p className="text-gray-900 whitespace-pre-wrap">{event.description}</p>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    background: 'rgba(107, 114, 128, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <svg style={{ width: '18px', height: '18px', color: '#6B7280' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                    </svg>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '12px', fontWeight: '600', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                      Description
+                    </p>
+                    <p style={{ fontSize: '14px', color: '#000', margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                      {event.description}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Teams Meeting */}
+              {event.calendar.provider === 'MICROSOFT' && event.providerMetadata?.teamsEnabled && event.providerMetadata?.teamsMeetingUrl && (
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(80, 95, 205, 0.08) 0%, rgba(80, 95, 205, 0.04) 100%)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  border: '1px solid rgba(80, 95, 205, 0.15)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: '#505FCD',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <svg style={{ width: '20px', height: '20px', color: '#fff' }} fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19.5 3A2.5 2.5 0 0122 5.5v13a2.5 2.5 0 01-2.5 2.5h-15A2.5 2.5 0 012 18.5v-13A2.5 2.5 0 014.5 3h15zm-9.75 12.75v-7.5h-3v7.5h3zm-1.5-8.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm9.75 8.5v-4.5c0-1.5-.75-2.25-1.875-2.25S14.5 9.75 14.5 11.25v4.5h3v-4.5c0-.375.188-.75.563-.75.374 0 .562.375.562.75v4.5h3z" />
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '14px', fontWeight: '600', color: '#505FCD', margin: 0 }}>
+                        Teams Meeting
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+                        Click to join the online meeting
+                      </p>
+                    </div>
+                    <a
+                      href={event.providerMetadata.teamsMeetingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onMouseEnter={() => setTeamsHovered(true)}
+                      onMouseLeave={() => setTeamsHovered(false)}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#fff',
+                        background: teamsHovered ? '#4048B5' : '#505FCD',
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      Join
+                    </a>
+                  </div>
                 </div>
               )}
 
               {/* Attendees */}
               {event.attendees && event.attendees.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                <div>
+                  <p style={{ fontSize: '12px', fontWeight: '600', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>
                     Attendees ({event.attendees.length})
-                  </h3>
-                  <div className="space-y-2">
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {event.attendees.map((attendee: any, index: number) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-sm font-medium text-gray-700">
-                          {attendee.displayName?.charAt(0) || attendee.email?.charAt(0) || '?'}
+                      <div key={index} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '10px 12px',
+                        background: '#FAFBFC',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(0, 0, 0, 0.06)',
+                      }}>
+                        <div style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          flexShrink: 0,
+                        }}>
+                          {attendee.displayName?.charAt(0)?.toUpperCase() || attendee.email?.charAt(0)?.toUpperCase() || '?'}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {attendee.displayName || attendee.email}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <p style={{
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              color: '#000',
+                              margin: 0,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {attendee.displayName || attendee.email}
+                            </p>
                             {attendee.isOrganizer && (
-                              <span className="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                              <span style={{
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                fontWeight: '600',
+                                background: 'rgba(147, 51, 234, 0.1)',
+                                color: '#9333EA',
+                              }}>
                                 Organizer
                               </span>
                             )}
-                          </p>
+                          </div>
                           {attendee.email && attendee.displayName && (
-                            <p className="text-xs text-gray-500 truncate">{attendee.email}</p>
+                            <p style={{ fontSize: '12px', color: '#666', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {attendee.email}
+                            </p>
                           )}
                         </div>
                         {attendee.responseStatus && (
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded ${getRSVPBadgeStyles(
-                              attendee.responseStatus
-                            )}`}
-                          >
+                          <span style={getRSVPBadgeStyle(attendee.responseStatus)}>
                             {attendee.responseStatus}
                           </span>
                         )}
@@ -647,245 +945,350 @@ export default function EventDetailsModal({
                 </div>
               )}
 
-              {/* Calendar & Provider */}
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                  Calendar
-                </h3>
-                <div className="flex items-center gap-2">
-                  {event.calendar.color && (
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: event.calendar.color }}
-                    />
-                  )}
-                  <span className="text-gray-900">{event.calendar.name}</span>
-                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
-                    {event.calendar.provider}
-                  </span>
-                  {isReadOnly && (
-                    <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
-                      Read-only
-                    </span>
-                  )}
+              {/* Calendar Info */}
+              <div style={{
+                background: '#FAFBFC',
+                borderRadius: '12px',
+                padding: '16px',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    background: `${calendarColor}20`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      borderRadius: '50%',
+                      background: calendarColor,
+                    }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '14px', fontWeight: '500', color: '#000', margin: 0 }}>
+                      {event.calendar.name}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '3px 8px',
+                        borderRadius: '5px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        ...getProviderBadgeStyle(event.calendar.provider),
+                      }}>
+                        {getProviderName(event.calendar.provider as Provider)}
+                      </span>
+                      {isReadOnly && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '3px 8px',
+                          borderRadius: '5px',
+                          fontSize: '11px',
+                          fontWeight: '500',
+                          background: 'rgba(234, 179, 8, 0.1)',
+                          color: '#CA8A04',
+                        }}>
+                          <svg style={{ width: '10px', height: '10px' }} fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                          </svg>
+                          Read-only
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 {event.htmlLink && (
                   <a
                     href={event.htmlLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:text-blue-800 underline"
                     onClick={(e) => e.stopPropagation()}
+                    onMouseEnter={() => setLinkHovered(true)}
+                    onMouseLeave={() => setLinkHovered(false)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      marginTop: '12px',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      color: linkHovered ? '#0052CC' : '#0066FF',
+                      textDecoration: 'none',
+                      transition: 'color 0.2s',
+                    }}
                   >
-                    View in {event.calendar.provider === 'GOOGLE' ? 'Google Calendar' : 'Outlook'}
+                    <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    View in {event.calendar.provider === 'GOOGLE' ? 'Google Calendar' : event.calendar.provider === 'MICROSOFT' ? 'Outlook' : 'calendar app'}
                   </a>
                 )}
               </div>
 
-              {/* Reminders */}
-              {event.reminders && event.reminders.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    Reminders
-                  </h3>
-                  <div className="space-y-1">
-                    {event.reminders.map((reminder: ReminderInput, index: number) => (
-                      <p key={index} className="text-sm text-gray-900">
-                        {reminder.method} - {reminder.minutesBefore} minutes before
-                      </p>
+              {/* Importance (Microsoft) */}
+              {event.calendar.provider === 'MICROSOFT' && event.providerMetadata?.importance && event.providerMetadata.importance !== 'normal' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', color: '#666' }}>Importance:</span>
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    background: event.providerMetadata.importance === 'high' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(107, 114, 128, 0.1)',
+                    color: event.providerMetadata.importance === 'high' ? '#DC2626' : '#6B7280',
+                    textTransform: 'capitalize',
+                  }}>
+                    {event.providerMetadata.importance}
+                  </span>
+                </div>
+              )}
+
+              {/* Categories (Microsoft) */}
+              {event.calendar.provider === 'MICROSOFT' && event.providerMetadata?.outlookCategories && event.providerMetadata.outlookCategories.length > 0 && (
+                <div>
+                  <p style={{ fontSize: '12px', fontWeight: '600', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                    Categories
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {event.providerMetadata.outlookCategories.map((category, index) => (
+                      <span key={index} style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        background: 'rgba(107, 114, 128, 0.1)',
+                        color: '#374151',
+                      }}>
+                        {category}
+                      </span>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Recurrence */}
-              {event.isRecurring && event.recurrenceRule && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    Recurrence
-                  </h3>
-                  <p className="text-sm text-gray-900">{event.recurrenceRule}</p>
-                </div>
-              )}
-
-              {/* Microsoft-Specific Features */}
-              {event.calendar.provider === 'MICROSOFT' && event.providerMetadata && (
-                <div className="space-y-4 pt-4 border-t border-gray-200">
-                  {/* Teams Meeting */}
-                  {event.providerMetadata.teamsEnabled && (
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                        Online Meeting
-                      </h3>
-                      <TeamsMeetingBadge
-                        teamsMeetingUrl={event.providerMetadata.teamsMeetingUrl}
-                        variant="button"
-                      />
-                    </div>
-                  )}
-
-                  {/* Importance */}
-                  {event.providerMetadata.importance && event.providerMetadata.importance !== 'normal' && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-700">Importance:</span>
-                      <ImportanceBadge importance={event.providerMetadata.importance} variant="badge" />
-                    </div>
-                  )}
-
-                  {/* Categories */}
-                  {event.providerMetadata.outlookCategories && event.providerMetadata.outlookCategories.length > 0 && (
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                        Categories
-                      </h3>
-                      <OutlookCategoriesBadges categories={event.providerMetadata.outlookCategories} />
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* Metadata */}
-              <div className="pt-4 border-t border-gray-200 text-xs text-gray-500 space-y-1">
-                <p>Created: {new Date(event.createdAt).toLocaleString()}</p>
-                <p>Updated: {new Date(event.updatedAt).toLocaleString()}</p>
+              <div style={{
+                paddingTop: '16px',
+                borderTop: '1px solid #E5E7EB',
+              }}>
+                <p style={{ fontSize: '12px', color: '#9CA3AF', margin: 0 }}>
+                  Created: {new Date(event.createdAt).toLocaleString()}
+                </p>
+                <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>
+                  Updated: {new Date(event.updatedAt).toLocaleString()}
+                </p>
               </div>
-            </>
+            </div>
           ) : event && isEditMode ? (
-            /* Edit Mode */
-            <form className="space-y-6">
-              {/* General Error */}
+            /* Edit Mode Form */
+            <form style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {formErrors.general && (
-                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg" role="alert">
-                  <p className="text-sm">{formErrors.general}</p>
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                }}>
+                  <p style={{ fontSize: '13px', color: '#DC2626', margin: 0 }}>
+                    {formErrors.general}
+                  </p>
                 </div>
               )}
 
-              {/* Title */}
-              <Input
-                label="Title"
-                type="text"
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                error={formErrors.title}
-                placeholder="Event title"
-                maxLength={500}
-                required
-                disabled={isSaving}
-              />
+              {/* All-day Toggle */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={formData.isAllDay}
+                  onChange={(e) => handleInputChange('isAllDay', e.target.checked)}
+                  disabled={isSaving}
+                  style={{ width: '18px', height: '18px', accentColor: '#0066FF' }}
+                />
+                <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>All-day event</span>
+              </label>
 
-              {/* Date and Time */}
-              <div className="space-y-3">
-                {/* All-day toggle */}
-                <label className="flex items-center gap-2 cursor-pointer">
+              {/* Date/Time Fields */}
+              <div style={{ display: 'grid', gridTemplateColumns: formData.isAllDay ? '1fr' : '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
+                    Start Date *
+                  </label>
                   <input
-                    type="checkbox"
-                    checked={formData.isAllDay}
-                    onChange={(e) => handleInputChange('isAllDay', e.target.checked)}
-                    disabled={isSaving}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">All-day event</span>
-                </label>
-
-                {/* Start Date/Time */}
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="Start Date"
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => handleInputChange('startDate', e.target.value)}
-                    error={formErrors.startDate}
-                    required
                     disabled={isSaving}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      fontSize: '14px',
+                      border: formErrors.startDate ? '1px solid #EF4444' : '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      outline: 'none',
+                    }}
                   />
-                  {!formData.isAllDay && (
-                    <Input
-                      label="Start Time"
+                  {formErrors.startDate && (
+                    <p style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px' }}>{formErrors.startDate}</p>
+                  )}
+                </div>
+                {!formData.isAllDay && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
+                      Start Time *
+                    </label>
+                    <input
                       type="time"
                       value={formData.startTime}
                       onChange={(e) => handleInputChange('startTime', e.target.value)}
-                      error={formErrors.startTime}
-                      required
                       disabled={isSaving}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        fontSize: '14px',
+                        border: formErrors.startTime ? '1px solid #EF4444' : '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        outline: 'none',
+                      }}
                     />
-                  )}
-                </div>
+                    {formErrors.startTime && (
+                      <p style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px' }}>{formErrors.startTime}</p>
+                    )}
+                  </div>
+                )}
+              </div>
 
-                {/* End Date/Time */}
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="End Date"
+              <div style={{ display: 'grid', gridTemplateColumns: formData.isAllDay ? '1fr' : '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
+                    End Date *
+                  </label>
+                  <input
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => handleInputChange('endDate', e.target.value)}
-                    error={formErrors.endDate}
-                    required
                     disabled={isSaving}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      fontSize: '14px',
+                      border: formErrors.endDate ? '1px solid #EF4444' : '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      outline: 'none',
+                    }}
                   />
-                  {!formData.isAllDay && (
-                    <Input
-                      label="End Time"
+                  {formErrors.endDate && (
+                    <p style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px' }}>{formErrors.endDate}</p>
+                  )}
+                </div>
+                {!formData.isAllDay && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
+                      End Time *
+                    </label>
+                    <input
                       type="time"
                       value={formData.endTime}
                       onChange={(e) => handleInputChange('endTime', e.target.value)}
-                      error={formErrors.endTime}
-                      required
                       disabled={isSaving}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        fontSize: '14px',
+                        border: formErrors.endTime ? '1px solid #EF4444' : '1px solid #E5E7EB',
+                        borderRadius: '8px',
+                        outline: 'none',
+                      }}
                     />
-                  )}
-                </div>
+                    {formErrors.endTime && (
+                      <p style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px' }}>{formErrors.endTime}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Timezone */}
               <div>
-                <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-1">
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
                   Timezone
                 </label>
                 <select
-                  id="timezone"
                   value={formData.timezone}
                   onChange={(e) => handleInputChange('timezone', e.target.value)}
                   disabled={isSaving}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    fontSize: '14px',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '8px',
+                    outline: 'none',
+                    background: '#fff',
+                  }}
                 >
                   {getCommonTimezones().map((tz) => (
-                    <option key={tz} value={tz}>
-                      {formatTimezone(tz)}
-                    </option>
+                    <option key={tz} value={tz}>{formatTimezone(tz)}</option>
                   ))}
                 </select>
               </div>
 
               {/* Description */}
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
                   Description
                 </label>
                 <textarea
-                  id="description"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   disabled={isSaving}
                   placeholder="Add a description..."
-                  maxLength={2000}
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    fontSize: '14px',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '8px',
+                    outline: 'none',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                  }}
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>
                   {formData.description.length}/2000 characters
                 </p>
               </div>
 
               {/* Location */}
-              <Input
-                label="Location"
-                type="text"
-                value={formData.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
-                placeholder="Add a location..."
-                maxLength={500}
-                disabled={isSaving}
-              />
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => handleInputChange('location', e.target.value)}
+                  disabled={isSaving}
+                  placeholder="Add a location..."
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    fontSize: '14px',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '8px',
+                    outline: 'none',
+                  }}
+                />
+              </div>
 
               {/* Attendees */}
               <AttendeeInput
@@ -899,69 +1302,160 @@ export default function EventDetailsModal({
 
         {/* Footer */}
         {!isLoading && event && (
-          <div className="flex gap-3 justify-between p-6 border-t border-gray-200">
+          <div style={{
+            padding: '16px 24px',
+            borderTop: '1px solid #E5E7EB',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '12px',
+          }}>
             {isEditMode ? (
               <>
-                <Button variant="secondary" onClick={handleCancelEdit} disabled={isSaving}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleSaveEdit}
-                  isLoading={isSaving}
+                <button
+                  onClick={handleCancelEdit}
                   disabled={isSaving}
+                  onMouseEnter={() => setCancelHovered(true)}
+                  onMouseLeave={() => setCancelHovered(false)}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#666',
+                    background: cancelHovered && !isSaving ? '#E5E7EB' : '#F3F4F6',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                  }}
                 >
-                  Save Changes
-                </Button>
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={isSaving}
+                  onMouseEnter={() => setSaveHovered(true)}
+                  onMouseLeave={() => setSaveHovered(false)}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#fff',
+                    background: saveHovered && !isSaving ? '#0052CC' : '#0066FF',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                    opacity: isSaving ? 0.7 : 1,
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  {isSaving && (
+                    <svg style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  )}
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
               </>
             ) : (
               <>
-                <div className="flex gap-2">
+                <div style={{ display: 'flex', gap: '8px' }}>
                   {!isReadOnly && (
                     <>
-                      <Button
-                        variant="secondary"
+                      <button
                         onClick={handleEditClick}
                         disabled={showDeleteConfirm}
+                        onMouseEnter={() => setEditHovered(true)}
+                        onMouseLeave={() => setEditHovered(false)}
+                        style={{
+                          padding: '10px 20px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          color: '#374151',
+                          background: editHovered && !showDeleteConfirm ? '#E5E7EB' : '#F3F4F6',
+                          border: 'none',
+                          borderRadius: '10px',
+                          cursor: showDeleteConfirm ? 'not-allowed' : 'pointer',
+                          opacity: showDeleteConfirm ? 0.5 : 1,
+                          transition: 'all 0.2s',
+                        }}
                       >
                         Edit
-                      </Button>
-                      <Button
-                        variant="danger"
+                      </button>
+                      <button
                         onClick={handleDeleteClick}
                         disabled={showDeleteConfirm}
+                        onMouseEnter={() => setDeleteHovered(true)}
+                        onMouseLeave={() => setDeleteHovered(false)}
+                        style={{
+                          padding: '10px 20px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          color: '#DC2626',
+                          background: deleteHovered && !showDeleteConfirm ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
+                          border: '1px solid rgba(220, 38, 38, 0.3)',
+                          borderRadius: '10px',
+                          cursor: showDeleteConfirm ? 'not-allowed' : 'pointer',
+                          opacity: showDeleteConfirm ? 0.5 : 1,
+                          transition: 'all 0.2s',
+                        }}
                       >
                         Delete
-                      </Button>
+                      </button>
                     </>
                   )}
                   {isReadOnly && (
-                    <div className="text-sm text-amber-700 flex items-center gap-1">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '10px 16px',
+                      background: 'rgba(234, 179, 8, 0.08)',
+                      borderRadius: '10px',
+                    }}>
+                      <svg style={{ width: '14px', height: '14px', color: '#CA8A04' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
-                      <span>This calendar is read-only</span>
+                      <span style={{ fontSize: '13px', fontWeight: '500', color: '#92400E' }}>
+                        This calendar is read-only
+                      </span>
                     </div>
                   )}
                 </div>
-                <Button variant="secondary" onClick={handleClose}>
+                <button
+                  onClick={handleClose}
+                  onMouseEnter={() => setCancelHovered(true)}
+                  onMouseLeave={() => setCancelHovered(false)}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#666',
+                    background: cancelHovered ? '#E5E7EB' : '#F3F4F6',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
                   Close
-                </Button>
+                </button>
               </>
             )}
           </div>
         )}
       </div>
+
+      {/* Animations */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
