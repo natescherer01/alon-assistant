@@ -141,6 +141,23 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* OAuth callback routes - backend redirects here after Google/Microsoft auth */}
+          <Route
+            path="/oauth/google/callback"
+            element={
+              <ProtectedRoute>
+                <OAuthCallbackPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/oauth/microsoft/callback"
+            element={
+              <ProtectedRoute>
+                <OAuthCallbackPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* 404 */}
           <Route path="*" element={<Navigate to="/" replace />} />
