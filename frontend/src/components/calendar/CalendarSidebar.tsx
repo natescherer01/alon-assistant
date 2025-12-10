@@ -384,102 +384,131 @@ export default function CalendarSidebar({
                       {/* Expanded Calendar Details */}
                       {expandedCalendarId === calendar.id && (
                         <div style={{
-                          padding: '12px',
-                          paddingTop: '4px',
-                          background: '#F9FAFB',
-                          borderTop: '1px solid #E5E7EB',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '12px',
+                          padding: '16px',
+                          background: 'linear-gradient(to bottom, #FAFBFC, #F5F5F7)',
+                          borderTop: '1px solid rgba(0, 0, 0, 0.06)',
                         }}>
-                          {/* Calendar Info */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
-                            {/* Calendar Color and Provider Badge */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                              {/* Calendar color indicator */}
-                              <div
-                                style={{
-                                  width: '12px',
-                                  height: '12px',
-                                  borderRadius: '50%',
-                                  border: '1px solid #D1D5DB',
-                                  flexShrink: 0,
-                                  backgroundColor: getCalendarColor(calendar.calendarColor, calendar.provider as Provider),
-                                }}
-                                title="Calendar color"
-                              />
-                              {/* Provider badge */}
-                              <span
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  padding: '2px 8px',
-                                  borderRadius: '9999px',
-                                  fontSize: '12px',
-                                  fontWeight: '500',
-                                  ...getProviderBadgeStyle(calendar.provider as Provider),
-                                }}
-                              >
-                                {getProviderName(calendar.provider as Provider)}
+                          {/* Badges Row */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            flexWrap: 'wrap',
+                            marginBottom: '16px',
+                          }}>
+                            {/* Provider badge */}
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              letterSpacing: '0.3px',
+                              textTransform: 'uppercase',
+                              ...getProviderBadgeStyle(calendar.provider as Provider),
+                            }}>
+                              {getProviderName(calendar.provider as Provider)}
+                            </span>
+                            {calendar.isPrimary && (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                letterSpacing: '0.3px',
+                                textTransform: 'uppercase',
+                                background: 'rgba(147, 51, 234, 0.1)',
+                                color: '#9333EA',
+                              }}>
+                                Primary
                               </span>
-                              {calendar.isPrimary && (
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  padding: '2px 8px',
-                                  borderRadius: '9999px',
-                                  fontSize: '12px',
-                                  fontWeight: '500',
-                                  background: 'rgba(147, 51, 234, 0.1)',
-                                  color: '#9333EA',
-                                }}>
-                                  Primary
-                                </span>
-                              )}
-                              {calendar.isReadOnly && (
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  padding: '2px 8px',
-                                  borderRadius: '9999px',
-                                  fontSize: '12px',
-                                  fontWeight: '500',
-                                  background: '#F3F4F6',
-                                  color: '#6B7280',
-                                }}>
-                                  <svg style={{ width: '12px', height: '12px' }} fill="currentColor" viewBox="0 0 20 20">
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                  Read-only
-                                </span>
-                              )}
-                            </div>
+                            )}
+                            {calendar.isReadOnly && (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                letterSpacing: '0.3px',
+                                textTransform: 'uppercase',
+                                background: 'rgba(0, 0, 0, 0.05)',
+                                color: '#6B7280',
+                              }}>
+                                <svg style={{ width: '10px', height: '10px' }} fill="currentColor" viewBox="0 0 20 20">
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                Read-only
+                              </span>
+                            )}
+                          </div>
 
+                          {/* Info Section */}
+                          <div style={{
+                            background: '#fff',
+                            borderRadius: '10px',
+                            padding: '12px',
+                            marginBottom: '12px',
+                            border: '1px solid rgba(0, 0, 0, 0.06)',
+                          }}>
                             {/* Owner Email */}
                             {calendar.ownerEmail && (
-                              <p style={{ color: '#666', margin: 0 }}>
-                                <span style={{ fontWeight: '500' }}>Owner:</span> {calendar.ownerEmail}
-                              </p>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                paddingBottom: calendar.lastSyncedAt ? '10px' : 0,
+                                marginBottom: calendar.lastSyncedAt ? '10px' : 0,
+                                borderBottom: calendar.lastSyncedAt ? '1px solid rgba(0, 0, 0, 0.06)' : 'none',
+                              }}>
+                                <svg style={{ width: '14px', height: '14px', color: '#9CA3AF', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span style={{ fontSize: '12px', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {calendar.ownerEmail}
+                                </span>
+                              </div>
                             )}
 
                             {/* Last Synced */}
                             {calendar.lastSyncedAt && (
-                              <p style={{ color: '#666', margin: 0 }}>
-                                <span style={{ fontWeight: '500' }}>Last synced:</span>{' '}
-                                {formatRelativeTime(calendar.lastSyncedAt)}
-                              </p>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <svg style={{ width: '14px', height: '14px', color: '#9CA3AF', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span style={{ fontSize: '12px', color: '#666' }}>
+                                  Synced {formatRelativeTime(calendar.lastSyncedAt)}
+                                </span>
+                              </div>
                             )}
 
                             {/* Sync Error */}
                             {calendar.syncError && (
-                              <p style={{ color: '#EF4444', margin: 0 }} title={calendar.syncError}>
-                                <span style={{ fontWeight: '500' }}>Error:</span> Sync failed
-                              </p>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                marginTop: '10px',
+                                padding: '8px',
+                                background: 'rgba(239, 68, 68, 0.08)',
+                                borderRadius: '6px',
+                              }} title={calendar.syncError}>
+                                <svg style={{ width: '14px', height: '14px', color: '#EF4444', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span style={{ fontSize: '12px', color: '#EF4444', fontWeight: '500' }}>
+                                  Sync failed
+                                </span>
+                              </div>
                             )}
                           </div>
 
@@ -492,32 +521,36 @@ export default function CalendarSidebar({
                                 disabled={isSyncing === calendar.id}
                                 style={{
                                   flex: 1,
-                                  padding: '6px 12px',
-                                  fontSize: '12px',
-                                  fontWeight: '500',
-                                  color: '#0066FF',
-                                  background: 'rgba(0, 102, 255, 0.1)',
+                                  padding: '10px 16px',
+                                  fontSize: '13px',
+                                  fontWeight: '600',
+                                  color: '#fff',
+                                  background: '#0066FF',
                                   border: 'none',
                                   borderRadius: '8px',
                                   cursor: isSyncing === calendar.id ? 'not-allowed' : 'pointer',
-                                  opacity: isSyncing === calendar.id ? 0.5 : 1,
+                                  opacity: isSyncing === calendar.id ? 0.7 : 1,
                                   transition: 'all 0.2s',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px',
                                 }}
                               >
                                 {isSyncing === calendar.id ? (
-                                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                    <svg style={{ width: '12px', height: '12px', animation: 'spin 1s linear infinite' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                      />
+                                  <>
+                                    <svg style={{ width: '14px', height: '14px', animation: 'spin 1s linear infinite' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                     </svg>
-                                    Syncing...
-                                  </span>
+                                    Syncing
+                                  </>
                                 ) : (
-                                  'Sync Now'
+                                  <>
+                                    <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    Sync Now
+                                  </>
                                 )}
                               </button>
                             )}
@@ -526,15 +559,21 @@ export default function CalendarSidebar({
                             <button
                               onClick={() => handleDisconnectClick(calendar)}
                               style={{
-                                padding: '6px 12px',
-                                fontSize: '12px',
-                                fontWeight: '500',
-                                color: '#EF4444',
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                border: 'none',
+                                padding: '10px 16px',
+                                fontSize: '13px',
+                                fontWeight: '600',
+                                color: '#DC2626',
+                                background: 'transparent',
+                                border: '1px solid rgba(220, 38, 38, 0.3)',
                                 borderRadius: '8px',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
+                              }}
+                              onMouseEnter={(e) => {
+                                (e.target as HTMLButtonElement).style.background = 'rgba(220, 38, 38, 0.08)';
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.target as HTMLButtonElement).style.background = 'transparent';
                               }}
                             >
                               Disconnect

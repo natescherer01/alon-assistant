@@ -142,8 +142,8 @@ export const calendarApi = {
     const response = await api.post<{ success: boolean }>(
       '/oauth/google/select',
       {
-        session_id: sessionId,
-        selected_calendar_ids: selectedCalendarIds,
+        code: sessionId,
+        selectedCalendarIds: selectedCalendarIds,
       }
     );
     return response.data;
@@ -159,8 +159,8 @@ export const calendarApi = {
     const response = await api.post<{ success: boolean }>(
       '/oauth/microsoft/select',
       {
-        session_id: sessionId,
-        selected_calendar_ids: selectedCalendarIds,
+        code: sessionId,
+        selectedCalendarIds: selectedCalendarIds,
       }
     );
     return response.data;

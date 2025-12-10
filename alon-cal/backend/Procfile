@@ -1,2 +1,0 @@
-web: npm run prisma:migrate:prod && npm run start
-release: npx prisma generate
