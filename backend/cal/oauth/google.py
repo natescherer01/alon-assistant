@@ -69,6 +69,7 @@ class GoogleOAuthConfig:
             f"{api_url}/api/v1/calendar/oauth/google/callback"
         )
         self.scopes = [
+            "openid",  # Required - Google adds this automatically, must be explicit to avoid scope mismatch
             "https://www.googleapis.com/auth/calendar.readonly",
             "https://www.googleapis.com/auth/calendar.events",
             "https://www.googleapis.com/auth/userinfo.email",
