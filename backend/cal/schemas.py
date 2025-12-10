@@ -249,7 +249,7 @@ class CalendarInfo(BaseModel):
 
 class EventResponse(BaseModel):
     """Response schema for a calendar event"""
-    id: UUID
+    id: str  # String to support composite IDs for recurring instances (uuid_datetime)
     title: str
     description: Optional[str] = None
     location: Optional[str] = None
