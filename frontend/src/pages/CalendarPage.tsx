@@ -9,8 +9,6 @@ import CreateEventButton from '../components/calendar/CreateEventButton';
 import CreateEventModal from '../components/calendar/CreateEventModal';
 import EventDetailsModal from '../components/calendar/EventDetailsModal';
 import TodaysPlanPanel from '../components/calendar/TodaysPlanPanel';
-import { UserSelectionPanel } from '../components/calendar/UserSelectionPanel';
-import { FreeTimeFinderPanel } from '../components/calendar/FreeTimeFinderPanel';
 import type { CalendarEvent } from '../api/calendar/calendar';
 import type { FreeSlot } from '../api/calendar/users';
 import LiveClock from '../components/calendar/LiveClock';
@@ -22,7 +20,6 @@ import LiveClock from '../components/calendar/LiveClock';
 export default function CalendarPage() {
   const navigate = useNavigate();
   const { logout } = useAuthStore();
-  // useCalendars now uses React Query - data is cached and persists across navigations
   const { calendars, isLoading, error, fetchCalendars } = useCalendars();
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
@@ -34,7 +31,7 @@ export default function CalendarPage() {
   // Multi-user calendar state
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [freeTimeSlots, setFreeTimeSlots] = useState<FreeSlot[] | null>(null);
-  const [showTeamPanel, setShowTeamPanel] = useState(false);
+  const currentUserId = String(useAuthStore.getState().user?.id || '');
 
   // No useEffect needed - React Query automatically fetches and caches data
 
@@ -205,6 +202,10 @@ export default function CalendarPage() {
             calendars={calendars}
             isCollapsed={isSidebarCollapsed}
             onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            currentUserId={currentUserId}
+            selectedUserIds={selectedUserIds}
+            onUserSelectionChange={setSelectedUserIds}
+            onFreeTimeSlotsChange={setFreeTimeSlots}
           />
         )}
 
@@ -215,69 +216,6 @@ export default function CalendarPage() {
             isExpanded={isTodaysPlanExpanded}
             onToggle={() => setIsTodaysPlanExpanded(!isTodaysPlanExpanded)}
           />
-        )}
-
-        {/* Team Calendar Panel - Fixed position on right side */}
-        {!isLoading && calendars.length > 0 && (
-          <div
-            style={{
-              position: 'fixed',
-              right: isTodaysPlanExpanded ? '320px' : '48px',
-              top: '80px',
-              width: showTeamPanel ? '280px' : '48px',
-              maxHeight: 'calc(100vh - 100px)',
-              background: '#fff',
-              borderRadius: '12px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-              transition: 'all 0.3s ease',
-              zIndex: 40,
-              overflow: 'hidden',
-            }}
-          >
-            {/* Toggle Button */}
-            <button
-              onClick={() => setShowTeamPanel(!showTeamPanel)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: showTeamPanel ? '#f3f4f6' : '#fff',
-                border: 'none',
-                borderBottom: showTeamPanel ? '1px solid #e5e7eb' : 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: showTeamPanel ? 'space-between' : 'center',
-                gap: '8px',
-              }}
-            >
-              <span style={{ fontSize: '20px' }}>👥</span>
-              {showTeamPanel && (
-                <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>
-                  Team Calendars
-                </span>
-              )}
-              {showTeamPanel && (
-                <span style={{ fontSize: '12px', color: '#9ca3af' }}>▼</span>
-              )}
-            </button>
-
-            {/* Panel Content */}
-            {showTeamPanel && (
-              <div style={{ maxHeight: 'calc(100vh - 180px)', overflowY: 'auto' }}>
-                <UserSelectionPanel
-                  selectedUserIds={selectedUserIds}
-                  onSelectionChange={setSelectedUserIds}
-                  currentUserId={String(useAuthStore.getState().user?.id || '')}
-                />
-                <FreeTimeFinderPanel
-                  selectedUserIds={selectedUserIds}
-                  currentUserId={String(useAuthStore.getState().user?.id || '')}
-                  viewDate={new Date()}
-                  onHighlightFreeSlots={setFreeTimeSlots}
-                />
-              </div>
-            )}
-          </div>
         )}
 
         {/* Main Content Area */}

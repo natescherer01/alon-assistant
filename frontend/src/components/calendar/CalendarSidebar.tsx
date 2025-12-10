@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { Calendar } from '../../api/calendar/calendar';
+import type { FreeSlot } from '../../api/calendar/users';
 import ProviderIcon from './ProviderIcon';
 import { formatRelativeTime } from '../../utils/calendar/time';
 import { useCalendars } from '../../hooks/calendar/useCalendars';
 import { useToast } from '../../hooks/calendar/useToast';
+import { useCalendarUsers, useFindFreeTimes } from '../../hooks/calendar/useCalendarUsers';
 import ConfirmationModal from './ConfirmationModal';
 import ConnectCalendarModal from './ConnectCalendarModal';
 import {
@@ -16,6 +18,10 @@ interface CalendarSidebarProps {
   calendars: Calendar[];
   isCollapsed: boolean;
   onToggle: () => void;
+  currentUserId: string;
+  selectedUserIds: string[];
+  onUserSelectionChange: (userIds: string[]) => void;
+  onFreeTimeSlotsChange: (slots: FreeSlot[] | null) => void;
 }
 
 /**
@@ -26,14 +32,72 @@ export default function CalendarSidebar({
   calendars,
   isCollapsed,
   onToggle,
+  currentUserId,
+  selectedUserIds,
+  onUserSelectionChange,
+  onFreeTimeSlotsChange,
 }: CalendarSidebarProps) {
   const [expandedCalendarId, setExpandedCalendarId] = useState<string | null>(null);
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [calendarToDisconnect, setCalendarToDisconnect] = useState<Calendar | null>(null);
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
+  const [showTeamSection, setShowTeamSection] = useState(false);
   const { disconnectCalendar, syncCalendar } = useCalendars();
   const { success, error: showError } = useToast();
+
+  // Team calendar hooks
+  const { data: teamUsers = [] } = useCalendarUsers();
+  const findFreeTimes = useFindFreeTimes();
+
+  // Filter team users (exclude current user, only those with calendars)
+  const filteredTeamUsers = useMemo(() => {
+    return teamUsers
+      .filter(u => String(u.id) !== String(currentUserId))
+      .filter(u => u.hasCalendar);
+  }, [teamUsers, currentUserId]);
+
+  const toggleUserSelection = useCallback((userId: string) => {
+    if (selectedUserIds.includes(userId)) {
+      onUserSelectionChange(selectedUserIds.filter(id => id !== userId));
+    } else {
+      onUserSelectionChange([...selectedUserIds, userId]);
+    }
+  }, [selectedUserIds, onUserSelectionChange]);
+
+  const handleFindFreeTime = useCallback(() => {
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 7);
+
+    const allUserIds = [String(currentUserId), ...selectedUserIds];
+
+    findFreeTimes.mutate(
+      {
+        userIds: allUserIds,
+        startDate,
+        endDate,
+        minSlotMinutes: 30,
+        excludedHoursStart: 0,
+        excludedHoursEnd: 6,
+      },
+      {
+        onSuccess: (data) => {
+          onFreeTimeSlotsChange(data.freeSlots);
+          success(`Found ${data.freeSlots.length} free time slots`);
+        },
+        onError: () => {
+          showError('Failed to find free times');
+        },
+      }
+    );
+  }, [currentUserId, selectedUserIds, findFreeTimes, onFreeTimeSlotsChange, success, showError]);
+
+  const clearFreeTimeSlots = useCallback(() => {
+    onFreeTimeSlotsChange(null);
+    onUserSelectionChange([]);
+  }, [onFreeTimeSlotsChange, onUserSelectionChange]);
 
   const handleCalendarClick = (calendarId: string) => {
     if (isCollapsed) {
@@ -603,6 +667,131 @@ export default function CalendarSidebar({
                 >
                   + Connect Calendar
                 </button>
+
+                {/* Team Section Divider */}
+                <div style={{
+                  marginTop: '16px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid #E5E7EB',
+                }}>
+                  {/* Team Header */}
+                  <button
+                    onClick={() => setShowTeamSection(!showTeamSection)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 0',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#000' }}>
+                      Team
+                    </span>
+                    <svg
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        color: '#9CA3AF',
+                        transition: 'transform 0.2s',
+                        transform: showTeamSection ? 'rotate(180deg)' : 'none',
+                      }}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Team Content */}
+                  {showTeamSection && (
+                    <div style={{ marginTop: '8px' }}>
+                      {filteredTeamUsers.length === 0 ? (
+                        <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>
+                          No team members with calendars
+                        </p>
+                      ) : (
+                        <>
+                          {/* User List */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
+                            {filteredTeamUsers.map(user => (
+                              <label
+                                key={user.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '6px 8px',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  background: selectedUserIds.includes(String(user.id)) ? 'rgba(0, 102, 255, 0.08)' : 'transparent',
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedUserIds.includes(String(user.id))}
+                                  onChange={() => toggleUserSelection(String(user.id))}
+                                  style={{ accentColor: '#0066FF', cursor: 'pointer' }}
+                                />
+                                <span style={{
+                                  fontSize: '13px',
+                                  color: '#333',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}>
+                                  {user.fullName || user.email.split('@')[0]}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+
+                          {/* Find Free Time Button */}
+                          <button
+                            onClick={handleFindFreeTime}
+                            disabled={findFreeTimes.isPending}
+                            style={{
+                              width: '100%',
+                              padding: '10px',
+                              fontSize: '13px',
+                              fontWeight: '500',
+                              color: '#fff',
+                              background: findFreeTimes.isPending ? '#9CA3AF' : '#22C55E',
+                              border: 'none',
+                              borderRadius: '8px',
+                              cursor: findFreeTimes.isPending ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            {findFreeTimes.isPending ? 'Finding...' : 'Find Free Time'}
+                          </button>
+
+                          {/* Clear Button */}
+                          {selectedUserIds.length > 0 && (
+                            <button
+                              onClick={clearFreeTimeSlots}
+                              style={{
+                                width: '100%',
+                                marginTop: '8px',
+                                padding: '8px',
+                                fontSize: '12px',
+                                color: '#666',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Clear selection
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
