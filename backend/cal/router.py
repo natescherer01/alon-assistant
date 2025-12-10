@@ -22,6 +22,9 @@ from cal.schemas import (
     EventResponse, EventDetailResponse, CreateEventRequest, CreateEventResponse,
     UpdateEventRequest, UpdateEventResponse, DeleteEventResponse,
     SyncAllResponse, SyncStatsResponse, ErrorResponse,
+    # Multi-user calendar view schemas
+    UserListItem, BusyTimesRequest, BusyTimesResponse, BusyBlock,
+    FreeTimesRequest, FreeTimesResponse, FreeSlot,
 )
 from cal.dependencies import (
     get_calendar_user, get_calendar_connection, decrypt_token,
@@ -724,3 +727,105 @@ async def retry_sync_event(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Retry sync failed: {str(e)}",
         )
+
+
+# =============================================================================
+# Multi-User Calendar View Endpoints
+# =============================================================================
+
+@router.get("/users", response_model=List[UserListItem])
+async def list_users_for_calendar(
+    calendar_user: CalendarUser = Depends(get_calendar_user),
+    db: Session = Depends(get_db),
+):
+    """
+    List all users for calendar selection.
+
+    Returns users with an indicator of whether they have connected calendars.
+    Used for selecting other users to view their busy times.
+    """
+    from cal.services.busy_time_service import BusyTimeService
+
+    users = BusyTimeService.get_all_users_with_calendars(db)
+    return [UserListItem(**u) for u in users]
+
+
+@router.post("/busy-times", response_model=BusyTimesResponse)
+async def get_busy_times(
+    request: BusyTimesRequest,
+    calendar_user: CalendarUser = Depends(get_calendar_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get busy time blocks for selected users.
+
+    Returns only time blocks - no event details (titles, descriptions, etc.)
+    for privacy. This allows team members to see when others are busy
+    without revealing what they're doing.
+    """
+    from cal.services.busy_time_service import BusyTimeService
+
+    logger.info(
+        f"Busy time query by user {calendar_user.email}: "
+        f"{len(request.user_ids)} users, "
+        f"range {request.start_date} to {request.end_date}"
+    )
+
+    busy_blocks = BusyTimeService.get_busy_blocks(
+        db,
+        request.user_ids,
+        request.start_date,
+        request.end_date
+    )
+
+    return BusyTimesResponse(
+        busy_blocks=[BusyBlock(**b) for b in busy_blocks]
+    )
+
+
+@router.post("/free-times", response_model=FreeTimesResponse)
+async def find_free_times(
+    request: FreeTimesRequest,
+    calendar_user: CalendarUser = Depends(get_calendar_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Calculate mutual free time slots across selected users.
+
+    Finds time slots where all selected users are available,
+    excluding specified hours (default: midnight-6am) and
+    filtering by minimum slot duration.
+    """
+    from cal.services.busy_time_service import BusyTimeService
+    from cal.services.free_time_calculator import FreeTimeCalculator
+
+    logger.info(
+        f"Free time search by user {calendar_user.email}: "
+        f"{len(request.user_ids)} users, "
+        f"range {request.start_date} to {request.end_date}, "
+        f"min {request.min_slot_minutes}min slots"
+    )
+
+    # Get busy blocks for all selected users
+    busy_blocks = BusyTimeService.get_busy_blocks(
+        db,
+        request.user_ids,
+        request.start_date,
+        request.end_date
+    )
+
+    # Calculate free times
+    calculator = FreeTimeCalculator(
+        excluded_hours=(request.excluded_hours_start, request.excluded_hours_end),
+        min_slot_minutes=request.min_slot_minutes
+    )
+
+    free_slots = calculator.find_free_slots(
+        busy_blocks,
+        request.start_date,
+        request.end_date
+    )
+
+    return FreeTimesResponse(
+        free_slots=[FreeSlot(**s) for s in free_slots]
+    )

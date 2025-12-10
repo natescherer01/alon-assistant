@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import type { CalendarEvent } from '../../api/calendar/calendar';
+import type { FreeSlot } from '../../api/calendar/users';
 import {
   getTimeSlots,
   getWeekDays,
@@ -41,6 +42,8 @@ interface WeekCalendarGridProps {
   countdownInfo?: CountdownInfo | null;
   /** User's timezone for displaying events (e.g., "America/Los_Angeles") */
   timezone?: string;
+  /** Free time slots to highlight with green overlay */
+  freeSlots?: FreeSlot[] | null;
 }
 
 /**
@@ -53,6 +56,7 @@ export default function WeekCalendarGrid({
   onEventClick,
   countdownInfo,
   timezone,
+  freeSlots,
 }: WeekCalendarGridProps) {
   const { user } = useAuth();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -142,6 +146,51 @@ export default function WeekCalendarGrid({
       return [{ start: startSlot, end: endSlot }];
     }
   }, [user?.sleepStartTime, user?.sleepEndTime]);
+
+  // Group free slots by day for rendering
+  const freeSlotsByDay = useMemo(() => {
+    const result = new Map<string, Array<{ startSlot: number; endSlot: number }>>();
+
+    if (!freeSlots || freeSlots.length === 0) {
+      return result;
+    }
+
+    displayDays.forEach(day => {
+      const dayKey = day.toDateString();
+      const dayStart = new Date(day);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(day);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const daySlotsRaw: Array<{ startSlot: number; endSlot: number }> = [];
+
+      freeSlots.forEach(slot => {
+        const slotStart = new Date(slot.startTime);
+        const slotEnd = new Date(slot.endTime);
+
+        // Check if slot overlaps with this day
+        if (slotStart <= dayEnd && slotEnd >= dayStart) {
+          // Calculate the portion of the slot that falls on this day
+          const effectiveStart = slotStart < dayStart ? dayStart : slotStart;
+          const effectiveEnd = slotEnd > dayEnd ? dayEnd : slotEnd;
+
+          // Convert to grid slots (15-minute increments, 96 slots per day)
+          const startSlot = effectiveStart.getHours() * 4 + Math.floor(effectiveStart.getMinutes() / 15);
+          const endSlot = effectiveEnd.getHours() * 4 + Math.ceil(effectiveEnd.getMinutes() / 15);
+
+          if (endSlot > startSlot) {
+            daySlotsRaw.push({ startSlot, endSlot });
+          }
+        }
+      });
+
+      if (daySlotsRaw.length > 0) {
+        result.set(dayKey, daySlotsRaw);
+      }
+    });
+
+    return result;
+  }, [freeSlots, displayDays]);
 
   // Handle mobile day navigation
   const handleMobilePrevDay = () => {
@@ -378,6 +427,7 @@ export default function WeekCalendarGrid({
             const dayEvents = eventsByDay.get(dayKey) || [];
             const { timedEvents } = separateAllDayEvents(dayEvents);
             const today = isToday(day);
+            const dayFreeSlots = freeSlotsByDay.get(dayKey);
 
             return (
               <DayColumn
@@ -391,6 +441,7 @@ export default function WeekCalendarGrid({
                 countdownInfo={today ? countdownInfo : undefined}
                 timezone={timezone}
                 sleepBlocks={sleepBlocks}
+                freeSlotBlocks={dayFreeSlots}
               />
             );
           })}
@@ -413,6 +464,8 @@ interface DayColumnProps {
   countdownInfo?: CountdownInfo | null;
   timezone?: string;
   sleepBlocks: Array<{ start: number; end: number }>;
+  /** Free time slots to render as green overlays */
+  freeSlotBlocks?: Array<{ startSlot: number; endSlot: number }>;
 }
 
 function DayColumn({
@@ -425,6 +478,7 @@ function DayColumn({
   countdownInfo,
   timezone,
   sleepBlocks,
+  freeSlotBlocks,
 }: DayColumnProps) {
   // Find the next event's grid position for the connector
   const getNextEventSlot = (): { slot: number; color: string } | null => {
@@ -498,6 +552,26 @@ function DayColumn({
             height: `${((block.end - block.start) / 96) * 100}%`,
           }}
           aria-hidden="true"
+        />
+      ))}
+
+      {/* Free time slots - green overlay highlighting available meeting times */}
+      {freeSlotBlocks && freeSlotBlocks.map((block, i) => (
+        <div
+          key={`free-${i}`}
+          style={{
+            position: 'absolute',
+            left: '2px',
+            right: '2px',
+            background: 'rgba(34, 197, 94, 0.25)',
+            border: '1px solid rgba(34, 197, 94, 0.4)',
+            borderRadius: '4px',
+            pointerEvents: 'none',
+            zIndex: 1,
+            top: `${(block.startSlot / 96) * 100}%`,
+            height: `${((block.endSlot - block.startSlot) / 96) * 100}%`,
+          }}
+          aria-label="Free time slot"
         />
       ))}
 

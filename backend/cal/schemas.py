@@ -558,3 +558,104 @@ class ErrorResponse(BaseModel):
     """Generic error response"""
     error: str
     message: str
+
+
+# ============================================================================
+# Multi-User Calendar View schemas
+# ============================================================================
+
+class UserListItem(BaseModel):
+    """User item for calendar selection"""
+    id: UUID
+    email: str
+    full_name: Optional[str] = Field(default=None, alias="fullName")
+    has_calendar: bool = Field(default=False, alias="hasCalendar")
+
+    model_config = {"populate_by_name": True}
+
+
+class BusyTimesRequest(BaseModel):
+    """Request for fetching busy times across users"""
+    user_ids: List[UUID] = Field(alias="userIds", max_length=50)  # Max 50 users
+    start_date: datetime = Field(alias="startDate")
+    end_date: datetime = Field(alias="endDate")
+
+    model_config = {"populate_by_name": True}
+
+    @model_validator(mode="after")
+    def validate_request(self):
+        # End must be after start
+        if self.end_date <= self.start_date:
+            raise ValueError("End date must be after start date")
+
+        # Max 90 days range
+        if (self.end_date - self.start_date).days > 90:
+            raise ValueError("Date range cannot exceed 90 days")
+
+        # At least one user
+        if len(self.user_ids) == 0:
+            raise ValueError("At least one user ID is required")
+
+        return self
+
+
+class BusyBlock(BaseModel):
+    """A busy time block (no event details for privacy)"""
+    user_id: UUID = Field(alias="userId")
+    user_name: str = Field(alias="userName")
+    start_time: datetime = Field(alias="startTime")
+    end_time: datetime = Field(alias="endTime")
+    is_all_day: bool = Field(default=False, alias="isAllDay")
+
+    model_config = {"populate_by_name": True}
+
+
+class BusyTimesResponse(BaseModel):
+    """Response containing busy time blocks"""
+    busy_blocks: List[BusyBlock] = Field(alias="busyBlocks")
+
+    model_config = {"populate_by_name": True}
+
+
+class FreeTimesRequest(BaseModel):
+    """Request for finding mutual free time"""
+    user_ids: List[UUID] = Field(alias="userIds", max_length=50)  # Max 50 users
+    start_date: datetime = Field(alias="startDate")
+    end_date: datetime = Field(alias="endDate")
+    excluded_hours_start: int = Field(default=0, ge=0, le=23, alias="excludedHoursStart")
+    excluded_hours_end: int = Field(default=6, ge=0, le=23, alias="excludedHoursEnd")
+    min_slot_minutes: int = Field(default=30, ge=15, le=480, alias="minSlotMinutes")
+
+    model_config = {"populate_by_name": True}
+
+    @model_validator(mode="after")
+    def validate_request(self):
+        # End must be after start
+        if self.end_date <= self.start_date:
+            raise ValueError("End date must be after start date")
+
+        # Max 30 days for free time search (more expensive)
+        if (self.end_date - self.start_date).days > 30:
+            raise ValueError("Date range cannot exceed 30 days for free time search")
+
+        # At least one user
+        if len(self.user_ids) == 0:
+            raise ValueError("At least one user ID is required")
+
+        return self
+
+
+class FreeSlot(BaseModel):
+    """A free time slot"""
+    start_time: datetime = Field(alias="startTime")
+    end_time: datetime = Field(alias="endTime")
+    duration_minutes: int = Field(alias="durationMinutes")
+
+    model_config = {"populate_by_name": True}
+
+
+class FreeTimesResponse(BaseModel):
+    """Response containing free time slots"""
+    free_slots: List[FreeSlot] = Field(alias="freeSlots")
+
+    model_config = {"populate_by_name": True}
