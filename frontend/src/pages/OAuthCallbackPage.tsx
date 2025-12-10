@@ -19,13 +19,11 @@ export default function OAuthCallbackPage() {
 
   useEffect(() => {
     const processCallback = async () => {
-      // Get session ID and provider from URL (new secure flow)
       const session = searchParams.get('session');
       const providerParam = searchParams.get('provider');
       const error = searchParams.get('error');
       const errorDescription = searchParams.get('error_description');
 
-      // Check for OAuth errors
       if (error) {
         setStatus('error');
         setErrorMessage(errorDescription || 'Authorization was denied');
@@ -45,18 +43,13 @@ export default function OAuthCallbackPage() {
       }
 
       try {
-        // Fetch session data from backend (secure server-side storage)
         const sessionData = await calendarApi.getOAuthSession(session);
-
-        // Set state for calendar selection modal
         setCalendars(sessionData.calendars);
         setSessionId(session);
         setProvider(providerParam.toUpperCase() as 'GOOGLE' | 'MICROSOFT');
         setStatus('selection');
       } catch (error) {
         setStatus('error');
-
-        // Handle specific error cases
         const errorMessage = error instanceof Error ? error.message : '';
 
         if (errorMessage.includes('expired') || errorMessage.includes('not found') || errorMessage.includes('404')) {
@@ -66,7 +59,6 @@ export default function OAuthCallbackPage() {
         } else {
           setErrorMessage('Failed to retrieve OAuth session. Please try again.');
         }
-
         console.error('OAuth session fetch error:', error);
       }
     };
@@ -85,126 +77,189 @@ export default function OAuthCallbackPage() {
     }, 500);
   };
 
+  // Spinner keyframes
+  const spinnerStyle = `
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  `;
+
   return (
     <>
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+      <style>{spinnerStyle}</style>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+      }}>
+        <div style={{
+          maxWidth: '420px',
+          width: '100%',
+          background: 'rgba(255, 255, 255, 0.95)',
+          borderRadius: '16px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          padding: '40px',
+          textAlign: 'center',
+        }}>
           {/* Processing State */}
           {status === 'processing' && (
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <svg
-                className="animate-spin h-12 w-12 text-blue-600"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                border: '4px solid #E5E7EB',
+                borderTopColor: '#3B82F6',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+              }} />
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: 0,
+              }}>
+                Connecting your calendar...
+              </h2>
+              <p style={{
+                fontSize: '16px',
+                color: '#6B7280',
+                margin: 0,
+              }}>
+                Please wait while we set up your connection.
+              </p>
+            </div>
+          )}
+
+          {/* Calendar Selection State - shows behind modal */}
+          {status === 'selection' && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <svg width="32" height="32" fill="none" stroke="white" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: 0,
+              }}>
+                Authorization successful!
+              </h2>
+              <p style={{
+                fontSize: '16px',
+                color: '#6B7280',
+                margin: 0,
+              }}>
+                Please select which calendars you'd like to sync.
+              </p>
+            </div>
+          )}
+
+          {/* Success State */}
+          {status === 'success' && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                background: 'linear-gradient(135deg, #10B981, #059669)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <svg width="32" height="32" fill="none" stroke="white" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: 0,
+              }}>
+                Successfully connected!
+              </h2>
+              <p style={{
+                fontSize: '16px',
+                color: '#6B7280',
+                margin: 0,
+              }}>
+                Your calendar has been connected. Redirecting...
+              </p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {status === 'error' && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <svg width="32" height="32" fill="none" stroke="white" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: 0,
+              }}>
+                Connection failed
+              </h2>
+              <p style={{
+                fontSize: '16px',
+                color: '#6B7280',
+                margin: 0,
+              }}>
+                {errorMessage}
+              </p>
+              <button
+                onClick={handleRetry}
+                style={{
+                  marginTop: '8px',
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
+                Return to Calendar
+              </button>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Connecting your calendar...
-            </h2>
-            <p className="text-gray-600">Please wait while we set up your connection.</p>
-          </div>
-        )}
-
-        {/* Calendar Selection State */}
-        {status === 'selection' && (
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-10 h-10 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900">Authorization successful!</h2>
-            <p className="text-gray-600">
-              Please select which calendars you'd like to sync.
-            </p>
-          </div>
-        )}
-
-        {/* Success State */}
-        {status === 'success' && (
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-10 h-10 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900">Successfully connected!</h2>
-            <p className="text-gray-600">
-              Your calendar has been connected. Redirecting to dashboard...
-            </p>
-          </div>
-        )}
-
-        {/* Error State */}
-        {status === 'error' && (
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-10 h-10 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </div>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900">Connection failed</h2>
-            <p className="text-gray-600">{errorMessage}</p>
-            <button
-              onClick={handleRetry}
-              className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Return to Dashboard
-            </button>
-          </div>
-        )}
+          )}
         </div>
       </div>
 
