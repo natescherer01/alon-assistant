@@ -309,6 +309,7 @@ export default function WeekCalendarGrid({
                     flexDirection: 'column',
                     gap: '4px',
                     background: today ? 'rgba(0, 102, 255, 0.05)' : 'transparent',
+                    overflow: 'hidden',
                   }}
                 >
                   {allDayEvents.length > 0 ? (
@@ -829,6 +830,8 @@ function AllDayEventBlock({ event, onClick }: AllDayEventBlockProps) {
         opacity: event.status === 'cancelled' ? 0.6 : 1,
         textDecoration: event.status === 'cancelled' ? 'line-through' : 'none',
         border: event.status === 'tentative' ? '2px dashed' : 'none',
+        overflow: 'hidden',
+        minWidth: 0,
       }}
       onClick={handleClick}
       role="button"
