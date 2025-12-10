@@ -5,8 +5,13 @@ Handles syncing events from Google, Microsoft, and ICS calendars.
 Supports incremental sync using provider-specific sync tokens/delta links.
 """
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
+
+
+def utc_now() -> datetime:
+    """Get current UTC time as timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 from sqlalchemy.orm import Session
 
@@ -67,7 +72,7 @@ async def sync_google_events(
         refresh_token = decrypt_token(connection.refresh_token)
 
         # Check if token needs refresh
-        if connection.token_expires_at and connection.token_expires_at < datetime.utcnow():
+        if connection.token_expires_at and connection.token_expires_at < utc_now():
             client = GoogleCalendarClient()
             new_tokens = await client.refresh_access_token(refresh_token)
             access_token = new_tokens.access_token
@@ -81,12 +86,12 @@ async def sync_google_events(
 
         # Determine sync range
         if force_full_sync or not connection.sync_token:
-            time_min = datetime.utcnow() - timedelta(days=30)
-            time_max = datetime.utcnow() + timedelta(days=365)
+            time_min = utc_now() - timedelta(days=30)
+            time_max = utc_now() + timedelta(days=365)
             sync_token = None
         else:
-            time_min = datetime.utcnow() - timedelta(days=30)
-            time_max = datetime.utcnow() + timedelta(days=365)
+            time_min = utc_now() - timedelta(days=30)
+            time_max = utc_now() + timedelta(days=365)
             sync_token = connection.sync_token
 
         try:
@@ -126,7 +131,7 @@ async def sync_google_events(
         if next_sync_token:
             connection.sync_token = next_sync_token
 
-        connection.last_synced_at = datetime.utcnow()
+        connection.last_synced_at = utc_now()
         db.commit()
 
         logger.info(f"Synced Google calendar {connection.id}: {stats}")
@@ -152,7 +157,7 @@ async def _upsert_google_event(
     # Handle cancelled/deleted events
     if google_event.status == "cancelled":
         if existing:
-            existing.deleted_at = datetime.utcnow()
+            existing.deleted_at = utc_now()
             existing.sync_status = SyncStatus.DELETED
             return "deleted"
         return "deleted"
@@ -181,7 +186,7 @@ async def _upsert_google_event(
         "reminders": google_event.reminders,
         "is_recurring": bool(google_event.recurrence or google_event.recurring_event_id),
         "recurrence_rule": google_event.recurrence[0] if google_event.recurrence else None,
-        "last_synced_at": datetime.utcnow(),
+        "last_synced_at": utc_now(),
         "deleted_at": None,  # Clear deleted_at if event reappears
     }
 
@@ -189,7 +194,7 @@ async def _upsert_google_event(
         # Update existing event
         for key, value in event_data.items():
             setattr(existing, key, value)
-        existing.updated_at = datetime.utcnow()
+        existing.updated_at = utc_now()
         return "updated"
     else:
         # Create new event
@@ -220,7 +225,7 @@ async def sync_microsoft_events(
         refresh_token = decrypt_token(connection.refresh_token)
 
         # Check if token needs refresh
-        if connection.token_expires_at and connection.token_expires_at < datetime.utcnow():
+        if connection.token_expires_at and connection.token_expires_at < utc_now():
             client = MicrosoftCalendarClient()
             new_tokens = await client.refresh_access_token(refresh_token)
             access_token = new_tokens.access_token
@@ -270,7 +275,7 @@ async def sync_microsoft_events(
         if next_delta_token:
             connection.sync_token = next_delta_token
 
-        connection.last_synced_at = datetime.utcnow()
+        connection.last_synced_at = utc_now()
         db.commit()
 
         logger.info(f"Synced Microsoft calendar {connection.id}: {stats}")
@@ -296,7 +301,7 @@ async def _upsert_microsoft_event(
     # Handle removed events (from delta sync)
     if ms_event.is_removed:
         if existing:
-            existing.deleted_at = datetime.utcnow()
+            existing.deleted_at = utc_now()
             existing.sync_status = SyncStatus.DELETED
             return "deleted"
         return "deleted"
@@ -305,7 +310,7 @@ async def _upsert_microsoft_event(
     if ms_event.is_cancelled:
         if existing:
             existing.status = EventStatus.CANCELLED
-            existing.deleted_at = datetime.utcnow()
+            existing.deleted_at = utc_now()
             existing.sync_status = SyncStatus.DELETED
             return "deleted"
         return "deleted"
@@ -334,7 +339,7 @@ async def _upsert_microsoft_event(
         "teams_enabled": ms_event.teams_enabled,
         "teams_meeting_url": ms_event.teams_meeting_url,
         "teams_conference_id": ms_event.teams_conference_id,
-        "last_synced_at": datetime.utcnow(),
+        "last_synced_at": utc_now(),
         "deleted_at": None,
     }
 
@@ -343,7 +348,7 @@ async def _upsert_microsoft_event(
         for key, value in event_data.items():
             if hasattr(existing, key):
                 setattr(existing, key, value)
-        existing.updated_at = datetime.utcnow()
+        existing.updated_at = utc_now()
         return "updated"
     else:
         # Create new event

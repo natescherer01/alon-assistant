@@ -28,6 +28,33 @@ from cal.dependencies import (
     get_client_ip, get_user_agent,
 )
 from cal.utils.recurrence import get_events_with_recurrence_expansion
+
+
+def normalize_reminders(reminders) -> Optional[List[dict]]:
+    """
+    Convert various reminder formats to a list of reminder dicts.
+
+    Google Calendar can return reminders in different formats:
+    - {'useDefault': True} - use default reminders
+    - {'useDefault': False, 'overrides': [...]} - explicit reminders
+    - A list directly
+    - None
+
+    Returns a list of reminder dicts or None.
+    """
+    if reminders is None:
+        return None
+    if isinstance(reminders, list):
+        return reminders
+    if isinstance(reminders, dict):
+        # Google format: {'useDefault': True} or {'useDefault': False, 'overrides': [...]}
+        if reminders.get('useDefault', False):
+            return []  # Using default reminders, return empty list
+        overrides = reminders.get('overrides')
+        if overrides and isinstance(overrides, list):
+            return overrides
+        return []
+    return None
 from cal.oauth.router import router as oauth_router
 from cal.services.webhook import router as webhook_router
 from cal.ics.router import router as ics_router
@@ -372,7 +399,7 @@ async def get_events(
             is_recurring=e['is_recurring'],
             recurrence_rule=e['recurrence_rule'],
             attendees=e['attendees'],
-            reminders=e['reminders'],
+            reminders=normalize_reminders(e['reminders']),
             html_link=e['html_link'],
             calendar_id=e['calendar_connection_id'],
             provider=e['calendar_connection'].provider,

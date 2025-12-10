@@ -349,8 +349,14 @@ class GoogleCalendarClient:
                 if sync_token:
                     params["syncToken"] = sync_token
                 else:
-                    params["timeMin"] = time_min.isoformat() + "Z"
-                    params["timeMax"] = time_max.isoformat() + "Z"
+                    # Format datetime to RFC3339 with Z suffix for Google API
+                    # Handle both naive and aware datetimes
+                    if time_min.tzinfo is not None:
+                        params["timeMin"] = time_min.strftime('%Y-%m-%dT%H:%M:%SZ')
+                        params["timeMax"] = time_max.strftime('%Y-%m-%dT%H:%M:%SZ')
+                    else:
+                        params["timeMin"] = time_min.isoformat() + "Z"
+                        params["timeMax"] = time_max.isoformat() + "Z"
 
                 if page_token:
                     params["pageToken"] = page_token
