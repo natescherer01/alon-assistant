@@ -326,6 +326,17 @@ async def select_google_calendars(
 
     logger.info(f"Connected {len(connected)} Google calendars for user {calendar_user.id}")
 
+    # Trigger initial sync for each connected calendar
+    from cal.services.sync import sync_calendar_events
+    for connection in connected:
+        try:
+            await sync_calendar_events(connection, db)
+            connection.last_synced_at = datetime.utcnow()
+            logger.info(f"Initial sync completed for Google calendar {connection.calendar_name}")
+        except Exception as e:
+            logger.warning(f"Initial sync failed for calendar {connection.calendar_name}: {e}")
+    db.commit()
+
     return CalendarSelectResponse(
         success=True,
         connected_count=len(connected),
@@ -588,6 +599,17 @@ async def select_microsoft_calendars(
     db.commit()
 
     logger.info(f"Connected {len(connected)} Microsoft calendars for user {calendar_user.id}")
+
+    # Trigger initial sync for each connected calendar
+    from cal.services.sync import sync_calendar_events
+    for connection in connected:
+        try:
+            await sync_calendar_events(connection, db)
+            connection.last_synced_at = datetime.utcnow()
+            logger.info(f"Initial sync completed for Microsoft calendar {connection.calendar_name}")
+        except Exception as e:
+            logger.warning(f"Initial sync failed for calendar {connection.calendar_name}: {e}")
+    db.commit()
 
     return CalendarSelectResponse(
         success=True,
