@@ -275,13 +275,6 @@ export default function CalendarPage() {
                   viewDate={new Date()}
                   onHighlightFreeSlots={setFreeTimeSlots}
                 />
-                {freeTimeSlots && freeTimeSlots.length > 0 && (
-                  <div style={{ padding: '8px 16px', background: '#f0fdf4', borderTop: '1px solid #bbf7d0' }}>
-                    <span style={{ fontSize: '12px', color: '#166534' }}>
-                      ✓ {freeTimeSlots.length} free slots highlighted
-                    </span>
-                  </div>
-                )}
               </div>
             )}
           </div>
