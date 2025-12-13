@@ -197,7 +197,7 @@ function TasksPage() {
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
       }}>
         <div className="navbar-container" style={{
-          maxWidth: '1400px',
+          maxWidth: '1600px',
           margin: '0 auto',
           padding: isMobile ? '12px 16px' : '16px 24px',
           display: 'flex',

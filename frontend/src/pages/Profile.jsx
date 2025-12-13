@@ -159,8 +159,8 @@ function Profile() {
         borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
       }}>
-        <div style={{
-          maxWidth: '1400px',
+        <div className="navbar-container" style={{
+          maxWidth: '1600px',
           margin: '0 auto',
           padding: isMobile ? '12px 16px' : '16px 24px',
           display: 'flex',
@@ -293,7 +293,6 @@ function Profile() {
             display: 'flex',
             flexDirection: 'column',
             gap: '8px',
-            zIndex: 100,
           }}>
             <button
               onClick={() => { navigate('/calendar'); setMobileMenuOpen(false); }}
