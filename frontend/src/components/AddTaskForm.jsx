@@ -9,6 +9,7 @@ function AddTaskForm({ onTaskAdded }) {
   const [title, setTitle] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const [formData, setFormData] = useState({
     description: '',
     project: '',
@@ -113,6 +114,27 @@ function AddTaskForm({ onTaskAdded }) {
     }
   };
 
+  // Shared input styles
+  const inputStyle = {
+    width: '100%',
+    padding: '10px 14px',
+    fontSize: '14px',
+    border: '1px solid rgba(0, 0, 0, 0.08)',
+    borderRadius: '10px',
+    outline: 'none',
+    background: '#fafafa',
+    transition: 'all 0.2s ease',
+  };
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: '12px',
+    fontWeight: '500',
+    color: '#6b7280',
+    marginBottom: '6px',
+    letterSpacing: '0.01em',
+  };
+
   // Expanded form
   if (isExpanded) {
     return (
@@ -120,10 +142,10 @@ function AddTaskForm({ onTaskAdded }) {
         <ConfirmDialog />
         <div style={{
           background: '#fff',
-          borderRadius: '8px',
-          border: '1px solid #e5e5e5',
-          padding: isMobile ? '16px' : '20px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+          borderRadius: '16px',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
+          padding: isMobile ? '20px' : '24px',
+          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
         }}>
           <form onSubmit={handleExpandedSubmit} onKeyDown={handleKeyDown}>
             <input
@@ -131,17 +153,19 @@ function AddTaskForm({ onTaskAdded }) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Task name"
+              placeholder="What needs to be done?"
               required
               style={{
                 width: '100%',
                 padding: '8px 0',
-                fontSize: '15px',
-                fontWeight: '500',
+                fontSize: '17px',
+                fontWeight: '600',
                 border: 'none',
                 outline: 'none',
                 background: 'transparent',
-                marginBottom: '12px',
+                marginBottom: '16px',
+                color: '#111',
+                letterSpacing: '-0.01em',
               }}
             />
 
@@ -149,89 +173,52 @@ function AddTaskForm({ onTaskAdded }) {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Description (optional)"
+              placeholder="Add notes or details..."
               rows={2}
               style={{
-                width: '100%',
-                padding: '8px 12px',
-                fontSize: '14px',
-                border: '1px solid #e5e5e5',
-                borderRadius: '6px',
-                outline: 'none',
+                ...inputStyle,
                 resize: 'none',
                 fontFamily: 'inherit',
-                background: '#fafafa',
-                marginBottom: '12px',
+                marginBottom: '16px',
               }}
             />
 
             <div style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-              gap: '12px',
-              marginBottom: '12px',
+              gap: '14px',
+              marginBottom: '16px',
             }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                  Project
-                </label>
+                <label style={labelStyle}>Project</label>
                 <input
                   type="text"
                   name="project"
                   value={formData.project}
                   onChange={handleChange}
                   placeholder="None"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '13px',
-                    border: '1px solid #e5e5e5',
-                    borderRadius: '6px',
-                    outline: 'none',
-                    background: '#fafafa',
-                  }}
+                  style={inputStyle}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                  Due date
-                </label>
+                <label style={labelStyle}>Due date</label>
                 <input
                   type="date"
                   name="deadline"
                   value={formData.deadline}
                   onChange={handleChange}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '13px',
-                    border: '1px solid #e5e5e5',
-                    borderRadius: '6px',
-                    outline: 'none',
-                    background: '#fafafa',
-                  }}
+                  style={inputStyle}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                  Priority
-                </label>
+                <label style={labelStyle}>Priority</label>
                 <select
                   name="intensity"
                   value={formData.intensity}
                   onChange={handleChange}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '13px',
-                    border: '1px solid #e5e5e5',
-                    borderRadius: '6px',
-                    outline: 'none',
-                    background: '#fafafa',
-                    cursor: 'pointer',
-                  }}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
                 >
                   <option value={1}>P4 - Low</option>
                   <option value={2}>P3</option>
@@ -244,41 +231,51 @@ function AddTaskForm({ onTaskAdded }) {
 
             {/* Recurring */}
             <div style={{
-              borderTop: '1px solid #eee',
-              paddingTop: '12px',
-              marginBottom: '16px',
+              borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+              paddingTop: '16px',
+              marginBottom: '20px',
             }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <div style={{
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '5px',
+                  border: formData.is_recurring ? 'none' : '1.5px solid rgba(0, 0, 0, 0.2)',
+                  background: formData.is_recurring ? '#111' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                }}>
+                  {formData.is_recurring && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
                 <input
                   type="checkbox"
                   name="is_recurring"
                   checked={formData.is_recurring}
                   onChange={handleChange}
-                  style={{ width: '14px', height: '14px', accentColor: '#000' }}
+                  style={{ display: 'none' }}
                 />
-                <span style={{ fontSize: '13px', color: '#666' }}>Repeat this task</span>
+                <span style={{ fontSize: '14px', color: '#374151', fontWeight: '450' }}>Repeat this task</span>
               </label>
 
               {formData.is_recurring && (
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: isMobile ? '1fr' : '1fr 80px 1fr',
-                  gap: '8px',
-                  marginTop: '12px',
-                  paddingLeft: '22px',
+                  gap: '10px',
+                  marginTop: '14px',
+                  paddingLeft: '28px',
                 }}>
                   <select
                     name="recurrence_type"
                     value={formData.recurrence_type}
                     onChange={handleChange}
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '13px',
-                      border: '1px solid #e5e5e5',
-                      borderRadius: '6px',
-                      outline: 'none',
-                      background: '#fafafa',
-                    }}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
                   >
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
@@ -292,15 +289,7 @@ function AddTaskForm({ onTaskAdded }) {
                     min="1"
                     value={formData.recurrence_interval}
                     onChange={handleChange}
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '13px',
-                      border: '1px solid #e5e5e5',
-                      borderRadius: '6px',
-                      outline: 'none',
-                      background: '#fafafa',
-                      textAlign: 'center',
-                    }}
+                    style={{ ...inputStyle, textAlign: 'center' }}
                   />
 
                   <input
@@ -308,33 +297,27 @@ function AddTaskForm({ onTaskAdded }) {
                     name="recurrence_end_date"
                     value={formData.recurrence_end_date}
                     onChange={handleChange}
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '13px',
-                      border: '1px solid #e5e5e5',
-                      borderRadius: '6px',
-                      outline: 'none',
-                      background: '#fafafa',
-                    }}
+                    style={inputStyle}
                   />
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button
                 type="button"
                 onClick={resetForm}
                 disabled={isSubmitting}
                 style={{
-                  padding: '8px 16px',
-                  fontSize: '13px',
+                  padding: '10px 20px',
+                  fontSize: '14px',
                   fontWeight: '500',
-                  color: '#666',
-                  background: '#f5f5f5',
+                  color: '#6b7280',
+                  background: 'rgba(0, 0, 0, 0.04)',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '10px',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
                 }}
               >
                 Cancel
@@ -343,14 +326,15 @@ function AddTaskForm({ onTaskAdded }) {
                 type="submit"
                 disabled={isSubmitting || !title.trim()}
                 style={{
-                  padding: '8px 16px',
-                  fontSize: '13px',
+                  padding: '10px 24px',
+                  fontSize: '14px',
                   fontWeight: '500',
                   color: '#fff',
-                  background: isSubmitting || !title.trim() ? '#999' : '#000',
+                  background: isSubmitting || !title.trim() ? '#9ca3af' : '#111',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '10px',
                   cursor: isSubmitting || !title.trim() ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
                 }}
               >
                 {isSubmitting ? 'Adding...' : 'Add Task'}
@@ -366,95 +350,138 @@ function AddTaskForm({ onTaskAdded }) {
   return (
     <>
       <ConfirmDialog />
-      <form onSubmit={handleQuickAdd} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <form onSubmit={handleQuickAdd}>
         <div style={{
-          flex: 1,
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
+          gap: '12px',
           background: '#fff',
-          border: '1px solid #e5e5e5',
-          borderRadius: '8px',
-          padding: '0 12px',
-          transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+          border: `1px solid ${isFocused || title.trim() ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.06)'}`,
+          borderRadius: '14px',
+          padding: '4px 6px 4px 18px',
+          transition: 'all 0.2s ease',
+          boxShadow: isFocused || title.trim() ? '0 4px 20px rgba(0, 0, 0, 0.06)' : '0 1px 3px rgba(0, 0, 0, 0.02)',
         }}>
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#9ca3af"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+          <div style={{
+            width: '20px',
+            height: '20px',
+            borderRadius: '6px',
+            border: '1.5px dashed rgba(0, 0, 0, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#9ca3af"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </div>
+
           <input
             ref={inputRef}
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Add a task..."
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder="Add a new task..."
             style={{
               flex: 1,
               padding: '12px 0',
-              fontSize: '14px',
+              fontSize: '15px',
               border: 'none',
               outline: 'none',
               background: 'transparent',
+              color: '#111',
+              fontWeight: '450',
             }}
           />
+
           {title.trim() && (
-            <button
-              type="button"
-              onClick={() => setIsExpanded(true)}
-              style={{
-                padding: '4px 8px',
-                fontSize: '12px',
-                color: '#666',
-                background: '#f5f5f5',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-              title="More options"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="1" />
-                <circle cx="19" cy="12" r="1" />
-                <circle cx="5" cy="12" r="1" />
-              </svg>
-              More
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setIsExpanded(true)}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '13px',
+                  fontWeight: '450',
+                  color: '#6b7280',
+                  background: 'rgba(0, 0, 0, 0.04)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  transition: 'all 0.15s ease',
+                }}
+                title="More options"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="19" cy="12" r="1" />
+                  <circle cx="5" cy="12" r="1" />
+                </svg>
+                <span style={{ display: isMobile ? 'none' : 'inline' }}>More</span>
+              </button>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                style={{
+                  padding: '8px 18px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: isSubmitting ? '#9ca3af' : '#111',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {isSubmitting ? (
+                  <span style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}>
+                    <span style={{
+                      width: '14px',
+                      height: '14px',
+                      border: '2px solid rgba(255, 255, 255, 0.3)',
+                      borderTop: '2px solid #fff',
+                      borderRadius: '50%',
+                      animation: 'spin 0.8s linear infinite',
+                    }} />
+                    Adding
+                  </span>
+                ) : 'Add'}
+              </button>
+            </div>
           )}
         </div>
-        {title.trim() && (
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            style={{
-              padding: '12px 20px',
-              fontSize: '14px',
-              fontWeight: '500',
-              color: '#fff',
-              background: isSubmitting ? '#666' : '#000',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              transition: 'background 0.15s ease',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {isSubmitting ? 'Adding...' : 'Add'}
-          </button>
-        )}
       </form>
+
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   );
 }

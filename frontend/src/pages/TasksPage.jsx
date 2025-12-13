@@ -184,22 +184,35 @@ function TasksPage() {
     return { all, waiting, upcoming, completed };
   }, [allTasks]);
 
+  const filterButtons = [
+    { key: 'all', label: 'All', count: counts.all },
+    { key: 'upcoming', label: 'Scheduled', count: counts.upcoming },
+    { key: 'waiting', label: 'Waiting', count: counts.waiting },
+    { key: 'completed', label: 'Done', count: counts.completed },
+    { key: 'deleted', label: 'Trash' },
+  ];
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'linear-gradient(180deg, #fafafa 0%, #fff 100%)',
+    }}>
       {/* Navbar */}
       <nav style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        background: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        borderBottom: '1px solid #f0f0f0',
+        background: 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
       }}>
         <div style={{
-          maxWidth: '800px',
+          maxWidth: '720px',
           margin: '0 auto',
-          padding: isMobile ? '12px 16px' : '12px 24px',
+          padding: isMobile ? '14px 20px' : '14px 32px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -208,7 +221,7 @@ function TasksPage() {
             <img
               src="/alon-logo.png"
               alt="Alon"
-              style={{ height: isMobile ? '28px' : '32px', cursor: 'pointer' }}
+              style={{ height: isMobile ? '26px' : '28px', cursor: 'pointer' }}
               onClick={() => navigate('/dashboard')}
             />
           </div>
@@ -225,7 +238,7 @@ function TasksPage() {
                 alignItems: 'center',
               }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.5">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.5">
                 {mobileMenuOpen ? (
                   <path d="M6 18L18 6M6 6l12 12" />
                 ) : (
@@ -236,7 +249,7 @@ function TasksPage() {
           )}
 
           {!isMobile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               {[
                 { label: 'Chat', path: '/dashboard' },
                 { label: 'Tasks', path: '/tasks', active: true },
@@ -247,30 +260,32 @@ function TasksPage() {
                   key={item.path}
                   onClick={() => !item.active && navigate(item.path)}
                   style={{
-                    padding: '6px 12px',
+                    padding: '8px 14px',
                     fontSize: '13px',
                     fontWeight: item.active ? '500' : '400',
-                    color: item.active ? '#111' : '#666',
-                    background: item.active ? '#f5f5f5' : 'transparent',
+                    color: item.active ? '#111' : '#6b7280',
+                    background: item.active ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: '8px',
                     cursor: item.active ? 'default' : 'pointer',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   {item.label}
                 </button>
               ))}
-              <div style={{ width: '1px', height: '16px', background: '#e5e5e5', margin: '0 8px' }} />
+              <div style={{ width: '1px', height: '20px', background: 'rgba(0, 0, 0, 0.08)', margin: '0 8px' }} />
               <button
                 onClick={handleLogout}
                 style={{
-                  padding: '6px 12px',
+                  padding: '8px 14px',
                   fontSize: '13px',
-                  color: '#666',
+                  color: '#9ca3af',
                   background: 'transparent',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
+                  transition: 'color 0.15s ease',
                 }}
               >
                 Logout
@@ -285,10 +300,11 @@ function TasksPage() {
             top: '100%',
             left: 0,
             right: 0,
-            background: '#fff',
-            padding: '8px',
-            borderBottom: '1px solid #f0f0f0',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            background: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
+            padding: '8px 12px 12px',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
           }}>
             {[
               { label: 'Chat', path: '/dashboard' },
@@ -301,31 +317,32 @@ function TasksPage() {
                 onClick={() => { !item.active && navigate(item.path); setMobileMenuOpen(false); }}
                 style={{
                   width: '100%',
-                  padding: '12px 16px',
-                  fontSize: '14px',
+                  padding: '14px 16px',
+                  fontSize: '15px',
                   fontWeight: item.active ? '500' : '400',
-                  color: item.active ? '#111' : '#666',
-                  background: item.active ? '#f5f5f5' : 'transparent',
+                  color: item.active ? '#111' : '#6b7280',
+                  background: item.active ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '10px',
                   cursor: 'pointer',
                   textAlign: 'left',
+                  marginBottom: '2px',
                 }}
               >
                 {item.label}
               </button>
             ))}
-            <div style={{ height: '1px', background: '#f0f0f0', margin: '8px 0' }} />
+            <div style={{ height: '1px', background: 'rgba(0, 0, 0, 0.06)', margin: '8px 0' }} />
             <button
               onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
               style={{
                 width: '100%',
-                padding: '12px 16px',
-                fontSize: '14px',
-                color: '#999',
+                padding: '14px 16px',
+                fontSize: '15px',
+                color: '#9ca3af',
                 background: 'transparent',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '10px',
                 cursor: 'pointer',
                 textAlign: 'left',
               }}
@@ -339,79 +356,82 @@ function TasksPage() {
       {/* Main Content */}
       <main style={{
         flex: 1,
-        maxWidth: '800px',
+        maxWidth: '720px',
         width: '100%',
         margin: '0 auto',
-        padding: isMobile ? '20px 16px' : '32px 24px',
+        padding: isMobile ? '24px 20px 40px' : '40px 32px 60px',
       }}>
         {/* Header */}
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '32px' }}>
           <h1 style={{
-            fontSize: isMobile ? '24px' : '28px',
-            fontWeight: '600',
+            fontSize: isMobile ? '28px' : '32px',
+            fontWeight: '700',
             color: '#111',
-            margin: '0 0 4px 0',
-            letterSpacing: '-0.02em',
+            margin: '0 0 6px 0',
+            letterSpacing: '-0.03em',
           }}>
             Tasks
           </h1>
           <p style={{
-            fontSize: '14px',
-            color: '#666',
+            fontSize: '15px',
+            color: '#9ca3af',
             margin: 0,
+            fontWeight: '400',
           }}>
-            {counts.all} active{counts.upcoming > 0 ? ` · ${counts.upcoming} with due dates` : ''}
+            {counts.all === 0 ? 'No active tasks' : `${counts.all} active${counts.upcoming > 0 ? ` · ${counts.upcoming} scheduled` : ''}`}
           </p>
         </div>
 
         {/* Add Task */}
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '32px' }}>
           <AddTaskForm onTaskAdded={handleTaskUpdate} />
         </div>
 
         {/* Filters & Search */}
         <div style={{
           display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: '12px',
-          marginBottom: '20px',
-          alignItems: isMobile ? 'stretch' : 'center',
+          flexDirection: 'column',
+          gap: '16px',
+          marginBottom: '24px',
         }}>
           {/* Filter tabs */}
           <div style={{
             display: 'flex',
-            gap: '4px',
-            background: '#f5f5f5',
-            borderRadius: '8px',
-            padding: '4px',
+            gap: '6px',
             overflowX: 'auto',
-            flexShrink: 0,
+            paddingBottom: '4px',
+            marginBottom: '-4px',
           }}>
-            {[
-              { key: 'all', label: 'All' },
-              { key: 'upcoming', label: 'Scheduled' },
-              { key: 'waiting', label: 'Waiting' },
-              { key: 'completed', label: 'Done' },
-              { key: 'deleted', label: 'Trash' },
-            ].map((f) => (
+            {filterButtons.map((f) => (
               <button
                 key={f.key}
                 onClick={() => setFilter(f.key)}
                 style={{
-                  padding: '6px 12px',
+                  padding: '8px 16px',
                   fontSize: '13px',
                   fontWeight: filter === f.key ? '500' : '400',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '100px',
                   cursor: 'pointer',
-                  background: filter === f.key ? '#fff' : 'transparent',
-                  color: filter === f.key ? '#111' : '#666',
-                  boxShadow: filter === f.key ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                  background: filter === f.key ? '#111' : 'rgba(0, 0, 0, 0.04)',
+                  color: filter === f.key ? '#fff' : '#6b7280',
                   whiteSpace: 'nowrap',
-                  transition: 'all 0.15s ease',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
                 {f.label}
+                {f.count !== undefined && f.count > 0 && (
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: '500',
+                    opacity: filter === f.key ? 0.7 : 0.6,
+                  }}>
+                    {f.count}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -419,8 +439,8 @@ function TasksPage() {
           {/* Search & Project filter */}
           <div style={{
             display: 'flex',
-            gap: '8px',
-            flex: 1,
+            gap: '10px',
+            alignItems: 'center',
           }}>
             <div style={{
               flex: 1,
@@ -435,7 +455,7 @@ function TasksPage() {
                 strokeWidth="2"
                 style={{
                   position: 'absolute',
-                  left: '12px',
+                  left: '14px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   pointerEvents: 'none',
@@ -446,17 +466,27 @@ function TasksPage() {
               </svg>
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search tasks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '8px 12px 8px 36px',
-                  fontSize: '13px',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: '6px',
+                  padding: '11px 14px 11px 42px',
+                  fontSize: '14px',
+                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  borderRadius: '12px',
                   outline: 'none',
                   background: '#fff',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02)',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'rgba(0, 0, 0, 0.15)';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(0, 0, 0, 0.04)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(0, 0, 0, 0.08)';
+                  e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.02)';
                 }}
               />
               {searchQuery && (
@@ -464,15 +494,17 @@ function TasksPage() {
                   onClick={() => setSearchQuery('')}
                   style={{
                     position: 'absolute',
-                    right: '8px',
+                    right: '10px',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    background: 'transparent',
+                    background: 'rgba(0, 0, 0, 0.06)',
                     border: 'none',
                     cursor: 'pointer',
                     padding: '4px',
                     display: 'flex',
-                    color: '#9ca3af',
+                    color: '#6b7280',
+                    borderRadius: '6px',
+                    transition: 'background 0.15s ease',
                   }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -487,15 +519,17 @@ function TasksPage() {
                 value={projectFilter}
                 onChange={(e) => setProjectFilter(e.target.value)}
                 style={{
-                  padding: '8px 12px',
+                  padding: '11px 14px',
                   fontSize: '13px',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: '6px',
+                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  borderRadius: '12px',
                   outline: 'none',
                   background: projectFilter !== 'all' ? '#111' : '#fff',
-                  color: projectFilter !== 'all' ? '#fff' : '#666',
+                  color: projectFilter !== 'all' ? '#fff' : '#6b7280',
                   cursor: 'pointer',
-                  minWidth: '120px',
+                  minWidth: '130px',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02)',
                 }}
               >
                 <option value="all">All projects</option>
@@ -510,27 +544,30 @@ function TasksPage() {
         {/* Error */}
         {error && (
           <div style={{
-            background: '#fef2f2',
+            background: 'linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%)',
             border: '1px solid #fecaca',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            marginBottom: '16px',
+            borderRadius: '14px',
+            padding: '14px 18px',
+            marginBottom: '20px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            animation: 'slideIn 0.3s ease',
           }}>
-            <span style={{ fontSize: '13px', color: '#991b1b' }}>{error.message}</span>
+            <span style={{ fontSize: '14px', color: '#b91c1c', fontWeight: '450' }}>{error.message}</span>
             <button
               onClick={() => setError(null)}
               style={{
                 background: 'transparent',
                 border: 'none',
                 cursor: 'pointer',
-                color: '#991b1b',
+                color: '#dc2626',
                 padding: '4px',
+                borderRadius: '6px',
+                display: 'flex',
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
             </button>
@@ -540,70 +577,109 @@ function TasksPage() {
         {/* Task List */}
         <div style={{
           background: '#fff',
-          borderRadius: '12px',
-          border: '1px solid #e5e5e5',
-          padding: isMobile ? '8px 16px' : '8px 20px',
+          borderRadius: '16px',
+          border: '1px solid rgba(0, 0, 0, 0.06)',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.02)',
+          overflow: 'hidden',
         }}>
           {isLoading ? (
-            <div style={{ padding: '40px', textAlign: 'center' }}>
+            <div style={{ padding: '60px 20px', textAlign: 'center' }}>
               <div style={{
-                width: '24px',
-                height: '24px',
-                border: '2px solid #e5e5e5',
-                borderTop: '2px solid #666',
+                width: '32px',
+                height: '32px',
+                border: '2px solid rgba(0, 0, 0, 0.06)',
+                borderTop: '2px solid #111',
                 borderRadius: '50%',
-                margin: '0 auto 12px',
+                margin: '0 auto 16px',
                 animation: 'spin 0.8s linear infinite',
               }} />
-              <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>Loading...</p>
+              <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0, fontWeight: '450' }}>Loading tasks...</p>
             </div>
           ) : displayedTasks.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center' }}>
-              <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
+            <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '14px',
+                background: 'rgba(0, 0, 0, 0.03)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5">
+                  {filter === 'deleted' ? (
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                  ) : filter === 'completed' ? (
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  ) : (
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  )}
+                </svg>
+              </div>
+              <p style={{ color: '#6b7280', fontSize: '15px', margin: '0 0 4px', fontWeight: '500' }}>
                 {searchQuery
-                  ? `No tasks matching "${searchQuery}"`
+                  ? 'No matching tasks'
                   : filter === 'completed'
                     ? 'No completed tasks'
                     : filter === 'deleted'
                       ? 'Trash is empty'
                       : filter === 'waiting'
                         ? 'No waiting tasks'
-                        : 'No tasks yet. Add one above!'}
+                        : 'No tasks yet'}
+              </p>
+              <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>
+                {searchQuery
+                  ? `Try a different search term`
+                  : filter === 'all'
+                    ? 'Add your first task above'
+                    : ''}
               </p>
             </div>
           ) : (
-            displayedTasks.map((task) => (
-              <div
-                key={task.id}
-                ref={(el) => { taskRefs.current[task.id] = el; }}
-                style={{
-                  transition: 'all 0.3s ease',
-                  borderRadius: '8px',
-                  background: highlightedTaskId === task.id ? '#fffbeb' : 'transparent',
-                }}
-              >
-                <TaskItem
-                  task={task}
-                  onUpdate={handleTaskUpdate}
-                  onDelete={handleTaskUpdate}
-                  onError={handleError}
-                  markSaving={markTaskSaving}
-                  isSaving={savingTasks.has(task.id)}
-                />
-              </div>
-            ))
+            <div style={{ padding: isMobile ? '8px 0' : '8px 0' }}>
+              {displayedTasks.map((task, index) => (
+                <div
+                  key={task.id}
+                  ref={(el) => { taskRefs.current[task.id] = el; }}
+                  style={{
+                    transition: 'all 0.3s ease',
+                    background: highlightedTaskId === task.id ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
+                  }}
+                >
+                  <TaskItem
+                    task={task}
+                    onUpdate={handleTaskUpdate}
+                    onDelete={handleTaskUpdate}
+                    onError={handleError}
+                    markSaving={markTaskSaving}
+                    isSaving={savingTasks.has(task.id)}
+                    isLast={index === displayedTasks.length - 1}
+                  />
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
         {/* Keyboard hint */}
-        {!isMobile && (
+        {!isMobile && displayedTasks.length > 0 && (
           <p style={{
             textAlign: 'center',
             fontSize: '12px',
             color: '#9ca3af',
             marginTop: '24px',
+            fontWeight: '400',
           }}>
-            Click a task to edit · Press <kbd style={{ background: '#f5f5f5', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>Esc</kbd> to cancel
+            Click to edit · <kbd style={{
+              background: 'rgba(0, 0, 0, 0.04)',
+              padding: '3px 8px',
+              borderRadius: '6px',
+              fontSize: '11px',
+              fontFamily: 'inherit',
+              fontWeight: '500',
+              border: '1px solid rgba(0, 0, 0, 0.06)',
+            }}>Esc</kbd> to cancel
           </p>
         )}
       </main>
@@ -612,6 +688,10 @@ function TasksPage() {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        @keyframes slideIn {
+          0% { opacity: 0; transform: translateY(-8px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
