@@ -8,6 +8,7 @@ import { useCalendars } from '../../hooks/calendar/useCalendars';
 import { useCalendarUsers, useFindFreeTimes } from '../../hooks/calendar/useCalendarUsers';
 import { useAuth } from '../../hooks/calendar/useAuth';
 import type { FreeSlot } from '../../api/calendar/users';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import {
   getCurrentDate,
   getCurrentTime,
@@ -40,6 +41,7 @@ export default function CreateEventModal({
   const { user } = useAuth();
   const { data: teamUsers = [] } = useCalendarUsers();
   const findFreeTimes = useFindFreeTimes();
+  const isMobile = useIsMobile(640);
 
   const [showDetails, setShowDetails] = useState(false);
   const [showRecurrence, setShowRecurrence] = useState(false);
@@ -362,10 +364,10 @@ export default function CreateEventModal({
         inset: 0,
         background: 'rgba(0, 0, 0, 0.5)',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: isMobile ? 'flex-end' : 'center',
         justifyContent: 'center',
         zIndex: 50,
-        padding: '16px',
+        padding: isMobile ? '0' : '16px',
         overflowY: 'auto',
       }}
       onClick={handleBackdropClick}
@@ -375,13 +377,15 @@ export default function CreateEventModal({
     >
       <div
         ref={modalRef}
+        className="modal-container"
         style={{
           background: '#fff',
-          borderRadius: '16px',
+          borderRadius: isMobile ? '16px 16px 0 0' : '16px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           width: '100%',
-          maxWidth: '600px',
-          margin: '32px 0',
+          maxWidth: isMobile ? '100%' : '600px',
+          maxHeight: isMobile ? '90vh' : 'none',
+          margin: isMobile ? '0' : '32px 0',
         }}
         tabIndex={-1}
       >
@@ -390,10 +394,10 @@ export default function CreateEventModal({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '24px',
+          padding: isMobile ? '16px' : '24px',
           borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
         }}>
-          <h2 id="modal-title" style={{ fontSize: '24px', fontWeight: '600', color: '#000', margin: 0 }}>
+          <h2 id="modal-title" style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: '600', color: '#000', margin: 0 }}>
             Create Event
           </h2>
           <button
@@ -417,7 +421,7 @@ export default function CreateEventModal({
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} style={{ padding: '24px', maxHeight: 'calc(100vh - 300px)', overflowY: 'auto' }}>
+        <form onSubmit={handleSubmit} className="modal-content" style={{ padding: isMobile ? '16px' : '24px', maxHeight: isMobile ? 'calc(90vh - 140px)' : 'calc(100vh - 300px)', overflowY: 'auto' }}>
           {/* Error Banners */}
           {(apiError || errors.general) && (
             <div style={{
@@ -643,147 +647,166 @@ export default function CreateEventModal({
           </div>
 
           {/* Team Availability Section */}
-          {filteredTeamUsers.length > 0 && (
-            <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', paddingTop: '16px', marginBottom: '16px' }}>
-              <button type="button" onClick={() => setShowTeamAvailability(!showTeamAvailability)} disabled={isLoading} style={sectionHeaderStyle}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: 0 }}>Team Availability</h3>
-                  {selectedUserIds.length > 0 && (
-                    <span style={{
-                      background: '#22C55E',
-                      color: '#fff',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      padding: '2px 8px',
-                      borderRadius: '12px',
-                    }}>
-                      {selectedUserIds.length} selected
-                    </span>
-                  )}
-                </div>
-                <svg
-                  style={{ width: '20px', height: '20px', color: '#666', transition: 'transform 0.2s', transform: showTeamAvailability ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
+          <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', paddingTop: '16px', marginBottom: '16px' }}>
+            <button type="button" onClick={() => setShowTeamAvailability(!showTeamAvailability)} disabled={isLoading} style={sectionHeaderStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: 0 }}>Team Availability</h3>
+                {selectedUserIds.length > 0 && (
+                  <span style={{
+                    background: '#22C55E',
+                    color: '#fff',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                  }}>
+                    {selectedUserIds.length} selected
+                  </span>
+                )}
+              </div>
+              <svg
+                style={{ width: '20px', height: '20px', color: '#666', transition: 'transform 0.2s', transform: showTeamAvailability ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
 
-              {showTeamAvailability && (
-                <div style={{ marginTop: '16px' }}>
-                  <p style={{ fontSize: '13px', color: '#666', margin: '0 0 12px 0' }}>
-                    Select team members to find mutual free time
-                  </p>
-
-                  {/* Team Members List */}
+            {showTeamAvailability && (
+              <div style={{ marginTop: '16px' }}>
+                {filteredTeamUsers.length === 0 ? (
                   <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    marginBottom: '12px',
-                    maxHeight: '150px',
-                    overflowY: 'auto',
+                    background: 'rgba(0, 0, 0, 0.02)',
                     border: '1px solid rgba(0, 0, 0, 0.1)',
                     borderRadius: '8px',
-                    padding: '8px',
+                    padding: '16px',
+                    textAlign: 'center',
                   }}>
-                    {filteredTeamUsers.map(teamUser => (
-                      <label
-                        key={teamUser.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          padding: '8px',
-                          borderRadius: '6px',
-                          cursor: isLoading ? 'not-allowed' : 'pointer',
-                          background: selectedUserIds.includes(String(teamUser.id)) ? 'rgba(34, 197, 94, 0.1)' : 'transparent',
-                          transition: 'background 0.15s',
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedUserIds.includes(String(teamUser.id))}
-                          onChange={() => toggleUserSelection(String(teamUser.id))}
-                          disabled={isLoading}
-                          style={{ accentColor: '#22C55E', cursor: isLoading ? 'not-allowed' : 'pointer', width: '16px', height: '16px' }}
-                        />
-                        <span style={{
-                          fontSize: '14px',
-                          color: '#333',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}>
-                          {teamUser.fullName || teamUser.email.split('@')[0]}
-                        </span>
-                      </label>
-                    ))}
+                    <svg style={{ width: '32px', height: '32px', color: '#9CA3AF', margin: '0 auto 8px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <p style={{ fontSize: '14px', fontWeight: '500', color: '#374151', margin: '0 0 4px 0' }}>
+                      No team members available
+                    </p>
+                    <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>
+                      Team members with connected calendars will appear here
+                    </p>
                   </div>
+                ) : (
+                  <>
+                    <p style={{ fontSize: '13px', color: '#666', margin: '0 0 12px 0' }}>
+                      Select team members to find mutual free time
+                    </p>
 
-                  {/* Action Buttons */}
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                    <button
-                      type="button"
-                      onClick={handleFindFreeTime}
-                      disabled={findFreeTimes.isPending || isLoading}
-                      style={{
-                        flex: 1,
-                        padding: '10px 16px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#fff',
-                        background: findFreeTimes.isPending ? '#9CA3AF' : '#22C55E',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: findFreeTimes.isPending || isLoading ? 'not-allowed' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                      }}
-                    >
-                      {findFreeTimes.isPending ? (
-                        <>
-                          <svg style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                          Finding...
-                        </>
-                      ) : (
-                        <>
-                          <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Find Free Time
-                        </>
-                      )}
-                    </button>
-                    {selectedUserIds.length > 0 && (
+                    {/* Team Members List */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      marginBottom: '12px',
+                      maxHeight: '150px',
+                      overflowY: 'auto',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      borderRadius: '8px',
+                      padding: '8px',
+                    }}>
+                      {filteredTeamUsers.map(teamUser => (
+                        <label
+                          key={teamUser.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px',
+                            borderRadius: '6px',
+                            cursor: isLoading ? 'not-allowed' : 'pointer',
+                            background: selectedUserIds.includes(String(teamUser.id)) ? 'rgba(34, 197, 94, 0.1)' : 'transparent',
+                            transition: 'background 0.15s',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedUserIds.includes(String(teamUser.id))}
+                            onChange={() => toggleUserSelection(String(teamUser.id))}
+                            disabled={isLoading}
+                            style={{ accentColor: '#22C55E', cursor: isLoading ? 'not-allowed' : 'pointer', width: '16px', height: '16px' }}
+                          />
+                          <span style={{
+                            fontSize: '14px',
+                            color: '#333',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {teamUser.fullName || teamUser.email.split('@')[0]}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                       <button
                         type="button"
-                        onClick={clearTeamSelection}
-                        disabled={isLoading}
+                        onClick={handleFindFreeTime}
+                        disabled={findFreeTimes.isPending || isLoading}
                         style={{
+                          flex: 1,
                           padding: '10px 16px',
                           fontSize: '14px',
-                          fontWeight: '500',
-                          color: '#666',
-                          background: 'transparent',
-                          border: '1px solid rgba(0, 0, 0, 0.15)',
+                          fontWeight: '600',
+                          color: '#fff',
+                          background: findFreeTimes.isPending ? '#9CA3AF' : '#22C55E',
+                          border: 'none',
                           borderRadius: '8px',
-                          cursor: isLoading ? 'not-allowed' : 'pointer',
+                          cursor: findFreeTimes.isPending || isLoading ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
                         }}
                       >
-                        Clear
+                        {findFreeTimes.isPending ? (
+                          <>
+                            <svg style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Finding...
+                          </>
+                        ) : (
+                          <>
+                            <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Find Free Time
+                          </>
+                        )}
                       </button>
-                    )}
-                  </div>
+                      {selectedUserIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={clearTeamSelection}
+                          disabled={isLoading}
+                          style={{
+                            padding: '10px 16px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#666',
+                            background: 'transparent',
+                            border: '1px solid rgba(0, 0, 0, 0.15)',
+                            borderRadius: '8px',
+                            cursor: isLoading ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
 
-                  {/* Free Time Slots Results */}
-                  {freeTimeSlots && freeTimeSlots.length > 0 && (
+                    {/* Free Time Slots Results */}
+                    {freeTimeSlots && freeTimeSlots.length > 0 && (
                     <div style={{
                       background: 'rgba(34, 197, 94, 0.05)',
                       border: '1px solid rgba(34, 197, 94, 0.2)',
@@ -855,24 +878,25 @@ export default function CreateEventModal({
                     </div>
                   )}
 
-                  {/* No Free Time Found */}
-                  {freeTimeSlots && freeTimeSlots.length === 0 && (
-                    <div style={{
-                      background: 'rgba(239, 68, 68, 0.05)',
-                      border: '1px solid rgba(239, 68, 68, 0.2)',
-                      borderRadius: '8px',
-                      padding: '12px',
-                      textAlign: 'center',
-                    }}>
-                      <p style={{ fontSize: '14px', color: '#DC2626', margin: 0 }}>
-                        No mutual free time found in the next 7 days
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                    {/* No Free Time Found */}
+                    {freeTimeSlots && freeTimeSlots.length === 0 && (
+                      <div style={{
+                        background: 'rgba(239, 68, 68, 0.05)',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        textAlign: 'center',
+                      }}>
+                        <p style={{ fontSize: '14px', color: '#DC2626', margin: 0 }}>
+                          No mutual free time found in the next 7 days
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Calendar Selection */}
           <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', paddingTop: '16px', marginBottom: '16px' }}>

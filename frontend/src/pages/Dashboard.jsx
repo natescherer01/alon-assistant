@@ -7,11 +7,13 @@ import { queryKeys } from '../lib/queryKeys';
 import TaskItem from '../components/TaskItem';
 import AddTaskForm from '../components/AddTaskForm';
 import ChatInterface from '../components/ChatInterface';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { logout } = useAuthStore();
+  const isMobile = useIsMobile(768);
 
   const [filter, setFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
@@ -19,6 +21,7 @@ function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [savingTasks, setSavingTasks] = useState(new Set());
   const [error, setError] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Use React Query - reads from AppDataLoader's cache or fetches if not cached
   const { data: allTasks = [], isLoading } = useQuery({
@@ -223,119 +226,235 @@ function Dashboard() {
         borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
       }}>
-        <div style={{
+        <div className="navbar-container" style={{
           maxWidth: '1400px',
           margin: '0 auto',
-          padding: '16px 24px',
+          padding: isMobile ? '12px 16px' : '16px 24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
-          {/* Logo and Navigation Tabs */}
+          {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
             <img
               src="/alon-logo.png"
               alt="Alon"
               style={{
-                height: '36px',
+                height: isMobile ? '28px' : '36px',
               }}
             />
-
           </div>
 
-          {/* User Section */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Toggle Chat/Tasks Button */}
+          {/* Mobile: Hamburger Menu Button */}
+          {isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* Toggle Chat/Tasks Button - always visible on mobile */}
+              <button
+                onClick={() => setShowChat(!showChat)}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: '#0066FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                }}
+              >
+                {showChat ? 'Tasks' : 'Chat'}
+              </button>
+
+              {/* Hamburger Menu */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                style={{
+                  padding: '8px',
+                  background: 'transparent',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                aria-label="Menu"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                  {mobileMenuOpen ? (
+                    <path d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <>
+                      <path d="M3 12h18M3 6h18M3 18h18" />
+                    </>
+                  )}
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Desktop: Full Navigation */}
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Toggle Chat/Tasks Button */}
+              <button
+                onClick={() => setShowChat(!showChat)}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: '#0066FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#0052CC';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#0066FF';
+                }}
+              >
+                {showChat ? 'Tasks' : 'Chat'}
+              </button>
+
+              {/* Calendar Button */}
+              <button
+                onClick={() => navigate('/calendar')}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: 'transparent',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                Calendar
+              </button>
+
+              {/* Profile Button */}
+              <button
+                onClick={() => navigate('/profile')}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: 'transparent',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'transparent';
+                }}
+              >
+                Profile
+              </button>
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: 'transparent',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'transparent';
+                }}
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Dropdown Menu */}
+        {isMobile && mobileMenuOpen && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
+            padding: '16px',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+          }}>
             <button
-              onClick={() => setShowChat(!showChat)}
+              onClick={() => { navigate('/calendar'); setMobileMenuOpen(false); }}
               style={{
-                padding: '8px 16px',
-                fontSize: '14px',
+                padding: '12px 16px',
+                fontSize: '15px',
                 fontWeight: '500',
-                color: '#fff',
-                background: '#0066FF',
+                color: '#333',
+                background: '#F3F4F6',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = '#0052CC';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = '#0066FF';
+                textAlign: 'left',
               }}
             >
-              {showChat ? 'Tasks' : 'Chat'}
+              📅 Calendar
             </button>
-
-            {/* Calendar Button */}
             <button
-              onClick={() => navigate('/calendar')}
+              onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}
               style={{
-                padding: '8px 16px',
-                fontSize: '14px',
+                padding: '12px 16px',
+                fontSize: '15px',
                 fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
+                color: '#333',
+                background: '#F3F4F6',
+                border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
+                textAlign: 'left',
               }}
             >
-              Calendar
+              👤 Profile
             </button>
-
-            {/* Profile Button */}
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
               style={{
-                padding: '8px 16px',
-                fontSize: '14px',
+                padding: '12px 16px',
+                fontSize: '15px',
                 fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
+                color: '#DC2626',
+                background: '#FEE2E2',
+                border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(0, 0, 0, 0.05)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'transparent';
+                textAlign: 'left',
               }}
             >
-              Profile
-            </button>
-
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(0, 0, 0, 0.05)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'transparent';
-              }}
-            >
-              Logout
+              🚪 Logout
             </button>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Main Content */}
@@ -344,12 +463,12 @@ function Dashboard() {
         maxWidth: '1400px',
         width: '100%',
         margin: '0 auto',
-        padding: '24px',
+        padding: isMobile ? '16px' : '24px',
         position: 'relative',
       }}>
         {/* Chat View - Keep mounted but hide when not active */}
         <div style={{
-          height: 'calc(100vh - 120px)',
+          height: isMobile ? 'calc(100vh - 100px)' : 'calc(100vh - 120px)',
           position: 'relative',
           display: showChat ? 'block' : 'none',
         }}>
@@ -365,7 +484,7 @@ function Dashboard() {
           display: showChat ? 'none' : 'block',
         }}>
 
-            <div className="dashboard-grid" style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px' }}>
+            <div className="dashboard-grid" style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: isMobile ? '16px' : '24px' }}>
               {/* Tasks Section */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {/* Next Task */}
@@ -469,20 +588,23 @@ function Dashboard() {
               </div>
 
               {/* Task Filters */}
-              <div style={{
+              <div className="task-filters" style={{
                 background: '#fff',
                 borderRadius: '16px',
-                padding: '16px',
+                padding: isMobile ? '12px' : '16px',
                 display: 'flex',
                 gap: '8px',
-                flexWrap: 'wrap',
+                flexWrap: isMobile ? 'nowrap' : 'wrap',
                 alignItems: 'center',
+                overflowX: isMobile ? 'auto' : 'visible',
+                WebkitOverflowScrolling: 'touch',
               }}>
                 <button
                   onClick={() => setFilter('all')}
+                  className="task-filter-btn"
                   style={{
-                    padding: '12px 20px',
-                    fontSize: '14px',
+                    padding: isMobile ? '10px 14px' : '12px 20px',
+                    fontSize: isMobile ? '13px' : '14px',
                     fontWeight: '500',
                     border: 'none',
                     borderRadius: '8px',
@@ -490,15 +612,18 @@ function Dashboard() {
                     transition: 'all 0.2s',
                     background: filter === 'all' ? '#0066FF' : '#F3F4F6',
                     color: filter === 'all' ? '#fff' : '#000',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
-                  All Active ({counts.all})
+                  All ({counts.all})
                 </button>
                 <button
                   onClick={() => setFilter('waiting')}
+                  className="task-filter-btn"
                   style={{
-                    padding: '12px 20px',
-                    fontSize: '14px',
+                    padding: isMobile ? '10px 14px' : '12px 20px',
+                    fontSize: isMobile ? '13px' : '14px',
                     fontWeight: '500',
                     border: 'none',
                     borderRadius: '8px',
@@ -506,15 +631,18 @@ function Dashboard() {
                     transition: 'all 0.2s',
                     background: filter === 'waiting' ? '#0066FF' : '#F3F4F6',
                     color: filter === 'waiting' ? '#fff' : '#000',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   Waiting ({counts.waiting})
                 </button>
                 <button
                   onClick={() => setFilter('upcoming')}
+                  className="task-filter-btn"
                   style={{
-                    padding: '12px 20px',
-                    fontSize: '14px',
+                    padding: isMobile ? '10px 14px' : '12px 20px',
+                    fontSize: isMobile ? '13px' : '14px',
                     fontWeight: '500',
                     border: 'none',
                     borderRadius: '8px',
@@ -522,15 +650,18 @@ function Dashboard() {
                     transition: 'all 0.2s',
                     background: filter === 'upcoming' ? '#0066FF' : '#F3F4F6',
                     color: filter === 'upcoming' ? '#fff' : '#000',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   Upcoming ({counts.upcoming})
                 </button>
                 <button
                   onClick={() => setFilter('completed')}
+                  className="task-filter-btn"
                   style={{
-                    padding: '12px 20px',
-                    fontSize: '14px',
+                    padding: isMobile ? '10px 14px' : '12px 20px',
+                    fontSize: isMobile ? '13px' : '14px',
                     fontWeight: '500',
                     border: 'none',
                     borderRadius: '8px',
@@ -538,15 +669,18 @@ function Dashboard() {
                     transition: 'all 0.2s',
                     background: filter === 'completed' ? '#0066FF' : '#F3F4F6',
                     color: filter === 'completed' ? '#fff' : '#000',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
-                  Completed
+                  Done
                 </button>
                 <button
                   onClick={() => setFilter('deleted')}
+                  className="task-filter-btn"
                   style={{
-                    padding: '12px 20px',
-                    fontSize: '14px',
+                    padding: isMobile ? '10px 14px' : '12px 20px',
+                    fontSize: isMobile ? '13px' : '14px',
                     fontWeight: '500',
                     border: 'none',
                     borderRadius: '8px',
@@ -554,6 +688,8 @@ function Dashboard() {
                     transition: 'all 0.2s',
                     background: filter === 'deleted' ? '#0066FF' : '#F3F4F6',
                     color: filter === 'deleted' ? '#fff' : '#000',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   Trash
@@ -666,33 +802,35 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* Sidebar */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              {/* Stats */}
-              <div style={{
-                background: '#fff',
-                borderRadius: '16px',
-                padding: '24px',
-              }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', color: '#000' }}>
-                  Overview
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>Active Tasks</span>
-                    <span style={{ fontWeight: 'bold', color: '#0066FF' }}>{counts.all}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>Waiting On</span>
-                    <span style={{ fontWeight: 'bold', color: '#F59E0B' }}>{counts.waiting}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>With Deadlines</span>
-                    <span style={{ fontWeight: 'bold', color: '#000' }}>{counts.upcoming}</span>
+            {/* Sidebar - Hidden on mobile */}
+            {!isMobile && (
+              <div className="dashboard-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {/* Stats */}
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '16px',
+                  padding: '24px',
+                }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', color: '#000' }}>
+                    Overview
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>Active Tasks</span>
+                      <span style={{ fontWeight: 'bold', color: '#0066FF' }}>{counts.all}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>Waiting On</span>
+                      <span style={{ fontWeight: 'bold', color: '#F59E0B' }}>{counts.waiting}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>With Deadlines</span>
+                      <span style={{ fontWeight: 'bold', color: '#000' }}>{counts.upcoming}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
             </div>
         </div>
       </main>

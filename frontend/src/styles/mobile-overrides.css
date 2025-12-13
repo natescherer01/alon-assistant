@@ -1,4 +1,11 @@
 /* Component-Specific Mobile Overrides */
+/* Mobile breakpoint: < 640px */
+/* Tablet breakpoint: 640px - 1024px */
+/* Desktop breakpoint: >= 1024px */
+
+/* ==========================================
+   DASHBOARD
+   ========================================== */
 
 /* Dashboard Grid */
 .dashboard-grid {
@@ -24,11 +31,107 @@
   }
 }
 
-/* Auth Cards (Login/Signup) */
+/* Dashboard sidebar - hide on mobile, show inline */
+.dashboard-sidebar {
+  display: none !important;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-sidebar {
+    display: flex !important;
+  }
+}
+
+/* ==========================================
+   NAVBAR - Mobile Optimizations
+   ========================================== */
+
+.navbar-container {
+  padding: 12px 16px !important;
+}
+
+@media (min-width: 640px) {
+  .navbar-container {
+    padding: 16px 24px !important;
+  }
+}
+
+/* Mobile navbar buttons */
+.navbar-buttons {
+  gap: 6px !important;
+}
+
+@media (min-width: 640px) {
+  .navbar-buttons {
+    gap: 12px !important;
+  }
+}
+
+/* Hide text labels on mobile, show icons */
+.navbar-btn-text {
+  display: none !important;
+}
+
+@media (min-width: 640px) {
+  .navbar-btn-text {
+    display: inline !important;
+  }
+}
+
+.navbar-btn-icon {
+  display: flex !important;
+}
+
+@media (min-width: 640px) {
+  .navbar-btn-icon {
+    display: none !important;
+  }
+}
+
+/* Mobile hamburger menu */
+.mobile-menu-btn {
+  display: flex !important;
+}
+
+@media (min-width: 768px) {
+  .mobile-menu-btn {
+    display: none !important;
+  }
+}
+
+.desktop-nav-buttons {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .desktop-nav-buttons {
+    display: flex !important;
+  }
+}
+
+/* Mobile dropdown menu */
+.mobile-dropdown-menu {
+  position: fixed !important;
+  top: 64px !important;
+  left: 0 !important;
+  right: 0 !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+  padding: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+  z-index: 100 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ==========================================
+   AUTH CARDS (Login/Signup)
+   ========================================== */
+
 .auth-card {
   max-width: 100% !important;
   margin: 16px !important;
   padding: 24px !important;
+  border-radius: 16px !important;
 }
 
 @media (min-width: 640px) {
@@ -36,10 +139,24 @@
     max-width: 480px !important;
     margin: 32px auto !important;
     padding: 48px !important;
+    border-radius: 24px !important;
   }
 }
 
-/* Chat Container */
+.auth-form-gap {
+  gap: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .auth-form-gap {
+    gap: 24px !important;
+  }
+}
+
+/* ==========================================
+   CHAT INTERFACE
+   ========================================== */
+
 .chat-container {
   max-width: 100% !important;
   padding: 12px !important;
@@ -61,19 +178,32 @@
 .chat-input-container {
   padding: 12px !important;
   gap: 8px !important;
+  flex-direction: column !important;
 }
 
 @media (min-width: 640px) {
   .chat-input-container {
     padding: 16px !important;
     gap: 12px !important;
+    flex-direction: row !important;
+  }
+}
+
+/* Chat input button - full width on mobile */
+.chat-send-btn {
+  width: 100% !important;
+}
+
+@media (min-width: 640px) {
+  .chat-send-btn {
+    width: auto !important;
   }
 }
 
 /* Chat Messages */
 .chat-message-bubble {
-  max-width: 85% !important;
-  padding: 12px 16px !important;
+  max-width: 90% !important;
+  padding: 12px 14px !important;
   font-size: 14px !important;
 }
 
@@ -84,7 +214,38 @@
   }
 }
 
-/* Profile Container */
+/* Chat avatar - smaller on mobile */
+.chat-avatar {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+}
+
+@media (min-width: 640px) {
+  .chat-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+  }
+}
+
+/* Suggested prompts grid */
+.suggested-prompts-grid {
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+}
+
+@media (min-width: 640px) {
+  .suggested-prompts-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+/* ==========================================
+   PROFILE PAGE
+   ========================================== */
+
 .profile-container {
   max-width: 100% !important;
   padding: 24px 16px !important;
@@ -113,21 +274,142 @@
   }
 }
 
-/* Navbar */
-.navbar-container {
-  padding: 12px 16px !important;
+/* Profile avatar section - stack on mobile */
+.profile-avatar-section {
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  gap: 16px !important;
 }
 
 @media (min-width: 640px) {
-  .navbar-container {
-    padding: 16px 24px !important;
+  .profile-avatar-section {
+    flex-direction: row !important;
+    align-items: center !important;
+    text-align: left !important;
+    gap: 24px !important;
   }
 }
 
-/* Task filters - stack on mobile */
+/* Profile header with buttons - stack on mobile */
+.profile-header-actions {
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+@media (min-width: 640px) {
+  .profile-header-actions {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+}
+
+/* ==========================================
+   TASK COMPONENTS
+   ========================================== */
+
+/* Task filters - wrap and scroll on mobile */
 .task-filters {
   flex-wrap: wrap !important;
   gap: 8px !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.task-filters::-webkit-scrollbar {
+  display: none;
+}
+
+/* Task filter buttons - smaller on mobile */
+.task-filter-btn {
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  white-space: nowrap !important;
+}
+
+@media (min-width: 640px) {
+  .task-filter-btn {
+    padding: 12px 20px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* Task item - adjust layout for mobile */
+.task-item {
+  padding: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .task-item {
+    padding: 20px !important;
+  }
+}
+
+/* Task item header - stack on mobile */
+.task-item-header {
+  flex-direction: column !important;
+  gap: 12px !important;
+  align-items: flex-start !important;
+}
+
+@media (min-width: 768px) {
+  .task-item-header {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+  }
+}
+
+/* Task item actions - full width buttons on mobile */
+.task-item-actions {
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+
+@media (min-width: 768px) {
+  .task-item-actions {
+    flex-wrap: nowrap !important;
+    width: auto !important;
+  }
+}
+
+.task-item-actions button {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+@media (min-width: 768px) {
+  .task-item-actions button {
+    flex: 0 0 auto !important;
+  }
+}
+
+/* Task form grid - single column on mobile */
+.task-form-grid {
+  grid-template-columns: 1fr !important;
+  gap: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .task-form-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* Recurrence grid */
+.recurrence-grid {
+  grid-template-columns: 1fr !important;
+  gap: 12px !important;
+}
+
+@media (min-width: 640px) {
+  .recurrence-grid {
+    grid-template-columns: 2fr 1fr !important;
+    gap: 12px !important;
+  }
 }
 
 /* Search bar */
@@ -139,4 +421,329 @@
   .search-container {
     padding: 16px !important;
   }
+}
+
+/* ==========================================
+   CALENDAR PAGE
+   ========================================== */
+
+/* Calendar sidebar - slide over on mobile */
+.calendar-sidebar-mobile {
+  position: fixed !important;
+  top: 64px !important;
+  left: 0 !important;
+  width: 100% !important;
+  max-width: 320px !important;
+  height: calc(100vh - 64px) !important;
+  transform: translateX(-100%) !important;
+  transition: transform 0.3s ease !important;
+  z-index: 50 !important;
+}
+
+.calendar-sidebar-mobile.open {
+  transform: translateX(0) !important;
+}
+
+@media (min-width: 1024px) {
+  .calendar-sidebar-mobile {
+    position: relative !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+  }
+}
+
+/* Calendar main content - no margin on mobile */
+.calendar-main-content {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+@media (min-width: 1024px) {
+  .calendar-main-content {
+    margin-left: 64px !important;
+    margin-right: 48px !important;
+  }
+}
+
+/* Today's plan panel - bottom sheet on mobile */
+.todays-plan-panel-mobile {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  max-height: 70vh !important;
+  transform: translateY(calc(100% - 60px)) !important;
+  transition: transform 0.3s ease !important;
+  border-radius: 20px 20px 0 0 !important;
+  z-index: 50 !important;
+}
+
+.todays-plan-panel-mobile.open {
+  transform: translateY(0) !important;
+}
+
+@media (min-width: 1024px) {
+  .todays-plan-panel-mobile {
+    position: fixed !important;
+    top: 64px !important;
+    right: 0 !important;
+    bottom: auto !important;
+    left: auto !important;
+    max-height: none !important;
+    height: calc(100vh - 64px) !important;
+    width: auto !important;
+    transform: none !important;
+    border-radius: 0 !important;
+  }
+}
+
+/* Calendar header - stack on mobile */
+.calendar-header {
+  flex-direction: column !important;
+  gap: 12px !important;
+  align-items: flex-start !important;
+}
+
+@media (min-width: 640px) {
+  .calendar-header {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+}
+
+/* ==========================================
+   MODALS
+   ========================================== */
+
+/* Modal container - full screen on mobile */
+.modal-container {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  height: 100% !important;
+}
+
+@media (min-width: 640px) {
+  .modal-container {
+    max-width: 500px !important;
+    max-height: 90vh !important;
+    margin: auto !important;
+    border-radius: 16px !important;
+    height: auto !important;
+  }
+}
+
+/* Modal content padding */
+.modal-content {
+  padding: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .modal-content {
+    padding: 24px !important;
+  }
+}
+
+/* Modal actions - stack on mobile */
+.modal-actions {
+  flex-direction: column-reverse !important;
+  gap: 8px !important;
+}
+
+@media (min-width: 640px) {
+  .modal-actions {
+    flex-direction: row !important;
+    gap: 12px !important;
+  }
+}
+
+.modal-actions button {
+  width: 100% !important;
+}
+
+@media (min-width: 640px) {
+  .modal-actions button {
+    width: auto !important;
+  }
+}
+
+/* ==========================================
+   FORM ELEMENTS - Touch Friendly
+   ========================================== */
+
+/* Increase touch targets for mobile */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="number"],
+textarea,
+select {
+  min-height: 44px !important;
+  font-size: 16px !important; /* Prevents iOS zoom */
+}
+
+button {
+  min-height: 44px !important;
+}
+
+/* Checkbox and radio - larger touch area */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* ==========================================
+   UTILITY CLASSES
+   ========================================== */
+
+/* Hide on mobile */
+.hide-mobile {
+  display: none !important;
+}
+
+@media (min-width: 640px) {
+  .hide-mobile {
+    display: initial !important;
+  }
+}
+
+/* Show only on mobile */
+.show-mobile-only {
+  display: initial !important;
+}
+
+@media (min-width: 640px) {
+  .show-mobile-only {
+    display: none !important;
+  }
+}
+
+/* Hide on tablet and below */
+.hide-tablet {
+  display: none !important;
+}
+
+@media (min-width: 1024px) {
+  .hide-tablet {
+    display: initial !important;
+  }
+}
+
+/* Show only on tablet and below */
+.show-tablet-only {
+  display: initial !important;
+}
+
+@media (min-width: 1024px) {
+  .show-tablet-only {
+    display: none !important;
+  }
+}
+
+/* Stack flexbox on mobile */
+.stack-mobile {
+  flex-direction: column !important;
+}
+
+@media (min-width: 640px) {
+  .stack-mobile {
+    flex-direction: row !important;
+  }
+}
+
+/* Full width on mobile */
+.full-width-mobile {
+  width: 100% !important;
+}
+
+@media (min-width: 640px) {
+  .full-width-mobile {
+    width: auto !important;
+  }
+}
+
+/* Gap adjustments */
+.gap-mobile {
+  gap: 8px !important;
+}
+
+@media (min-width: 640px) {
+  .gap-mobile {
+    gap: 12px !important;
+  }
+}
+
+/* Text size adjustments */
+.text-responsive {
+  font-size: 14px !important;
+}
+
+@media (min-width: 640px) {
+  .text-responsive {
+    font-size: 16px !important;
+  }
+}
+
+/* Padding adjustments */
+.padding-responsive {
+  padding: 12px !important;
+}
+
+@media (min-width: 640px) {
+  .padding-responsive {
+    padding: 16px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .padding-responsive {
+    padding: 24px !important;
+  }
+}
+
+/* ==========================================
+   SCROLLBAR STYLING (Touch-friendly)
+   ========================================== */
+
+@media (max-width: 640px) {
+  /* Hide scrollbars on mobile for cleaner look */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+}
+
+/* ==========================================
+   SAFE AREA INSETS (iOS notch support)
+   ========================================== */
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top) !important;
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom) !important;
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left) !important;
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right) !important;
 }
