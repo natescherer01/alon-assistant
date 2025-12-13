@@ -1,18 +1,22 @@
 """
 Claude AI chat service for conversational task management
 """
+import re
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from anthropic import AsyncAnthropic, APIError, RateLimitError, APIConnectionError
 from sqlalchemy.orm import Session
 from config import get_settings
-from models import Task, User
+from models import Task, User, ChatMessage
 from tasks.service import TaskService
 from logger import get_logger
 
 settings = get_settings()
 logger = get_logger(__name__)
+
+# Number of recent messages to include for conversation context
+CONVERSATION_HISTORY_LIMIT = 10
 
 
 class ClaudeService:
@@ -39,9 +43,114 @@ class ClaudeService:
         user_tz = ZoneInfo(user.timezone or "UTC")
         return datetime.now(user_tz)
 
-    def build_system_prompt(self, user: User, db: Session) -> str:
+    def _get_conversation_history(self, user: User, db: Session) -> List[Dict[str, str]]:
+        """
+        Retrieve recent conversation history for context continuity.
+
+        Returns:
+            List of message dictionaries in Claude API format:
+            [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]
+        """
+        # Get recent messages ordered by time (oldest first)
+        recent_messages = db.query(ChatMessage).filter(
+            ChatMessage.user_id == user.id
+        ).order_by(ChatMessage.created_at.desc()).limit(CONVERSATION_HISTORY_LIMIT).all()
+
+        # Reverse to chronological order (oldest first)
+        recent_messages.reverse()
+
+        messages = []
+        for msg in recent_messages:
+            # Add user message
+            messages.append({
+                "role": "user",
+                "content": msg.message
+            })
+            # Add assistant response
+            messages.append({
+                "role": "assistant",
+                "content": msg.response
+            })
+
+        logger.debug(f"Loaded {len(recent_messages)} messages for conversation context")
+        return messages
+
+    def _extract_task_context(self, user: User, db: Session) -> Dict[str, Any]:
+        """
+        Extract task context from recent conversation history.
+
+        This identifies:
+        - Last mentioned task ID
+        - Recently discussed task IDs (in order of recency)
+        - Any task that was just created
+
+        Returns:
+            Dict with:
+            - last_task_id: Most recently mentioned task ID
+            - recent_task_ids: List of recently mentioned task IDs
+            - last_created_task_id: ID of last task created via assistant
+        """
+        # Get recent messages (last 5 for context extraction)
+        recent_messages = db.query(ChatMessage).filter(
+            ChatMessage.user_id == user.id
+        ).order_by(ChatMessage.created_at.desc()).limit(5).all()
+
+        # Pattern to find task IDs in messages
+        task_id_pattern = re.compile(r'(?:Task\s*#?|task\s*#?|ID:\s*)(\d+)', re.IGNORECASE)
+        # Pattern to find newly created tasks in responses
+        created_task_pattern = re.compile(r'(?:created|added).*?Task\s*#?(\d+)', re.IGNORECASE)
+
+        mentioned_task_ids = []
+        last_created_task_id = None
+
+        for msg in recent_messages:  # Most recent first
+            # Check response for created tasks
+            if not last_created_task_id:
+                created_matches = created_task_pattern.findall(msg.response)
+                if created_matches:
+                    last_created_task_id = int(created_matches[0])
+
+            # Find all task ID mentions in both user message and response
+            user_mentions = task_id_pattern.findall(msg.message)
+            response_mentions = task_id_pattern.findall(msg.response)
+
+            # Add to list (preserving recency order)
+            for task_id in user_mentions + response_mentions:
+                tid = int(task_id)
+                if tid not in mentioned_task_ids:
+                    mentioned_task_ids.append(tid)
+
+        # Verify task IDs still exist and belong to user
+        valid_task_ids = []
+        if mentioned_task_ids:
+            existing_tasks = db.query(Task.id).filter(
+                Task.id.in_(mentioned_task_ids),
+                Task.user_id == user.id,
+                Task.status != "deleted"
+            ).all()
+            existing_ids = {t.id for t in existing_tasks}
+            valid_task_ids = [tid for tid in mentioned_task_ids if tid in existing_ids]
+
+        context = {
+            "last_task_id": valid_task_ids[0] if valid_task_ids else None,
+            "recent_task_ids": valid_task_ids[:5],  # Keep up to 5 recent task IDs
+            "last_created_task_id": last_created_task_id
+        }
+
+        logger.debug(f"Extracted task context: {context}")
+        return context
+
+    def build_system_prompt(self, user: User, db: Session, task_context: Optional[Dict[str, Any]] = None) -> str:
         """
         Build proactive system prompt with user context and urgency analysis
+
+        Args:
+            user: Current user
+            db: Database session
+            task_context: Optional dict with task context from conversation:
+                - last_task_id: Most recently mentioned task ID
+                - recent_task_ids: List of recently mentioned task IDs
+                - last_created_task_id: ID of last task created via assistant
         """
         from datetime import timedelta
 
@@ -164,6 +273,37 @@ class ClaudeService:
                     task_summary += f" (deleted {task.deleted_at.strftime('%Y-%m-%d %H:%M')})"
                 task_summary += "\n"
 
+        # Build context section from task context
+        context_section = ""
+        if task_context:
+            if task_context.get("last_task_id"):
+                # Get task details for context
+                last_task = db.query(Task).filter(
+                    Task.id == task_context["last_task_id"],
+                    Task.user_id == user.id
+                ).first()
+                if last_task:
+                    context_section += f"- **LAST_TASK_ID:** #{last_task.id} - \"{last_task.title}\"\n"
+                    context_section += f"  (This is the task currently being discussed)\n"
+
+            if task_context.get("last_created_task_id") and task_context.get("last_created_task_id") != task_context.get("last_task_id"):
+                created_task = db.query(Task).filter(
+                    Task.id == task_context["last_created_task_id"],
+                    Task.user_id == user.id
+                ).first()
+                if created_task:
+                    context_section += f"- **LAST_CREATED_TASK_ID:** #{created_task.id} - \"{created_task.title}\"\n"
+                    context_section += f"  (This task was just created in the conversation)\n"
+
+            if task_context.get("recent_task_ids"):
+                other_recent = [tid for tid in task_context["recent_task_ids"]
+                               if tid != task_context.get("last_task_id") and tid != task_context.get("last_created_task_id")]
+                if other_recent:
+                    context_section += f"- **Other recently mentioned tasks:** {', '.join(f'#{tid}' for tid in other_recent[:3])}\n"
+
+        if not context_section:
+            context_section = "- No specific task context yet (this may be the start of the conversation)\n"
+
         system_prompt = f"""You are Sam, the Alon Assistant - a personal AI assistant helping {user.full_name or user.email} manage their tasks and stay productive.
 
 Your name is Sam. When users greet you or ask who you are, introduce yourself as Sam, the Alon Assistant.
@@ -215,6 +355,31 @@ ACTION: UPDATE_TASK | Task ID: [id] | Status: [status] | Deadline: [YYYY-MM-DD] 
 
 **Restore Deleted Task:**
 ACTION: RESTORE_TASK | Task ID: [id]
+
+## 🔗 CONVERSATION CONTEXT (CRITICAL!)
+You have access to recent conversation history. Use this to understand implicit references.
+
+**CURRENT TASK CONTEXT:**
+{context_section}
+
+**HANDLING IMPLICIT REFERENCES:**
+When user says things like "it", "the task", "this one", "that deadline", "update it" - they're referring to the task from the current context above.
+
+**CRITICAL RULES:**
+1. When user refers to "the task" without an ID, use the LAST_TASK_ID from context
+2. If user just created a task and asks to modify "it", use LAST_CREATED_TASK_ID
+3. ALWAYS include the explicit Task ID in your ACTION commands
+4. If context is unclear, ASK which task they mean - but only if truly ambiguous
+
+**Examples:**
+- User: "Add a task to buy groceries" → You create Task #15
+- User: "Actually, add a deadline to it for tomorrow" → Use Task ID: 15 (from context)
+- User: "Mark it complete" → Use Task ID: 15 (last mentioned)
+
+**NEVER:**
+- ❌ Generate an ACTION without a Task ID when updating/completing tasks
+- ❌ Guess which task if multiple were discussed and context is unclear
+- ❌ Ignore the conversation context
 
 ## Conversational Task Creation Strategy
 When user wants to add a task, be SMART about gathering info:
@@ -432,7 +597,17 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
             APIConnectionError: If cannot connect to Anthropic API
             APIError: If other API error occurs
         """
-        system_prompt = self.build_system_prompt(user, db)
+        # Get conversation history for context continuity
+        conversation_history = self._get_conversation_history(user, db)
+
+        # Extract task context from recent conversations
+        task_context = self._extract_task_context(user, db)
+
+        # Build system prompt with task context
+        system_prompt = self.build_system_prompt(user, db, task_context)
+
+        # Build messages array: conversation history + current message
+        messages = conversation_history + [{"role": "user", "content": message}]
 
         # Call Claude API with error handling
         try:
@@ -440,9 +615,7 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
                 model=settings.claude_model,
                 max_tokens=2000,
                 system=system_prompt,
-                messages=[
-                    {"role": "user", "content": message}
-                ],
+                messages=messages,
                 timeout=30.0  # 30 second timeout
             )
 
@@ -492,16 +665,24 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
             APIConnectionError: If cannot connect to Anthropic API
             APIError: If other API error occurs
         """
-        system_prompt = self.build_system_prompt(user, db)
+        # Get conversation history for context continuity
+        conversation_history = self._get_conversation_history(user, db)
+
+        # Extract task context from recent conversations
+        task_context = self._extract_task_context(user, db)
+
+        # Build system prompt with task context
+        system_prompt = self.build_system_prompt(user, db, task_context)
+
+        # Build messages array: conversation history + current message
+        messages = conversation_history + [{"role": "user", "content": message}]
 
         try:
             async with self.client.messages.stream(
                 model=settings.claude_model,
                 max_tokens=2000,
                 system=system_prompt,
-                messages=[
-                    {"role": "user", "content": message}
-                ],
+                messages=messages,
             ) as stream:
                 async for text in stream.text_stream:
                     yield text
@@ -574,7 +755,8 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
         self,
         actions: List[Dict[str, Any]],
         user: User,
-        db: Session
+        db: Session,
+        task_context: Optional[Dict[str, Any]] = None
     ) -> List[Task]:
         """
         Execute parsed actions and return modified tasks
@@ -583,6 +765,7 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
             actions: List of action dictionaries
             user: Current user
             db: Database session
+            task_context: Optional task context for resolving implicit references
 
         Returns:
             List of created/modified tasks
@@ -600,23 +783,23 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
                         modified_tasks.append(task)
 
                 elif action_type == "COMPLETE_TASK":
-                    task = self._complete_task_from_action(params, user, db)
+                    task = self._complete_task_from_action(params, user, db, task_context)
                     if task:
                         modified_tasks.append(task)
 
                 elif action_type in ["UPDATE_STATUS", "UPDATE_TASK"]:
-                    task = self._update_task_from_action(params, user, db)
+                    task = self._update_task_from_action(params, user, db, task_context)
                     if task:
                         modified_tasks.append(task)
 
                 elif action_type == "RESTORE_TASK":
-                    task = self._restore_task_from_action(params, user, db)
+                    task = self._restore_task_from_action(params, user, db, task_context)
                     if task:
                         modified_tasks.append(task)
 
             except Exception as e:
                 # Log error but continue with other actions
-                print(f"Error executing action {action_type}: {str(e)}")
+                logger.error(f"Error executing action {action_type}: {str(e)}")
                 continue
 
         return modified_tasks
@@ -692,11 +875,21 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
         self,
         params: Dict[str, str],
         user: User,
-        db: Session
+        db: Session,
+        task_context: Optional[Dict[str, Any]] = None
     ) -> Task:
-        """Complete task from action params"""
+        """Complete task from action params with context fallback"""
         task_id = params.get("task_id")
+
+        # If no task_id provided, try to get from context
+        if not task_id and task_context:
+            # Prefer last_created_task_id if available (most likely what user meant)
+            task_id = task_context.get("last_created_task_id") or task_context.get("last_task_id")
+            if task_id:
+                logger.info(f"Using task_id {task_id} from context (no explicit ID provided)")
+
         if not task_id:
+            logger.warning("No task_id provided and no context available for COMPLETE_TASK")
             return None
 
         try:
@@ -727,11 +920,21 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
         self,
         params: Dict[str, str],
         user: User,
-        db: Session
+        db: Session,
+        task_context: Optional[Dict[str, Any]] = None
     ) -> Task:
-        """Update task from action params"""
+        """Update task from action params with context fallback"""
         task_id = params.get("task_id")
+
+        # If no task_id provided, try to get from context
+        if not task_id and task_context:
+            # Prefer last_created_task_id for updates (likely updating newly created task)
+            task_id = task_context.get("last_created_task_id") or task_context.get("last_task_id")
+            if task_id:
+                logger.info(f"Using task_id {task_id} from context for UPDATE_TASK (no explicit ID provided)")
+
         if not task_id:
+            logger.warning("No task_id provided and no context available for UPDATE_TASK")
             return None
 
         try:
@@ -798,11 +1001,20 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
         self,
         params: Dict[str, str],
         user: User,
-        db: Session
+        db: Session,
+        task_context: Optional[Dict[str, Any]] = None
     ) -> Task:
-        """Restore deleted task from action params"""
+        """Restore deleted task from action params with context fallback"""
         task_id = params.get("task_id")
+
+        # If no task_id provided, try to get from context
+        if not task_id and task_context:
+            task_id = task_context.get("last_task_id")
+            if task_id:
+                logger.info(f"Using task_id {task_id} from context for RESTORE_TASK (no explicit ID provided)")
+
         if not task_id:
+            logger.warning("No task_id provided and no context available for RESTORE_TASK")
             return None
 
         try:
