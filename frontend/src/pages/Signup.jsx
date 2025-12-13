@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuthStore from '../utils/authStore';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 function Signup() {
   const navigate = useNavigate();
   const { signup, isLoading, error, clearError } = useAuthStore();
+  const isMobile = useIsMobile(640);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -57,32 +59,32 @@ function Signup() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+    <div style={{ minHeight: '100vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '16px' : '24px' }}>
 
       {/* Signup Card */}
-      <div style={{
+      <div className="auth-card" style={{
         position: 'relative',
         zIndex: 10,
         width: '100%',
-        maxWidth: '480px',
+        maxWidth: isMobile ? '100%' : '480px',
         background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(20px) saturate(180%)',
         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderRadius: '24px',
-        padding: '48px',
+        borderRadius: isMobile ? '16px' : '24px',
+        padding: isMobile ? '24px' : '48px',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
       }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <div style={{ textAlign: 'center', marginBottom: isMobile ? '32px' : '40px' }}>
           <img
             src="/alon-logo.png"
             alt="Alon"
             style={{
-              height: '60px',
+              height: isMobile ? '48px' : '60px',
               marginBottom: '16px',
             }}
           />
-          <p style={{ fontSize: '18px', color: 'rgba(0, 0, 0, 0.6)' }}>
+          <p style={{ fontSize: isMobile ? '16px' : '18px', color: 'rgba(0, 0, 0, 0.6)' }}>
             Create your account
           </p>
         </div>
@@ -103,7 +105,7 @@ function Signup() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <form onSubmit={handleSubmit} className="auth-form-gap" style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px' }}>
           <div>
             <label htmlFor="fullName" style={{
               display: 'block',

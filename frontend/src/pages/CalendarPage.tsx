@@ -11,6 +11,7 @@ import EventDetailsModal from '../components/calendar/EventDetailsModal';
 import type { CalendarEvent } from '../api/calendar/calendar';
 import type { FreeSlot } from '../api/calendar/users';
 import LiveClock from '../components/calendar/LiveClock';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 /**
  * Calendar page - matches Dashboard styling exactly
@@ -20,11 +21,13 @@ export default function CalendarPage() {
   const navigate = useNavigate();
   const { logout } = useAuthStore();
   const { calendars, isLoading, error, fetchCalendars } = useCalendars();
+  const isMobile = useIsMobile(768);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Multi-user calendar state
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [freeTimeSlots, setFreeTimeSlots] = useState<FreeSlot[] | null>(null);
@@ -78,7 +81,7 @@ export default function CalendarPage() {
         <div style={{
           maxWidth: '1400px',
           margin: '0 auto',
-          padding: '16px 24px',
+          padding: isMobile ? '12px 16px' : '16px 24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -88,112 +91,249 @@ export default function CalendarPage() {
             <img
               src="/alon-logo.png"
               alt="Alon"
-              style={{ height: '36px', cursor: 'pointer' }}
+              style={{ height: isMobile ? '28px' : '36px', cursor: 'pointer' }}
               onClick={() => navigate('/dashboard')}
             />
           </div>
 
-          {/* User Section */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Tasks Button */}
-            <button
-              onClick={() => navigate('/dashboard')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'transparent';
-              }}
-            >
-              Tasks
-            </button>
+          {/* Mobile: Hamburger Menu Button */}
+          {isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* Create Event Button - always visible on mobile */}
+              <button
+                onClick={() => setShowCreateEventModal(true)}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: '#0066FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>+</span>
+              </button>
 
-            {/* Calendar Button (active) */}
+              {/* Hamburger Menu */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                style={{
+                  padding: '8px',
+                  background: 'transparent',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                aria-label="Menu"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                  {mobileMenuOpen ? (
+                    <path d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <>
+                      <path d="M3 12h18M3 6h18M3 18h18" />
+                    </>
+                  )}
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Desktop: Full Navigation */}
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Tasks Button */}
+              <button
+                onClick={() => navigate('/dashboard')}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: 'transparent',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.background = 'transparent';
+                }}
+              >
+                Tasks
+              </button>
+
+              {/* Calendar Button (active) */}
+              <button
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: '#0066FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                Calendar
+              </button>
+
+              {/* Profile Button */}
+              <button
+                onClick={() => navigate('/profile')}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: 'transparent',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.background = 'transparent';
+                }}
+              >
+                Profile
+              </button>
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: 'transparent',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.background = 'transparent';
+                }}
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Dropdown Menu */}
+        {isMobile && mobileMenuOpen && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
+            padding: '16px',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            zIndex: 100,
+          }}>
             <button
+              onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}
               style={{
-                padding: '8px 16px',
-                fontSize: '14px',
+                padding: '12px 16px',
+                fontSize: '15px',
                 fontWeight: '500',
-                color: '#fff',
-                background: '#0066FF',
+                color: '#333',
+                background: '#F3F4F6',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
+                textAlign: 'left',
               }}
             >
-              Calendar
+              ✅ Tasks
             </button>
-
-            {/* Profile Button */}
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => { setIsSidebarCollapsed(!isSidebarCollapsed); setMobileMenuOpen(false); }}
               style={{
-                padding: '8px 16px',
-                fontSize: '14px',
+                padding: '12px 16px',
+                fontSize: '15px',
                 fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
+                color: '#333',
+                background: '#F3F4F6',
+                border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'transparent';
+                textAlign: 'left',
               }}
             >
-              Profile
+              📅 Calendars
             </button>
-
-            {/* Logout Button */}
             <button
-              onClick={handleLogout}
+              onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}
               style={{
-                padding: '8px 16px',
-                fontSize: '14px',
+                padding: '12px 16px',
+                fontSize: '15px',
                 fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
+                color: '#333',
+                background: '#F3F4F6',
+                border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'transparent';
+                textAlign: 'left',
               }}
             >
-              Logout
+              👤 Profile
+            </button>
+            <button
+              onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+              style={{
+                padding: '12px 16px',
+                fontSize: '15px',
+                fontWeight: '500',
+                color: '#DC2626',
+                background: '#FEE2E2',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              🚪 Logout
             </button>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Main Layout */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Left Sidebar - Only show if calendars are loaded */}
+        {/* Left Sidebar - Only show if calendars are loaded (hidden behind modal on mobile) */}
         {!isLoading && calendars.length > 0 && (
           <CalendarSidebar
             calendars={calendars}
-            isCollapsed={isSidebarCollapsed}
+            isCollapsed={isMobile ? true : isSidebarCollapsed}
             onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             currentUserId={currentUserId}
             selectedUserIds={selectedUserIds}
@@ -208,14 +348,14 @@ export default function CalendarPage() {
           display: 'flex',
           flexDirection: 'column',
           overflowY: 'auto',
-          marginLeft: !isLoading && calendars.length > 0 ? (isSidebarCollapsed ? '64px' : '288px') : '0',
+          marginLeft: isMobile ? '0' : (!isLoading && calendars.length > 0 ? (isSidebarCollapsed ? '64px' : '288px') : '0'),
           transition: 'all 0.3s ease',
         }}>
           <div style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            padding: '16px',
+            padding: isMobile ? '12px' : '16px',
           }}>
             {/* Loading State */}
             {isLoading && (
@@ -340,11 +480,12 @@ export default function CalendarPage() {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: '16px',
+                  marginBottom: isMobile ? '12px' : '16px',
                   flexShrink: 0,
                 }}>
                   <LiveClock />
-                  <CreateEventButton onClick={() => setShowCreateEventModal(true)} />
+                  {/* Hide create button on mobile - it's in the navbar */}
+                  {!isMobile && <CreateEventButton onClick={() => setShowCreateEventModal(true)} />}
                 </div>
 
                 {/* Unified Calendar View */}

@@ -8,6 +8,7 @@ import { useCalendars } from '../../hooks/calendar/useCalendars';
 import { useCalendarUsers, useFindFreeTimes } from '../../hooks/calendar/useCalendarUsers';
 import { useAuth } from '../../hooks/calendar/useAuth';
 import type { FreeSlot } from '../../api/calendar/users';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import {
   getCurrentDate,
   getCurrentTime,
@@ -40,6 +41,7 @@ export default function CreateEventModal({
   const { user } = useAuth();
   const { data: teamUsers = [] } = useCalendarUsers();
   const findFreeTimes = useFindFreeTimes();
+  const isMobile = useIsMobile(640);
 
   const [showDetails, setShowDetails] = useState(false);
   const [showRecurrence, setShowRecurrence] = useState(false);
@@ -362,10 +364,10 @@ export default function CreateEventModal({
         inset: 0,
         background: 'rgba(0, 0, 0, 0.5)',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: isMobile ? 'flex-end' : 'center',
         justifyContent: 'center',
         zIndex: 50,
-        padding: '16px',
+        padding: isMobile ? '0' : '16px',
         overflowY: 'auto',
       }}
       onClick={handleBackdropClick}
@@ -375,13 +377,15 @@ export default function CreateEventModal({
     >
       <div
         ref={modalRef}
+        className="modal-container"
         style={{
           background: '#fff',
-          borderRadius: '16px',
+          borderRadius: isMobile ? '16px 16px 0 0' : '16px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           width: '100%',
-          maxWidth: '600px',
-          margin: '32px 0',
+          maxWidth: isMobile ? '100%' : '600px',
+          maxHeight: isMobile ? '90vh' : 'none',
+          margin: isMobile ? '0' : '32px 0',
         }}
         tabIndex={-1}
       >
@@ -390,10 +394,10 @@ export default function CreateEventModal({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '24px',
+          padding: isMobile ? '16px' : '24px',
           borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
         }}>
-          <h2 id="modal-title" style={{ fontSize: '24px', fontWeight: '600', color: '#000', margin: 0 }}>
+          <h2 id="modal-title" style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: '600', color: '#000', margin: 0 }}>
             Create Event
           </h2>
           <button
@@ -417,7 +421,7 @@ export default function CreateEventModal({
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} style={{ padding: '24px', maxHeight: 'calc(100vh - 300px)', overflowY: 'auto' }}>
+        <form onSubmit={handleSubmit} className="modal-content" style={{ padding: isMobile ? '16px' : '24px', maxHeight: isMobile ? 'calc(90vh - 140px)' : 'calc(100vh - 300px)', overflowY: 'auto' }}>
           {/* Error Banners */}
           {(apiError || errors.general) && (
             <div style={{
