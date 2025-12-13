@@ -809,61 +809,6 @@ function TasksPage() {
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div style={{
-                background: '#fff',
-                borderRadius: '12px',
-                border: '1px solid #eee',
-              }}>
-                <div style={{
-                  padding: '16px 20px',
-                  borderBottom: '1px solid #eee',
-                }}>
-                  <span style={{ fontSize: '15px', fontWeight: '600', color: '#000', letterSpacing: '-0.01em' }}>
-                    Quick Actions
-                  </span>
-                </div>
-                <div style={{ padding: '12px 20px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <button
-                      onClick={() => navigate('/dashboard')}
-                      style={{
-                        padding: '8px 10px',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#333',
-                        background: 'transparent',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                      onMouseEnter={(e) => e.target.style.background = '#fafafa'}
-                      onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                    >
-                      Go to Chat
-                    </button>
-                    <button
-                      onClick={() => navigate('/calendar')}
-                      style={{
-                        padding: '8px 10px',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#333',
-                        background: 'transparent',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                      onMouseEnter={(e) => e.target.style.background = '#fafafa'}
-                      onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                    >
-                      View Calendar
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
         </div>
