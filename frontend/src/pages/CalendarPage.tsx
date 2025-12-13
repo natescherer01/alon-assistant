@@ -27,7 +27,7 @@ export default function CalendarPage() {
   const isMobile = useIsMobile(768);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -87,7 +87,8 @@ export default function CalendarPage() {
   useEffect(() => {
     const state = location.state as { selectedEventId?: string; eventDate?: string } | null;
     if (state?.selectedEventId) {
-      setSelectedEventId(state.selectedEventId);
+      // Create minimal event object for modal (will fetch full details from API)
+      setSelectedEvent({ id: state.selectedEventId } as CalendarEvent);
       // Clear the state to prevent re-opening on refresh
       navigate(location.pathname, { replace: true, state: null });
     }
@@ -102,7 +103,7 @@ export default function CalendarPage() {
   };
 
   const handleEventClick = (event: CalendarEvent) => {
-    setSelectedEventId(event.id);
+    setSelectedEvent(event);
   };
 
   const handleEventCreated = () => {
@@ -115,7 +116,7 @@ export default function CalendarPage() {
 
   const handleEventDeleted = () => {
     setRefreshKey((prev) => prev + 1);
-    setSelectedEventId(null);
+    setSelectedEvent(null);
   };
 
   const handleLogout = () => {
@@ -708,11 +709,12 @@ export default function CalendarPage() {
       />
 
       {/* Event Details Modal */}
-      {selectedEventId && (
+      {selectedEvent && (
         <EventDetailsModal
-          isOpen={selectedEventId !== null}
-          onClose={() => setSelectedEventId(null)}
-          eventId={selectedEventId}
+          isOpen={selectedEvent !== null}
+          onClose={() => setSelectedEvent(null)}
+          eventId={selectedEvent.id}
+          initialEvent={selectedEvent.title ? selectedEvent : undefined}
           onEventUpdated={handleEventUpdated}
           onEventDeleted={handleEventDeleted}
         />
