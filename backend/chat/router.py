@@ -67,13 +67,17 @@ async def chat_with_assistant(
             detail="Failed to process chat message. Please try again."
         )
 
+    # Extract task context for action execution (for fallback when task_id is missing)
+    task_context = claude_service._extract_task_context(current_user, db)
+
     # Execute any actions Claude suggested
     modified_tasks = []
     if result.get("actions"):
         modified_tasks = await claude_service.execute_actions(
             actions=result["actions"],
             user=current_user,
-            db=db
+            db=db,
+            task_context=task_context
         )
 
     # Clean response: Remove ACTION lines and format nicely
@@ -212,13 +216,17 @@ async def chat_with_assistant_stream(
             # Parse actions from full response
             actions = claude_service._parse_actions(full_response)
 
+            # Extract task context for action execution (for fallback when task_id is missing)
+            task_context = claude_service._extract_task_context(current_user, db)
+
             # Execute any actions Claude suggested
             modified_tasks = []
             if actions:
                 modified_tasks = await claude_service.execute_actions(
                     actions=actions,
                     user=current_user,
-                    db=db
+                    db=db,
+                    task_context=task_context
                 )
 
             # Clean response for storage
