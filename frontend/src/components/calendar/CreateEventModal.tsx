@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { Input } from './Input';
 import { Button } from './Button';
 import AttendeeInput from './AttendeeInput';
 import RecurrenceSelector from './RecurrenceSelector';
 import { useCreateEvent } from '../../hooks/calendar/useCreateEvent';
 import { useCalendars } from '../../hooks/calendar/useCalendars';
+import { useCalendarUsers, useFindFreeTimes } from '../../hooks/calendar/useCalendarUsers';
+import { useAuth } from '../../hooks/calendar/useAuth';
+import type { FreeSlot } from '../../api/calendar/users';
 import {
   getCurrentDate,
   getCurrentTime,
@@ -34,9 +37,15 @@ export default function CreateEventModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const { createEvent, isLoading, error: apiError, clearError } = useCreateEvent();
   const { calendars, fetchCalendars } = useCalendars();
+  const { user } = useAuth();
+  const { data: teamUsers = [] } = useCalendarUsers();
+  const findFreeTimes = useFindFreeTimes();
 
   const [showDetails, setShowDetails] = useState(false);
   const [showRecurrence, setShowRecurrence] = useState(false);
+  const [showTeamAvailability, setShowTeamAvailability] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [freeTimeSlots, setFreeTimeSlots] = useState<FreeSlot[] | null>(null);
 
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
@@ -87,6 +96,94 @@ export default function CreateEventModal({
     };
   }, [isOpen, isLoading]);
 
+  // Filter team users (exclude current user, only those with calendars)
+  const filteredTeamUsers = useMemo(() => {
+    if (!user?.id) return [];
+    return teamUsers
+      .filter(u => String(u.id) !== String(user.id))
+      .filter(u => u.hasCalendar);
+  }, [teamUsers, user?.id]);
+
+  const toggleUserSelection = useCallback((userId: string) => {
+    setSelectedUserIds(prev => {
+      if (prev.includes(userId)) {
+        return prev.filter(id => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
+    });
+    // Clear free time slots when selection changes
+    setFreeTimeSlots(null);
+  }, []);
+
+  const handleFindFreeTime = useCallback(() => {
+    if (!user?.id) return;
+
+    // Use the selected date from form or default to today
+    const startDate = new Date(formData.startDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 7);
+
+    const allUserIds = [String(user.id), ...selectedUserIds];
+
+    findFreeTimes.mutate(
+      {
+        userIds: allUserIds,
+        startDate,
+        endDate,
+        minSlotMinutes: 30,
+        excludedHoursStart: 0,
+        excludedHoursEnd: 6,
+      },
+      {
+        onSuccess: (data) => {
+          setFreeTimeSlots(data.freeSlots);
+        },
+        onError: () => {
+          setFreeTimeSlots(null);
+        },
+      }
+    );
+  }, [user?.id, selectedUserIds, findFreeTimes, formData.startDate]);
+
+  const handleSelectFreeSlot = useCallback((slot: FreeSlot) => {
+    const start = new Date(slot.startTime);
+    const end = new Date(slot.endTime);
+
+    // Format date as YYYY-MM-DD
+    const formatDate = (d: Date) => {
+      return d.toISOString().split('T')[0];
+    };
+
+    // Format time as HH:MM
+    const formatTime = (d: Date) => {
+      return d.toTimeString().slice(0, 5);
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      startDate: formatDate(start),
+      startTime: formatTime(start),
+      endDate: formatDate(end),
+      endTime: formatTime(end),
+    }));
+
+    // Clear errors for time fields
+    setErrors(prev => ({
+      ...prev,
+      startDate: undefined,
+      startTime: undefined,
+      endDate: undefined,
+      endTime: undefined,
+    }));
+  }, []);
+
+  const clearTeamSelection = useCallback(() => {
+    setSelectedUserIds([]);
+    setFreeTimeSlots(null);
+  }, []);
+
   const handleClose = () => {
     if (!isLoading) {
       resetForm();
@@ -120,6 +217,9 @@ export default function CreateEventModal({
     setErrors({});
     setShowDetails(false);
     setShowRecurrence(false);
+    setShowTeamAvailability(false);
+    setSelectedUserIds([]);
+    setFreeTimeSlots(null);
     setSyncErrorId(null);
   };
 
@@ -542,6 +642,238 @@ export default function CreateEventModal({
             />
           </div>
 
+          {/* Team Availability Section */}
+          {filteredTeamUsers.length > 0 && (
+            <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', paddingTop: '16px', marginBottom: '16px' }}>
+              <button type="button" onClick={() => setShowTeamAvailability(!showTeamAvailability)} disabled={isLoading} style={sectionHeaderStyle}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: 0 }}>Team Availability</h3>
+                  {selectedUserIds.length > 0 && (
+                    <span style={{
+                      background: '#22C55E',
+                      color: '#fff',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                    }}>
+                      {selectedUserIds.length} selected
+                    </span>
+                  )}
+                </div>
+                <svg
+                  style={{ width: '20px', height: '20px', color: '#666', transition: 'transform 0.2s', transform: showTeamAvailability ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {showTeamAvailability && (
+                <div style={{ marginTop: '16px' }}>
+                  <p style={{ fontSize: '13px', color: '#666', margin: '0 0 12px 0' }}>
+                    Select team members to find mutual free time
+                  </p>
+
+                  {/* Team Members List */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    marginBottom: '12px',
+                    maxHeight: '150px',
+                    overflowY: 'auto',
+                    border: '1px solid rgba(0, 0, 0, 0.1)',
+                    borderRadius: '8px',
+                    padding: '8px',
+                  }}>
+                    {filteredTeamUsers.map(teamUser => (
+                      <label
+                        key={teamUser.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '8px',
+                          borderRadius: '6px',
+                          cursor: isLoading ? 'not-allowed' : 'pointer',
+                          background: selectedUserIds.includes(String(teamUser.id)) ? 'rgba(34, 197, 94, 0.1)' : 'transparent',
+                          transition: 'background 0.15s',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.includes(String(teamUser.id))}
+                          onChange={() => toggleUserSelection(String(teamUser.id))}
+                          disabled={isLoading}
+                          style={{ accentColor: '#22C55E', cursor: isLoading ? 'not-allowed' : 'pointer', width: '16px', height: '16px' }}
+                        />
+                        <span style={{
+                          fontSize: '14px',
+                          color: '#333',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {teamUser.fullName || teamUser.email.split('@')[0]}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={handleFindFreeTime}
+                      disabled={findFreeTimes.isPending || isLoading}
+                      style={{
+                        flex: 1,
+                        padding: '10px 16px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#fff',
+                        background: findFreeTimes.isPending ? '#9CA3AF' : '#22C55E',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: findFreeTimes.isPending || isLoading ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      {findFreeTimes.isPending ? (
+                        <>
+                          <svg style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Finding...
+                        </>
+                      ) : (
+                        <>
+                          <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Find Free Time
+                        </>
+                      )}
+                    </button>
+                    {selectedUserIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={clearTeamSelection}
+                        disabled={isLoading}
+                        style={{
+                          padding: '10px 16px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          color: '#666',
+                          background: 'transparent',
+                          border: '1px solid rgba(0, 0, 0, 0.15)',
+                          borderRadius: '8px',
+                          cursor: isLoading ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Free Time Slots Results */}
+                  {freeTimeSlots && freeTimeSlots.length > 0 && (
+                    <div style={{
+                      background: 'rgba(34, 197, 94, 0.05)',
+                      border: '1px solid rgba(34, 197, 94, 0.2)',
+                      borderRadius: '8px',
+                      padding: '12px',
+                    }}>
+                      <p style={{ fontSize: '13px', fontWeight: '600', color: '#16A34A', margin: '0 0 8px 0' }}>
+                        {freeTimeSlots.length} available time slot{freeTimeSlots.length !== 1 ? 's' : ''} found
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#666', margin: '0 0 12px 0' }}>
+                        Click a slot to set your event time
+                      </p>
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                      }}>
+                        {freeTimeSlots.slice(0, 20).map((slot, index) => {
+                          const start = new Date(slot.startTime);
+                          const end = new Date(slot.endTime);
+                          const dateStr = start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                          const startTimeStr = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                          const endTimeStr = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+                          return (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => handleSelectFreeSlot(slot)}
+                              disabled={isLoading}
+                              style={{
+                                padding: '10px 12px',
+                                background: '#fff',
+                                border: '1px solid rgba(34, 197, 94, 0.3)',
+                                borderRadius: '6px',
+                                cursor: isLoading ? 'not-allowed' : 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.15s',
+                              }}
+                              onMouseEnter={(e) => {
+                                (e.target as HTMLButtonElement).style.background = 'rgba(34, 197, 94, 0.1)';
+                                (e.target as HTMLButtonElement).style.borderColor = '#22C55E';
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.target as HTMLButtonElement).style.background = '#fff';
+                                (e.target as HTMLButtonElement).style.borderColor = 'rgba(34, 197, 94, 0.3)';
+                              }}
+                            >
+                              <div style={{ fontSize: '13px', fontWeight: '600', color: '#16A34A' }}>
+                                {dateStr}
+                              </div>
+                              <div style={{ fontSize: '13px', color: '#333', marginTop: '2px' }}>
+                                {startTimeStr} - {endTimeStr}
+                                <span style={{ color: '#666', marginLeft: '8px' }}>
+                                  ({slot.durationMinutes} min)
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                        {freeTimeSlots.length > 20 && (
+                          <p style={{ fontSize: '12px', color: '#666', textAlign: 'center', margin: '8px 0 0 0' }}>
+                            +{freeTimeSlots.length - 20} more slots available
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Free Time Found */}
+                  {freeTimeSlots && freeTimeSlots.length === 0 && (
+                    <div style={{
+                      background: 'rgba(239, 68, 68, 0.05)',
+                      border: '1px solid rgba(239, 68, 68, 0.2)',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      textAlign: 'center',
+                    }}>
+                      <p style={{ fontSize: '14px', color: '#DC2626', margin: 0 }}>
+                        No mutual free time found in the next 7 days
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Calendar Selection */}
           <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', paddingTop: '16px', marginBottom: '16px' }}>
             <label htmlFor="calendar" style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#000', marginBottom: '8px' }}>
@@ -598,6 +930,14 @@ export default function CreateEventModal({
           </Button>
         </div>
       </div>
+
+      {/* Animations */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
