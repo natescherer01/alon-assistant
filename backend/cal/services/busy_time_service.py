@@ -23,31 +23,40 @@ class BusyTimeService:
     @staticmethod
     def get_all_users_with_calendars(db: Session) -> List[Dict[str, Any]]:
         """
-        Get all users, indicating if they have calendar connections.
+        Get all users, indicating if they have calendar events.
 
         Returns:
             List of user dicts with id, email, full_name, has_calendar
+            where has_calendar indicates the user has calendar events in the database.
         """
         # Query all main users
         users = db.query(User).all()
 
         result = []
         for user in users:
-            # Check if user has calendar connections via CalendarUser
+            # Check if user has calendar events via CalendarUser
             calendar_user = db.query(CalendarUser).filter(
                 CalendarUser.email == user.email  # Link by email
             ).first()
 
             has_calendar = False
             if calendar_user:
-                connection_count = db.query(CalendarConnection).filter(
-                    and_(
-                        CalendarConnection.user_id == calendar_user.id,
-                        CalendarConnection.is_connected == True,
-                        CalendarConnection.deleted_at.is_(None)
+                # Check if user has any calendar events (not just connections)
+                # This allows seeing users who have events synced regardless of
+                # whether their calendar connection is currently "active"
+                event_count = (
+                    db.query(CalendarEvent)
+                    .join(CalendarConnection)
+                    .filter(
+                        and_(
+                            CalendarConnection.user_id == calendar_user.id,
+                            CalendarConnection.deleted_at.is_(None),
+                            CalendarEvent.deleted_at.is_(None)
+                        )
                     )
-                ).count()
-                has_calendar = connection_count > 0
+                    .count()
+                )
+                has_calendar = event_count > 0
 
             result.append({
                 "id": user.id,
@@ -106,13 +115,14 @@ class BusyTimeService:
                 continue
 
             # Get all events for this user's calendars
+            # Note: We don't require is_connected == True because we want to show
+            # events from any synced calendar, even if the connection is stale
             events = (
                 db.query(CalendarEvent)
                 .join(CalendarConnection)
                 .filter(
                     and_(
                         CalendarConnection.user_id == calendar_user.id,
-                        CalendarConnection.is_connected == True,
                         CalendarConnection.deleted_at.is_(None),
                         CalendarEvent.deleted_at.is_(None),
                         or_(
