@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import useAuthStore from '../utils/authStore';
 import { tasksAPI } from '../api/client';
@@ -10,6 +10,7 @@ import { useIsMobile } from '../hooks/useIsMobile';
 
 function TasksPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { logout } = useAuthStore();
   const isMobile = useIsMobile(768);
@@ -20,6 +21,8 @@ function TasksPage() {
   const [savingTasks, setSavingTasks] = useState(new Set());
   const [error, setError] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [highlightedTaskId, setHighlightedTaskId] = useState(null);
+  const taskRefs = useRef({});
 
   // Use React Query
   const { data: allTasks = [], isLoading } = useQuery({
@@ -174,6 +177,26 @@ function TasksPage() {
       return hasChanges ? newSaving : prevSaving;
     });
   }, [displayedTasks]);
+
+  // Handle navigation state from dashboard preview click
+  useEffect(() => {
+    const state = location.state;
+    if (state?.selectedTaskId) {
+      setHighlightedTaskId(state.selectedTaskId);
+      // Clear the state to prevent re-highlighting on refresh
+      navigate(location.pathname, { replace: true, state: null });
+
+      // Scroll to the task after a short delay to ensure it's rendered
+      setTimeout(() => {
+        const taskElement = taskRefs.current[state.selectedTaskId];
+        if (taskElement) {
+          taskElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        // Remove highlight after animation
+        setTimeout(() => setHighlightedTaskId(null), 2000);
+      }, 100);
+    }
+  }, [location.state, navigate, location.pathname]);
 
   // Memoized counts
   const counts = useMemo(() => {
@@ -788,15 +811,24 @@ function TasksPage() {
                 </div>
               ) : (
                 displayedTasks.map((task) => (
-                  <TaskItem
+                  <div
                     key={task.id}
-                    task={task}
-                    onUpdate={handleTaskUpdate}
-                    onDelete={handleTaskUpdate}
-                    onError={handleError}
-                    markSaving={markTaskSaving}
-                    isSaving={savingTasks.has(task.id)}
-                  />
+                    ref={(el) => { taskRefs.current[task.id] = el; }}
+                    style={{
+                      transition: 'all 0.3s ease',
+                      borderRadius: '12px',
+                      boxShadow: highlightedTaskId === task.id ? '0 0 0 3px #0066FF, 0 4px 12px rgba(0, 102, 255, 0.3)' : 'none',
+                    }}
+                  >
+                    <TaskItem
+                      task={task}
+                      onUpdate={handleTaskUpdate}
+                      onDelete={handleTaskUpdate}
+                      onError={handleError}
+                      markSaving={markTaskSaving}
+                      isSaving={savingTasks.has(task.id)}
+                    />
+                  </div>
                 ))
               )}
             </div>

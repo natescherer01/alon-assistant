@@ -50,7 +50,7 @@ function Dashboard() {
     return allTasks.filter(t => t.status !== 'completed' && t.status !== 'deleted');
   }, [allTasks]);
 
-  // Get today's events
+  // Get today's events (no limit for scrollable view)
   const todayEvents = useMemo(() => {
     const todayStr = today.toISOString().split('T')[0];
     return calendarEvents
@@ -58,11 +58,10 @@ function Dashboard() {
         const eventDate = new Date(event.startTime).toISOString().split('T')[0];
         return eventDate === todayStr;
       })
-      .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
-      .slice(0, 5);
+      .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
   }, [calendarEvents]);
 
-  // Get upcoming events (next 7 days, excluding today)
+  // Get upcoming events (next 7 days, excluding today - no limit for scrollable view)
   const upcomingEvents = useMemo(() => {
     const todayStr = today.toISOString().split('T')[0];
     return calendarEvents
@@ -70,8 +69,7 @@ function Dashboard() {
         const eventDate = new Date(event.startTime).toISOString().split('T')[0];
         return eventDate > todayStr;
       })
-      .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
-      .slice(0, 3);
+      .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
   }, [calendarEvents]);
 
   const handleTaskUpdate = (updatedTask = null, taskId = null, action = 'update') => {
@@ -589,7 +587,7 @@ function Dashboard() {
                 </div>
               )}
 
-              {/* Task List Preview */}
+              {/* Task List Preview - Scrollable */}
               <div style={{ padding: '12px 20px 16px' }}>
                 {activeTasks.length === 0 ? (
                   <p style={{
@@ -602,8 +600,15 @@ function Dashboard() {
                     No active tasks
                   </p>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {activeTasks.slice(0, 4).map((task) => (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    paddingRight: '4px',
+                  }}>
+                    {activeTasks.map((task) => (
                       <div
                         key={task.id}
                         style={{
@@ -615,8 +620,9 @@ function Dashboard() {
                           borderRadius: '10px',
                           cursor: 'pointer',
                           transition: 'all 0.2s',
+                          flexShrink: 0,
                         }}
-                        onClick={() => navigate('/tasks')}
+                        onClick={() => navigate('/tasks', { state: { selectedTaskId: task.id } })}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = '#F3F4F6';
                         }}
@@ -725,88 +731,37 @@ function Dashboard() {
                 </span>
               </div>
 
-              {/* Today's Events */}
+              {/* Today's Events - Scrollable */}
               <div style={{ padding: '16px 20px' }}>
                 <div style={{
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  color: '#4040B0',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginBottom: '12px',
+                  maxHeight: '280px',
+                  overflowY: 'auto',
+                  paddingRight: '4px',
                 }}>
-                  Today
-                </div>
-
-                {todayEvents.length === 0 ? (
-                  <p style={{
-                    fontSize: '13px',
-                    color: '#9CA3AF',
-                    textAlign: 'center',
-                    padding: '16px 0',
-                    margin: 0,
+                  <div style={{
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    color: '#4040B0',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '12px',
                   }}>
-                    No events today
-                  </p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {todayEvents.map((event) => (
-                      <div
-                        key={event.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: '10px',
-                          padding: '10px 12px',
-                          background: '#F9FAFB',
-                          borderRadius: '10px',
-                          borderLeft: `3px solid ${event.calendarColor || '#00D4DD'}`,
-                        }}
-                      >
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{
-                            fontSize: '13px',
-                            fontWeight: '500',
-                            color: '#1a1a1a',
-                            margin: 0,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}>
-                            {event.title}
-                          </p>
-                          <p style={{
-                            fontSize: '11px',
-                            color: '#9CA3AF',
-                            margin: '2px 0 0 0',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                          }}>
-                            {getProviderIcon(event.provider)} {event.isAllDay ? 'All day' : formatEventTime(event.startTime)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                    Today
                   </div>
-                )}
 
-                {/* Upcoming Events */}
-                {upcomingEvents.length > 0 && (
-                  <>
-                    <div style={{
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      color: '#6B7280',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      marginTop: '16px',
-                      marginBottom: '12px',
+                  {todayEvents.length === 0 ? (
+                    <p style={{
+                      fontSize: '13px',
+                      color: '#9CA3AF',
+                      textAlign: 'center',
+                      padding: '16px 0',
+                      margin: 0,
                     }}>
-                      Upcoming
-                    </div>
+                      No events today
+                    </p>
+                  ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {upcomingEvents.map((event) => (
+                      {todayEvents.map((event) => (
                         <div
                           key={event.id}
                           style={{
@@ -816,7 +771,17 @@ function Dashboard() {
                             padding: '10px 12px',
                             background: '#F9FAFB',
                             borderRadius: '10px',
-                            borderLeft: `3px solid ${event.calendarColor || '#6B7280'}`,
+                            borderLeft: `3px solid ${event.calendarColor || '#00D4DD'}`,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            flexShrink: 0,
+                          }}
+                          onClick={() => navigate('/calendar', { state: { selectedEventId: event.id, eventDate: event.startTime } })}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#F3F4F6';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#F9FAFB';
                           }}
                         >
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -835,15 +800,82 @@ function Dashboard() {
                               fontSize: '11px',
                               color: '#9CA3AF',
                               margin: '2px 0 0 0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
                             }}>
-                              {formatEventDate(event.startTime)} • {event.isAllDay ? 'All day' : formatEventTime(event.startTime)}
+                              {getProviderIcon(event.provider)} {event.isAllDay ? 'All day' : formatEventTime(event.startTime)}
                             </p>
                           </div>
                         </div>
                       ))}
                     </div>
-                  </>
-                )}
+                  )}
+
+                  {/* Upcoming Events */}
+                  {upcomingEvents.length > 0 && (
+                    <>
+                      <div style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: '#6B7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        marginTop: '16px',
+                        marginBottom: '12px',
+                      }}>
+                        Upcoming
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {upcomingEvents.map((event) => (
+                          <div
+                            key={event.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              gap: '10px',
+                              padding: '10px 12px',
+                              background: '#F9FAFB',
+                              borderRadius: '10px',
+                              borderLeft: `3px solid ${event.calendarColor || '#6B7280'}`,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              flexShrink: 0,
+                            }}
+                            onClick={() => navigate('/calendar', { state: { selectedEventId: event.id, eventDate: event.startTime } })}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#F3F4F6';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = '#F9FAFB';
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{
+                                fontSize: '13px',
+                                fontWeight: '500',
+                                color: '#1a1a1a',
+                                margin: 0,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}>
+                                {event.title}
+                              </p>
+                              <p style={{
+                                fontSize: '11px',
+                                color: '#9CA3AF',
+                                margin: '2px 0 0 0',
+                              }}>
+                                {formatEventDate(event.startTime)} • {event.isAllDay ? 'All day' : formatEventTime(event.startTime)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
 
                 {/* View All Link */}
                 <button
