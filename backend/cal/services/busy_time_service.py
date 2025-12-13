@@ -42,7 +42,7 @@ class BusyTimeService:
             if calendar_user:
                 connection_count = db.query(CalendarConnection).filter(
                     and_(
-                        CalendarConnection.calendar_user_id == calendar_user.id,
+                        CalendarConnection.user_id == calendar_user.id,
                         CalendarConnection.is_connected == True,
                         CalendarConnection.deleted_at.is_(None)
                     )
@@ -111,7 +111,7 @@ class BusyTimeService:
                 .join(CalendarConnection)
                 .filter(
                     and_(
-                        CalendarConnection.calendar_user_id == calendar_user.id,
+                        CalendarConnection.user_id == calendar_user.id,
                         CalendarConnection.is_connected == True,
                         CalendarConnection.deleted_at.is_(None),
                         CalendarEvent.deleted_at.is_(None),
