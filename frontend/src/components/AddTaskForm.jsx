@@ -135,17 +135,41 @@ function AddTaskForm({ onTaskAdded }) {
     letterSpacing: '0.01em',
   };
 
-  // Expanded form
-  if (isExpanded) {
+  // Modal overlay for expanded form
+  const renderExpandedModal = () => {
+    if (!isExpanded) return null;
+
     return (
-      <>
-        <ConfirmDialog />
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(4px)',
+          WebkitBackdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px',
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) resetForm();
+        }}
+      >
         <div style={{
           background: '#fff',
-          borderRadius: '16px',
-          border: '1px solid rgba(0, 0, 0, 0.08)',
-          padding: isMobile ? '20px' : '24px',
-          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
+          borderRadius: '20px',
+          padding: isMobile ? '24px' : '32px',
+          boxShadow: '0 24px 80px rgba(0, 0, 0, 0.2)',
+          width: '100%',
+          maxWidth: '520px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          animation: 'modalSlideIn 0.2s ease',
         }}>
           <form onSubmit={handleExpandedSubmit} onKeyDown={handleKeyDown}>
             <input
@@ -158,12 +182,12 @@ function AddTaskForm({ onTaskAdded }) {
               style={{
                 width: '100%',
                 padding: '8px 0',
-                fontSize: '17px',
+                fontSize: '18px',
                 fontWeight: '600',
                 border: 'none',
                 outline: 'none',
                 background: 'transparent',
-                marginBottom: '16px',
+                marginBottom: '20px',
                 color: '#111',
                 letterSpacing: '-0.01em',
               }}
@@ -174,12 +198,12 @@ function AddTaskForm({ onTaskAdded }) {
               value={formData.description}
               onChange={handleChange}
               placeholder="Add notes or details..."
-              rows={2}
+              rows={3}
               style={{
                 ...inputStyle,
                 resize: 'none',
                 fontFamily: 'inherit',
-                marginBottom: '16px',
+                marginBottom: '20px',
               }}
             />
 
@@ -187,7 +211,7 @@ function AddTaskForm({ onTaskAdded }) {
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
               gap: '14px',
-              marginBottom: '16px',
+              marginBottom: '20px',
             }}>
               <div>
                 <label style={labelStyle}>Project</label>
@@ -233,7 +257,7 @@ function AddTaskForm({ onTaskAdded }) {
             <div style={{
               borderTop: '1px solid rgba(0, 0, 0, 0.06)',
               paddingTop: '16px',
-              marginBottom: '20px',
+              marginBottom: '24px',
             }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
                 <div style={{
@@ -309,7 +333,7 @@ function AddTaskForm({ onTaskAdded }) {
                 onClick={resetForm}
                 disabled={isSubmitting}
                 style={{
-                  padding: '10px 20px',
+                  padding: '12px 24px',
                   fontSize: '14px',
                   fontWeight: '500',
                   color: '#6b7280',
@@ -326,7 +350,7 @@ function AddTaskForm({ onTaskAdded }) {
                 type="submit"
                 disabled={isSubmitting || !title.trim()}
                 style={{
-                  padding: '10px 24px',
+                  padding: '12px 28px',
                   fontSize: '14px',
                   fontWeight: '500',
                   color: '#fff',
@@ -342,14 +366,15 @@ function AddTaskForm({ onTaskAdded }) {
             </div>
           </form>
         </div>
-      </>
+      </div>
     );
-  }
+  };
 
-  // Quick add input
+  // Quick add input (always visible) + modal overlay when expanded
   return (
     <>
       <ConfirmDialog />
+      {renderExpandedModal()}
       <form onSubmit={handleQuickAdd}>
         <div style={{
           display: 'flex',
@@ -482,6 +507,10 @@ function AddTaskForm({ onTaskAdded }) {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        @keyframes modalSlideIn {
+          0% { opacity: 0; transform: scale(0.95) translateY(-10px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
         }
       `}</style>
     </>
