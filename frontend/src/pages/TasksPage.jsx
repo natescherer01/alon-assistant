@@ -207,203 +207,152 @@ function TasksPage() {
   }, [allTasks]);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F5F5F7' }}>
-      {/* Glassmorphism Navbar */}
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+      {/* Minimal Navbar */}
       <nav style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        background: 'rgba(255, 255, 255, 0.8)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        background: 'rgba(255, 255, 255, 0.9)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #eee',
       }}>
-        <div className="navbar-container" style={{
-          maxWidth: '1600px',
+        <div style={{
+          maxWidth: '1400px',
           margin: '0 auto',
-          padding: isMobile ? '12px 16px' : '16px 24px',
+          padding: isMobile ? '12px 16px' : '12px 32px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
             <img
               src="/alon-logo.png"
               alt="Alon"
               style={{
-                height: isMobile ? '28px' : '36px',
+                height: isMobile ? '24px' : '28px',
                 cursor: 'pointer',
               }}
               onClick={() => navigate('/dashboard')}
             />
           </div>
 
-          {/* Mobile: Hamburger Menu Button */}
+          {/* Mobile: Menu Button */}
           {isMobile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {/* Hamburger Menu */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                style={{
-                  padding: '8px',
-                  background: 'transparent',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                aria-label="Menu"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
-                  {mobileMenuOpen ? (
-                    <path d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <>
-                      <path d="M3 12h18M3 6h18M3 18h18" />
-                    </>
-                  )}
-                </svg>
-              </button>
-            </div>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{
+                padding: '8px',
+                background: 'transparent',
+                border: '1px solid #eee',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              aria-label="Menu"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="1.5">
+                {mobileMenuOpen ? (
+                  <path d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path d="M3 12h18M3 6h18M3 18h18" />
+                )}
+              </svg>
+            </button>
           )}
 
-          {/* Desktop: Full Navigation */}
+          {/* Desktop: Navigation */}
           {!isMobile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {/* Chat Button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <button
                 onClick={() => navigate('/dashboard')}
                 style={{
                   padding: '8px 16px',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: '500',
                   color: '#666',
                   background: 'transparent',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
+                  border: 'none',
+                  borderRadius: '6px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(0, 0, 0, 0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent';
-                }}
+                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                onMouseLeave={(e) => e.target.style.background = 'transparent'}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
                 Chat
               </button>
 
-              {/* Tasks Button (active) */}
               <button
                 style={{
                   padding: '8px 16px',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: '500',
-                  color: '#fff',
-                  background: '#0066FF',
+                  color: '#000',
+                  background: '#f5f5f5',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   cursor: 'default',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 11l3 3L22 4" />
-                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                </svg>
                 Tasks
               </button>
 
-              {/* Calendar Button */}
               <button
                 onClick={() => navigate('/calendar')}
                 style={{
                   padding: '8px 16px',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: '500',
                   color: '#666',
                   background: 'transparent',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
+                  border: 'none',
+                  borderRadius: '6px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(0, 0, 0, 0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent';
-                }}
+                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                onMouseLeave={(e) => e.target.style.background = 'transparent'}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
                 Calendar
               </button>
 
-              {/* Profile Button */}
               <button
                 onClick={() => navigate('/profile')}
                 style={{
                   padding: '8px 16px',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: '500',
                   color: '#666',
                   background: 'transparent',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
+                  border: 'none',
+                  borderRadius: '6px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(0, 0, 0, 0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent';
-                }}
+                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                onMouseLeave={(e) => e.target.style.background = 'transparent'}
               >
                 Profile
               </button>
 
-              {/* Logout Button */}
+              <div style={{ width: '1px', height: '20px', background: '#eee', margin: '0 8px' }} />
+
               <button
                 onClick={handleLogout}
                 style={{
                   padding: '8px 16px',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: '500',
                   color: '#666',
                   background: 'transparent',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
+                  border: 'none',
+                  borderRadius: '6px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(0, 0, 0, 0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent';
-                }}
+                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                onMouseLeave={(e) => e.target.style.background = 'transparent'}
               >
                 Logout
               </button>
@@ -418,128 +367,168 @@ function TasksPage() {
             top: '100%',
             left: 0,
             right: 0,
-            background: 'rgba(255, 255, 255, 0.98)',
-            backdropFilter: 'blur(20px)',
-            padding: '16px',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            background: '#fff',
+            padding: '8px',
+            borderBottom: '1px solid #eee',
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px',
+            gap: '2px',
           }}>
             <button
               onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}
               style={{
                 padding: '12px 16px',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '500',
                 color: '#333',
-                background: '#F3F4F6',
+                background: 'transparent',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 cursor: 'pointer',
                 textAlign: 'left',
               }}
             >
-              💬 Chat
+              Chat
+            </button>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#000',
+                background: '#f5f5f5',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              Tasks
             </button>
             <button
               onClick={() => { navigate('/calendar'); setMobileMenuOpen(false); }}
               style={{
                 padding: '12px 16px',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '500',
                 color: '#333',
-                background: '#F3F4F6',
+                background: 'transparent',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 cursor: 'pointer',
                 textAlign: 'left',
               }}
             >
-              📅 Calendar
+              Calendar
             </button>
             <button
               onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}
               style={{
                 padding: '12px 16px',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '500',
                 color: '#333',
-                background: '#F3F4F6',
+                background: 'transparent',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 cursor: 'pointer',
                 textAlign: 'left',
               }}
             >
-              👤 Profile
+              Profile
             </button>
+            <div style={{ height: '1px', background: '#eee', margin: '4px 0' }} />
             <button
               onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
               style={{
                 padding: '12px 16px',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '500',
-                color: '#DC2626',
-                background: '#FEE2E2',
+                color: '#999',
+                background: 'transparent',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 cursor: 'pointer',
                 textAlign: 'left',
               }}
             >
-              🚪 Logout
+              Logout
             </button>
           </div>
         )}
       </nav>
 
       {/* Main Content */}
-      <main className="dashboard-container" style={{
+      <main style={{
         flex: 1,
         maxWidth: '1400px',
         width: '100%',
         margin: '0 auto',
-        padding: isMobile ? '16px' : '24px',
+        padding: isMobile ? '16px' : '24px 32px',
       }}>
-        <div className="dashboard-grid" style={{
+        <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1fr 320px',
-          gap: isMobile ? '16px' : '24px',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 280px',
+          gap: isMobile ? '16px' : '32px',
         }}>
           {/* Tasks Section */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Next Task */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Next Task - Minimalist Style */}
             {nextTask && (
               <div style={{
-                background: '#0066FF',
-                borderRadius: '16px',
-                padding: '24px',
-                color: '#fff',
+                background: '#fff',
+                borderRadius: '12px',
+                border: '1px solid #eee',
               }}>
-                <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>
-                  Next Task
-                </h2>
                 <div style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '12px',
-                  padding: '16px',
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #eee',
                 }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px' }}>
-                    {nextTask.title}
-                  </h3>
-                  {nextTask.description && (
-                    <p style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>
-                      {nextTask.description}
-                    </p>
-                  )}
-                  {nextTask.deadline && (
-                    <p style={{ fontSize: '14px', opacity: 0.8 }}>
-                      Due: {nextTask.deadline}
-                    </p>
-                  )}
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: '#999',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '8px',
+                  }}>
+                    Next
+                  </div>
+                  <div style={{
+                    background: '#fafafa',
+                    borderRadius: '8px',
+                    padding: '12px',
+                  }}>
+                    <h4 style={{
+                      fontSize: '15px',
+                      fontWeight: '500',
+                      color: '#000',
+                      margin: '0 0 4px 0',
+                      lineHeight: '1.4',
+                    }}>
+                      {nextTask.title}
+                    </h4>
+                    {nextTask.description && (
+                      <p style={{
+                        fontSize: '13px',
+                        color: '#666',
+                        margin: '0 0 4px 0',
+                        lineHeight: '1.4',
+                      }}>
+                        {nextTask.description}
+                      </p>
+                    )}
+                    {nextTask.deadline && (
+                      <p style={{
+                        fontSize: '13px',
+                        color: '#999',
+                        margin: 0,
+                      }}>
+                        {nextTask.deadline}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -547,200 +536,147 @@ function TasksPage() {
             {/* Add Task */}
             <AddTaskForm onTaskAdded={handleTaskUpdate} />
 
-            {/* Search Bar */}
+            {/* Search Bar - Minimalist */}
             <div style={{
               background: '#fff',
-              borderRadius: '16px',
-              padding: '16px',
+              borderRadius: '12px',
+              border: '1px solid #eee',
+              padding: '12px 16px',
             }}>
               <div style={{ position: 'relative' }}>
                 <input
                   type="text"
-                  placeholder="Search tasks by title, description, project..."
+                  placeholder="Search tasks..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '12px 16px 12px 44px',
-                    fontSize: '15px',
-                    border: '1px solid rgba(0, 0, 0, 0.1)',
-                    borderRadius: '8px',
+                    padding: '10px 12px 10px 36px',
+                    fontSize: '14px',
+                    border: '1px solid #eee',
+                    borderRadius: '6px',
                     outline: 'none',
-                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    background: '#fafafa',
+                    transition: 'all 0.2s',
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = '#0066FF';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+                    e.target.style.borderColor = '#ccc';
+                    e.target.style.background = '#fff';
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
-                    e.target.style.boxShadow = 'none';
+                    e.target.style.borderColor = '#eee';
+                    e.target.style.background = '#fafafa';
                   }}
                 />
-                <span style={{
-                  position: 'absolute',
-                  left: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  fontSize: '18px',
-                  color: '#9CA3AF',
-                }}>
-                  🔍
-                </span>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#999"
+                  strokeWidth="2"
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                  }}
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
                     style={{
                       position: 'absolute',
-                      right: '12px',
+                      right: '8px',
                       top: '50%',
                       transform: 'translateY(-50%)',
                       background: 'transparent',
                       border: 'none',
-                      color: '#9CA3AF',
-                      fontSize: '20px',
+                      color: '#999',
+                      fontSize: '16px',
                       cursor: 'pointer',
                       padding: '4px',
                       lineHeight: 1,
                     }}
                   >
-                    ✕
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Task Filters */}
-            <div className="task-filters" style={{
-              background: '#fff',
-              borderRadius: '16px',
-              padding: isMobile ? '12px' : '16px',
+            {/* Task Filters - Minimalist */}
+            <div style={{
               display: 'flex',
-              gap: '8px',
+              gap: '6px',
               flexWrap: isMobile ? 'nowrap' : 'wrap',
               alignItems: 'center',
               overflowX: isMobile ? 'auto' : 'visible',
               WebkitOverflowScrolling: 'touch',
+              paddingBottom: isMobile ? '4px' : '0',
             }}>
-              <button
-                onClick={() => setFilter('all')}
-                className="task-filter-btn"
-                style={{
-                  padding: isMobile ? '10px 14px' : '12px 20px',
-                  fontSize: isMobile ? '13px' : '14px',
-                  fontWeight: '500',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  background: filter === 'all' ? '#0066FF' : '#F3F4F6',
-                  color: filter === 'all' ? '#fff' : '#000',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
-              >
-                All ({counts.all})
-              </button>
-              <button
-                onClick={() => setFilter('waiting')}
-                className="task-filter-btn"
-                style={{
-                  padding: isMobile ? '10px 14px' : '12px 20px',
-                  fontSize: isMobile ? '13px' : '14px',
-                  fontWeight: '500',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  background: filter === 'waiting' ? '#0066FF' : '#F3F4F6',
-                  color: filter === 'waiting' ? '#fff' : '#000',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
-              >
-                Waiting ({counts.waiting})
-              </button>
-              <button
-                onClick={() => setFilter('upcoming')}
-                className="task-filter-btn"
-                style={{
-                  padding: isMobile ? '10px 14px' : '12px 20px',
-                  fontSize: isMobile ? '13px' : '14px',
-                  fontWeight: '500',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  background: filter === 'upcoming' ? '#0066FF' : '#F3F4F6',
-                  color: filter === 'upcoming' ? '#fff' : '#000',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
-              >
-                Upcoming ({counts.upcoming})
-              </button>
-              <button
-                onClick={() => setFilter('completed')}
-                className="task-filter-btn"
-                style={{
-                  padding: isMobile ? '10px 14px' : '12px 20px',
-                  fontSize: isMobile ? '13px' : '14px',
-                  fontWeight: '500',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  background: filter === 'completed' ? '#0066FF' : '#F3F4F6',
-                  color: filter === 'completed' ? '#fff' : '#000',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
-              >
-                Done
-              </button>
-              <button
-                onClick={() => setFilter('deleted')}
-                className="task-filter-btn"
-                style={{
-                  padding: isMobile ? '10px 14px' : '12px 20px',
-                  fontSize: isMobile ? '13px' : '14px',
-                  fontWeight: '500',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  background: filter === 'deleted' ? '#0066FF' : '#F3F4F6',
-                  color: filter === 'deleted' ? '#fff' : '#000',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
-              >
-                Trash
-              </button>
+              {[
+                { key: 'all', label: 'All', count: counts.all },
+                { key: 'waiting', label: 'Waiting', count: counts.waiting },
+                { key: 'upcoming', label: 'Upcoming', count: counts.upcoming },
+                { key: 'completed', label: 'Done', count: null },
+                { key: 'deleted', label: 'Trash', count: null },
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    background: filter === f.key ? '#000' : '#f5f5f5',
+                    color: filter === f.key ? '#fff' : '#666',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (filter !== f.key) e.target.style.background = '#eee';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (filter !== f.key) e.target.style.background = '#f5f5f5';
+                  }}
+                >
+                  {f.label}{f.count !== null ? ` (${f.count})` : ''}
+                </button>
+              ))}
 
               {/* Project Filter Dropdown */}
               {projects.length > 0 && (
                 <>
-                  <div style={{ width: '1px', height: '32px', background: 'rgba(0, 0, 0, 0.1)', margin: '0 4px' }} />
+                  <div style={{ width: '1px', height: '24px', background: '#eee', margin: '0 4px' }} />
                   <select
                     value={projectFilter}
                     onChange={(e) => setProjectFilter(e.target.value)}
                     style={{
-                      padding: '12px 16px',
-                      fontSize: '14px',
+                      padding: '6px 12px',
+                      fontSize: '13px',
                       fontWeight: '500',
                       border: 'none',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       cursor: 'pointer',
-                      background: '#F3F4F6',
-                      color: '#000',
+                      background: '#f5f5f5',
+                      color: '#666',
                       outline: 'none',
                     }}
                   >
                     <option value="all">All Projects</option>
                     {projects.map((project) => (
                       <option key={project} value={project}>
-                        📁 {project}
+                        {project}
                       </option>
                     ))}
                   </select>
@@ -751,15 +687,15 @@ function TasksPage() {
             {/* Error Banner */}
             {error && (
               <div style={{
-                background: '#FEE2E2',
-                border: '1px solid #FCA5A5',
-                borderRadius: '12px',
-                padding: '16px',
+                background: '#fafafa',
+                border: '1px solid #eee',
+                borderRadius: '8px',
+                padding: '12px 16px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}>
-                <p style={{ color: '#991B1B', margin: 0, fontSize: '14px', fontWeight: '500' }}>
+                <p style={{ color: '#666', margin: 0, fontSize: '13px' }}>
                   {error.message}
                 </p>
                 <button
@@ -767,46 +703,50 @@ function TasksPage() {
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: '#991B1B',
+                    color: '#999',
                     cursor: 'pointer',
-                    fontSize: '20px',
+                    fontSize: '16px',
                     padding: '4px 8px',
                   }}
                 >
-                  ✕
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             )}
 
             {/* Task List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {isLoading ? (
                 <div style={{
                   background: '#fff',
-                  borderRadius: '16px',
+                  borderRadius: '12px',
+                  border: '1px solid #eee',
                   padding: '48px',
                   textAlign: 'center',
                 }}>
                   <div style={{
-                    width: '48px',
-                    height: '48px',
-                    border: '4px solid #F3F4F6',
-                    borderTop: '4px solid #0066FF',
+                    width: '32px',
+                    height: '32px',
+                    border: '2px solid #eee',
+                    borderTop: '2px solid #000',
                     borderRadius: '50%',
-                    margin: '0 auto 16px',
+                    margin: '0 auto 12px',
                     animation: 'spin 1s linear infinite',
                   }} />
-                  <p style={{ color: '#666' }}>Loading tasks...</p>
+                  <p style={{ color: '#999', fontSize: '14px', margin: 0 }}>Loading tasks...</p>
                 </div>
               ) : displayedTasks.length === 0 ? (
                 <div style={{
                   background: '#fff',
-                  borderRadius: '16px',
+                  borderRadius: '12px',
+                  border: '1px solid #eee',
                   padding: '48px',
                   textAlign: 'center',
                 }}>
-                  <p style={{ color: '#666' }}>
-                    {searchQuery ? `No tasks found matching "${searchQuery}"` : 'No tasks found. Add your first task to get started!'}
+                  <p style={{ color: '#999', fontSize: '14px', margin: 0 }}>
+                    {searchQuery ? `No tasks found matching "${searchQuery}"` : 'No tasks yet'}
                   </p>
                 </div>
               ) : (
@@ -817,7 +757,7 @@ function TasksPage() {
                     style={{
                       transition: 'all 0.3s ease',
                       borderRadius: '12px',
-                      boxShadow: highlightedTaskId === task.id ? '0 0 0 3px #0066FF, 0 4px 12px rgba(0, 102, 255, 0.3)' : 'none',
+                      boxShadow: highlightedTaskId === task.id ? '0 0 0 2px #000' : 'none',
                     }}
                   >
                     <TaskItem
@@ -836,28 +776,35 @@ function TasksPage() {
 
           {/* Sidebar - Hidden on mobile */}
           {!isMobile && (
-            <div className="dashboard-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              {/* Stats */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* Overview Card */}
               <div style={{
                 background: '#fff',
-                borderRadius: '16px',
-                padding: '24px',
+                borderRadius: '12px',
+                border: '1px solid #eee',
               }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', color: '#000' }}>
-                  Overview
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>Active Tasks</span>
-                    <span style={{ fontWeight: 'bold', color: '#0066FF' }}>{counts.all}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>Waiting On</span>
-                    <span style={{ fontWeight: 'bold', color: '#F59E0B' }}>{counts.waiting}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.7)' }}>With Deadlines</span>
-                    <span style={{ fontWeight: 'bold', color: '#000' }}>{counts.upcoming}</span>
+                <div style={{
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #eee',
+                }}>
+                  <span style={{ fontSize: '15px', fontWeight: '600', color: '#000', letterSpacing: '-0.01em' }}>
+                    Overview
+                  </span>
+                </div>
+                <div style={{ padding: '16px 20px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '14px', color: '#666' }}>Active</span>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#000' }}>{counts.all}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '14px', color: '#666' }}>Waiting</span>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#666' }}>{counts.waiting}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '14px', color: '#666' }}>With Deadlines</span>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#666' }}>{counts.upcoming}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -865,74 +812,56 @@ function TasksPage() {
               {/* Quick Actions */}
               <div style={{
                 background: '#fff',
-                borderRadius: '16px',
-                padding: '24px',
+                borderRadius: '12px',
+                border: '1px solid #eee',
               }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', color: '#000' }}>
-                  Quick Actions
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <button
-                    onClick={() => navigate('/dashboard')}
-                    style={{
-                      padding: '12px 16px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#0066FF',
-                      background: 'rgba(0, 102, 255, 0.08)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = 'rgba(0, 102, 255, 0.12)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'rgba(0, 102, 255, 0.08)';
-                    }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-                    Chat with Sam
-                  </button>
-                  <button
-                    onClick={() => navigate('/calendar')}
-                    style={{
-                      padding: '12px 16px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#10B981',
-                      background: 'rgba(16, 185, 129, 0.08)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = 'rgba(16, 185, 129, 0.12)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'rgba(16, 185, 129, 0.08)';
-                    }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    View Calendar
-                  </button>
+                <div style={{
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #eee',
+                }}>
+                  <span style={{ fontSize: '15px', fontWeight: '600', color: '#000', letterSpacing: '-0.01em' }}>
+                    Quick Actions
+                  </span>
+                </div>
+                <div style={{ padding: '12px 20px 16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <button
+                      onClick={() => navigate('/dashboard')}
+                      style={{
+                        padding: '8px 10px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#333',
+                        background: 'transparent',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => e.target.style.background = '#fafafa'}
+                      onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                    >
+                      Go to Chat
+                    </button>
+                    <button
+                      onClick={() => navigate('/calendar')}
+                      style={{
+                        padding: '8px 10px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#333',
+                        background: 'transparent',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => e.target.style.background = '#fafafa'}
+                      onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                    >
+                      View Calendar
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
