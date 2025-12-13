@@ -691,11 +691,6 @@ interface EventBlockProps {
 
 function EventBlock({ event, onClick, timezone }: EventBlockProps) {
   const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    setTooltipPosition({ x: e.clientX, y: e.clientY });
-  };
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -755,7 +750,6 @@ function EventBlock({ event, onClick, timezone }: EventBlockProps) {
         onClick={handleClick}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
-        onMouseMove={handleMouseMove}
         role="button"
         tabIndex={0}
         aria-label={`${event.title} at ${formatTime(new Date(event.startTime), timezone)}`}
@@ -812,7 +806,7 @@ function EventBlock({ event, onClick, timezone }: EventBlockProps) {
 
       {/* Tooltip */}
       {showTooltip && (
-        <EventTooltip event={event} timezone={timezone} position={tooltipPosition} />
+        <EventTooltip event={event} timezone={timezone} />
       )}
     </>
   );
@@ -899,40 +893,18 @@ function AllDayEventBlock({ event, onClick }: AllDayEventBlockProps) {
 interface EventTooltipProps {
   event: CalendarEvent;
   timezone?: string;
-  position: { x: number; y: number };
 }
 
-function EventTooltip({ event, timezone, position }: EventTooltipProps) {
+function EventTooltip({ event, timezone }: EventTooltipProps) {
   const startTime = new Date(event.startTime);
   const endTime = new Date(event.endTime);
-
-  // Calculate tooltip position to keep it on screen
-  const tooltipWidth = 300;
-  const tooltipHeight = 200; // Approximate
-  const offset = 15;
-
-  // Position to the right of cursor by default, flip if near edge
-  let left = position.x + offset;
-  let top = position.y + offset;
-
-  // Check if tooltip would go off-screen
-  if (typeof window !== 'undefined') {
-    if (left + tooltipWidth > window.innerWidth) {
-      left = position.x - tooltipWidth - offset;
-    }
-    if (top + tooltipHeight > window.innerHeight) {
-      top = position.y - tooltipHeight - offset;
-    }
-    // Ensure we don't go negative
-    if (left < 0) left = offset;
-    if (top < 0) top = offset;
-  }
 
   return (
     <div style={{
       position: 'fixed',
-      left: `${left}px`,
-      top: `${top}px`,
+      left: '50%',
+      top: '50%',
+      transform: 'translate(-50%, -50%)',
       zIndex: 9999,
       background: '#fff',
       border: '2px solid #D1D5DB',

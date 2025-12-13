@@ -506,8 +506,8 @@ function MonthEventTooltip({ event, timezone }: MonthEventTooltipProps) {
 
   return (
     <div style={{
-      position: 'absolute',
-      zIndex: 50,
+      position: 'fixed',
+      zIndex: 9999,
       background: '#fff',
       border: '1px solid #E5E7EB',
       borderRadius: '12px',
@@ -516,9 +516,9 @@ function MonthEventTooltip({ event, timezone }: MonthEventTooltipProps) {
       minWidth: '260px',
       maxWidth: '350px',
       pointerEvents: 'none',
-      left: 0,
-      top: '100%',
-      marginTop: '4px',
+      left: '50%',
+      top: '50%',
+      transform: 'translate(-50%, -50%)',
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {/* Title and importance */}
