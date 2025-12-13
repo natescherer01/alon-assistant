@@ -235,12 +235,27 @@ class ClaudeService:
         if waiting_tasks:
             alerts += "\n⏳ Currently waiting on:\n" + "\n".join(waiting_tasks) + "\n"
 
+        # Extract projects from active tasks for context
+        active_projects = set()
+        for task in active_tasks:
+            if task.project:
+                active_projects.add(task.project)
+
+        # Build projects summary
+        projects_summary = ""
+        if active_projects:
+            projects_summary = "\n🏷️ ACTIVE PROJECTS:\n"
+            projects_summary += ", ".join(sorted(active_projects)) + "\n"
+            projects_summary += "(Use these project names for related new tasks)\n"
+
         # Build full task list
         task_summary = "\n📋 ALL ACTIVE TASKS:\n"
         if active_tasks:
             for task in active_tasks[:15]:  # Show up to 15 tasks
                 task_summary += f"- Task #{task.id}: {task.title}\n"
                 task_summary += f"  Status: {task.status}"
+                if task.project:
+                    task_summary += f" | Project: {task.project}"
                 if task.deadline:
                     days_until = (task.deadline - today).days
                     task_summary += f" | Deadline: {task.deadline} ({days_until} days)"
@@ -322,19 +337,49 @@ Act as a PROACTIVE, attentive micromanager who:
 
 ## URGENT CONTEXT (mention these proactively!)
 {alerts if alerts else "✅ No urgent items right now."}
-
+{projects_summary}
 {task_summary}
 
-## Intelligence Features
+## Intelligence Features - AUTO-FILL EVERYTHING YOU CAN!
+
+**IMPORTANT: When adding tasks, ALWAYS fill in as many fields as possible based on:**
+1. What the user explicitly said
+2. What you know from the conversation history
+3. What you can infer from the user's existing tasks
+4. Reasonable defaults based on context
 
 **Auto-detect intensity from keywords:**
 - Light (1-2): email, call, meeting, review, check, quick, brief
 - Medium (3): write, draft, prepare, update, organize
 - Heavy (4-5): project, develop, design, research, build, implement, create
 
+**Auto-detect project:**
+- Look at user's existing active tasks - if they're working on a specific project, new related tasks likely belong to that project
+- If user mentions a project name in conversation, use it
+- If the task is clearly part of ongoing work (same topic, related to other tasks), assign to that project
+- Common project indicators: client names, product names, course names, event names
+
+**Auto-fill description with context:**
+- Add relevant context you know from the conversation
+- Include related tasks or deadlines if helpful
+- Add any details the user mentioned that aren't in the title
+- If it's a follow-up task, note what it's following up on
+- For study tasks, include subject/topic details
+
+**Auto-detect deadline:**
+- If user mentions time-related words, infer the deadline:
+  - "today", "this afternoon", "tonight" → today's date
+  - "tomorrow", "tomorrow morning" → tomorrow's date
+  - "this week", "by Friday" → appropriate weekday
+  - "next week" → following Monday
+  - "end of month" → last day of current month
+- If related to an existing task with a deadline, use similar timing
+- For recurring meetings/tasks, use the next occurrence
+
 **Auto-detect waiting-on:**
 - "sent to Luke" → status: waiting_on, waiting_on: "Luke's response"
 - "waiting for approval" → status: waiting_on, waiting_on: "approval"
+- "emailed", "messaged", "asked" → likely waiting for response
 
 **Suggest prerequisites:**
 - "send/submit X" → suggest "review/proofread X" first
@@ -344,14 +389,14 @@ Act as a PROACTIVE, attentive micromanager who:
 ## Action Format
 Use this format to trigger actions (system will parse and execute):
 
-**Add Task (only Title required, rest optional):**
-ACTION: ADD_TASK | Title: [title] | Description: [desc] | Deadline: [YYYY-MM-DD] | Intensity: [1-5] | Status: [status] | Waiting On: [person/thing] | Dependencies: [task #1, task #2]
+**Add Task (only Title required, but fill in ALL fields you can infer!):**
+ACTION: ADD_TASK | Title: [title] | Description: [desc] | Deadline: [YYYY-MM-DD] | Intensity: [1-5] | Project: [project name] | Status: [status] | Waiting On: [person/thing] | Dependencies: [task #1, task #2]
 
 **Complete Task:**
 ACTION: COMPLETE_TASK | Task ID: [id] | Notes: [completion notes]
 
 **Update Task:**
-ACTION: UPDATE_TASK | Task ID: [id] | Status: [status] | Deadline: [YYYY-MM-DD] | Intensity: [1-5] | Waiting On: [person/thing] | Description: [new desc]
+ACTION: UPDATE_TASK | Task ID: [id] | Status: [status] | Deadline: [YYYY-MM-DD] | Intensity: [1-5] | Project: [project name] | Waiting On: [person/thing] | Description: [new desc]
 
 **Restore Deleted Task:**
 ACTION: RESTORE_TASK | Task ID: [id]
@@ -382,20 +427,22 @@ When user says things like "it", "the task", "this one", "that deadline", "updat
 - ❌ Ignore the conversation context
 
 ## Conversational Task Creation Strategy
-When user wants to add a task, be SMART about gathering info:
+When user wants to add a task, be SMART and PROACTIVE about filling in details:
 
-**Step 1: Create immediately with what you have**
-- User says "add task: email Luke" → Create it RIGHT AWAY with just the title
-- Don't hold up task creation waiting for all fields
+**Step 1: Create immediately with EVERYTHING you can infer**
+- User says "add task: email Luke" → Create it with:
+  - Title: "Email Luke"
+  - Description: Context from conversation (why they're emailing, what about)
+  - Intensity: 2 (email is light work)
+  - Project: Infer from what they've been working on
+  - Any other relevant context
+- Don't hold up task creation waiting for all fields, but DO fill in what you know!
 
-**Step 2: Ask for CRITICAL missing info only (max 1-2 questions)**
-Ask ONLY if the task seems time-sensitive or blocked:
-- "When do you need this done by?" (if task mentions: submit, send, deadline, meeting, due)
-- "What are you waiting on?" (if user says: "sent to", "waiting for", "need approval from")
-- "Does this depend on another task?" (if user says: "after I finish", "once X is done")
-
-**Step 3: Apply smart defaults (AUTO-DETECT, don't ask!):**
-- **Intensity**: Auto-detect from keywords in title/description
+**Step 2: Fill in ALL fields you can from context:**
+- **Project**: Look at user's active tasks - if they're working on "Website Redesign" and ask to "add task: update the homepage", assign it to "Website Redesign"
+- **Description**: Add context you know from conversation - if user said "Luke asked me to send him the budget", include that context
+- **Deadline**: Infer from conversation - "need to do this by Friday" → set Friday as deadline
+- **Intensity**: Auto-detect from keywords
   - Light (1-2): email, call, quick, review, check, read, meeting
   - Medium (3): write, draft, update, prepare, organize
   - Heavy (4-5): project, build, design, develop, implement, research, create
@@ -407,18 +454,27 @@ Ask ONLY if the task seems time-sensitive or blocked:
   - "sent email to Luke" → waiting_on: "Luke's response"
   - "waiting for approval" → waiting_on: "approval"
   - "need Sarah to review" → waiting_on: "Sarah's review"
+- **Dependencies**: If task is related to existing tasks, link them
+
+**Step 3: Ask for CRITICAL missing info only (max 1-2 questions)**
+Ask ONLY if the task seems time-sensitive or blocked AND you truly can't infer:
+- "When do you need this done by?" (if task mentions: submit, send, deadline, meeting, due)
+- "What are you waiting on?" (if user says: "sent to", "waiting for", "need approval from")
 
 **DON'T:**
 - ❌ Ask "what's the intensity?" (auto-detect it!)
+- ❌ Ask "which project?" if you can infer from context
 - ❌ Bombard with 5+ questions per task
 - ❌ Wait to create task until you have all info
-- ❌ Ask about description if title is clear
+- ❌ Leave description empty if you have context
+- ❌ Leave project empty if they're clearly working on something
 
 **DO:**
-- ✅ Create task immediately with available info
-- ✅ Auto-detect intensity, status, waiting_on from context
-- ✅ Ask max 1-2 follow-up questions ONLY if critical
-- ✅ Use conversational tone: "Got it! When do you need this by?"
+- ✅ Fill in EVERY field you can infer from context
+- ✅ Use conversation history to add description context
+- ✅ Match project to what user is working on
+- ✅ Create task immediately with all available/inferred info
+- ✅ Ask max 1-2 follow-up questions ONLY if truly critical
 
 ## Response Formatting
 Format your responses using clean, modern markdown:
@@ -853,6 +909,14 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
             # Split by comma and clean up
             dependencies = [dep.strip() for dep in dep_str.split(",") if dep.strip()]
 
+        # Parse project
+        project = params.get("project", None)
+        if project:
+            project = project.strip()
+            # Clean up empty or placeholder values
+            if project.lower() in ["none", "null", "", "[project name]"]:
+                project = None
+
         # Create task
         new_task = Task(
             user_id=user.id,
@@ -862,7 +926,8 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
             intensity=intensity,
             status=status,
             waiting_on=waiting_on,
-            dependencies=dependencies
+            dependencies=dependencies,
+            project=project
         )
 
         db.add(new_task)
@@ -991,6 +1056,14 @@ Try to answer these WITHOUT looking at your notes first. Active recall strengthe
         if "dependencies" in params:
             dep_str = params["dependencies"]
             task.dependencies = [dep.strip() for dep in dep_str.split(",") if dep.strip()]
+
+        # Update project
+        if "project" in params:
+            project = params["project"].strip()
+            if project.lower() in ["none", "null", ""]:
+                task.project = None
+            else:
+                task.project = project
 
         db.commit()
         db.refresh(task)
