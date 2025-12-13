@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCalendars } from '../hooks/calendar/useCalendars';
 import useAuthStore from '../utils/authStore';
@@ -11,6 +11,10 @@ import type { CalendarEvent } from '../api/calendar/calendar';
 import type { FreeSlot } from '../api/calendar/users';
 import { useIsMobile } from '../hooks/useIsMobile';
 
+// Constants for auto-sync throttling
+const SYNC_THROTTLE_KEY = 'calendar_last_auto_sync';
+const SYNC_THROTTLE_MS = 5 * 60 * 1000; // 5 minutes minimum between auto-syncs
+
 /**
  * Calendar page - matches Dashboard styling exactly
  * Uses React Query for data caching - no loading on subsequent visits
@@ -19,7 +23,7 @@ export default function CalendarPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuthStore();
-  const { calendars, isLoading, error, fetchCalendars } = useCalendars();
+  const { calendars, isLoading, error, fetchCalendars, syncAllCalendars, isSyncingAll } = useCalendars();
   const isMobile = useIsMobile(768);
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
@@ -31,6 +35,39 @@ export default function CalendarPage() {
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [freeTimeSlots, setFreeTimeSlots] = useState<FreeSlot[] | null>(null);
   const currentUserId = String(useAuthStore.getState().user?.id || '');
+
+  // Track if auto-sync has been attempted this mount
+  const autoSyncAttempted = useRef(false);
+
+  // Auto-sync calendars on page mount (throttled to once every 5 minutes)
+  useEffect(() => {
+    // Only attempt once per mount
+    if (autoSyncAttempted.current) return;
+    autoSyncAttempted.current = true;
+
+    // Check if we should sync based on throttle
+    const lastSyncTime = localStorage.getItem(SYNC_THROTTLE_KEY);
+    const now = Date.now();
+
+    if (lastSyncTime) {
+      const timeSinceLastSync = now - parseInt(lastSyncTime, 10);
+      if (timeSinceLastSync < SYNC_THROTTLE_MS) {
+        // Skip sync - too recent
+        return;
+      }
+    }
+
+    // Trigger sync in background (don't block UI)
+    syncAllCalendars()
+      .then(() => {
+        localStorage.setItem(SYNC_THROTTLE_KEY, String(Date.now()));
+        setRefreshKey((prev) => prev + 1);
+      })
+      .catch((err) => {
+        console.error('Auto-sync failed:', err);
+        // Don't update throttle time on failure so retry happens sooner
+      });
+  }, [syncAllCalendars]);
 
   // Handle navigation state from dashboard preview click
   useEffect(() => {
@@ -187,7 +224,7 @@ export default function CalendarPage() {
                 Tasks
               </button>
 
-              {/* Calendar Button (active) */}
+              {/* Calendar Button (active) with sync indicator */}
               <button
                 style={{
                   padding: '8px 16px',
@@ -198,9 +235,25 @@ export default function CalendarPage() {
                   border: 'none',
                   borderRadius: '6px',
                   cursor: 'default',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
                 Calendar
+                {isSyncingAll && (
+                  <span
+                    style={{
+                      width: '12px',
+                      height: '12px',
+                      border: '2px solid #ddd',
+                      borderTop: '2px solid #666',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                    }}
+                    title="Syncing calendars..."
+                  />
+                )}
               </button>
 
               <button
@@ -302,9 +355,25 @@ export default function CalendarPage() {
                 borderRadius: '6px',
                 cursor: 'pointer',
                 textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
               }}
             >
               Calendar
+              {isSyncingAll && (
+                <span
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    border: '2px solid #ddd',
+                    borderTop: '2px solid #666',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                  }}
+                  title="Syncing calendars..."
+                />
+              )}
             </button>
             <button
               onClick={() => { setIsSidebarCollapsed(!isSidebarCollapsed); setMobileMenuOpen(false); }}

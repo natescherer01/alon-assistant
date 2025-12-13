@@ -61,6 +61,21 @@ export function useCalendars() {
     },
   });
 
+  // Sync all calendars mutation
+  const syncAllMutation = useMutation({
+    mutationFn: () => calendarApi.syncAllCalendars(),
+    onSuccess: () => {
+      // Update lastSyncedAt for all calendars in cache
+      queryClient.setQueryData<Calendar[]>(
+        queryKeys.calendar.calendars(),
+        (old) =>
+          old?.map((cal) => ({ ...cal, lastSyncedAt: new Date().toISOString() })) || []
+      );
+      // Invalidate events to get fresh data
+      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.events() });
+    },
+  });
+
   // Connect ICS calendar mutation
   const connectIcsMutation = useMutation({
     mutationFn: ({ url, displayName }: { url: string; displayName?: string }) =>
@@ -138,6 +153,7 @@ export function useCalendars() {
     fetchCalendars,
     disconnectCalendar: (id: string) => disconnectMutation.mutateAsync(id),
     syncCalendar: (id: string) => syncMutation.mutateAsync(id),
+    syncAllCalendars: () => syncAllMutation.mutateAsync(),
     initiateOAuth,
     validateIcsUrl,
     connectIcsCalendar: (url: string, displayName?: string) =>
@@ -148,6 +164,7 @@ export function useCalendars() {
     // Loading states for mutations
     isDisconnecting: disconnectMutation.isPending,
     isSyncing: syncMutation.isPending,
+    isSyncingAll: syncAllMutation.isPending,
     isConnecting: connectIcsMutation.isPending,
 
     // Clear error (for backwards compatibility - React Query handles this)
