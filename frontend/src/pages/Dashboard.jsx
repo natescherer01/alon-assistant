@@ -656,7 +656,7 @@ function Dashboard() {
             }}>
               {/* Header */}
               <div style={{
-                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                background: 'linear-gradient(135deg, #4040B0 0%, #00D4DD 100%)',
                 padding: '16px 20px',
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -690,7 +690,7 @@ function Dashboard() {
                 <div style={{
                   fontSize: '11px',
                   fontWeight: '600',
-                  color: '#10B981',
+                  color: '#4040B0',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                   marginBottom: '12px',
@@ -720,7 +720,7 @@ function Dashboard() {
                           padding: '10px 12px',
                           background: '#F9FAFB',
                           borderRadius: '10px',
-                          borderLeft: `3px solid ${event.calendarColor || '#10B981'}`,
+                          borderLeft: `3px solid ${event.calendarColor || '#00D4DD'}`,
                         }}
                       >
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -814,15 +814,15 @@ function Dashboard() {
                     marginTop: '16px',
                     fontSize: '13px',
                     fontWeight: '500',
-                    color: '#10B981',
+                    color: '#4040B0',
                     background: 'transparent',
-                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    border: '1px solid rgba(64, 64, 176, 0.2)',
                     borderRadius: '8px',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = 'rgba(16, 185, 129, 0.05)';
+                    e.target.style.background = 'rgba(64, 64, 176, 0.05)';
                   }}
                   onMouseLeave={(e) => {
                     e.target.style.background = 'transparent';
