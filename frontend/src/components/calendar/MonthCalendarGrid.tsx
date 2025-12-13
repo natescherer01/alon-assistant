@@ -105,13 +105,17 @@ export default function MonthCalendarGrid({
       borderRadius: '16px',
       overflow: 'hidden',
       boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
     }}>
       {/* Weekday Header */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(7, 1fr)',
+        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
         borderBottom: '1px solid #E5E7EB',
         background: '#F9FAFB',
+        width: '100%',
       }}>
         {weekdayNames.map((name, index) => {
           const isWeekend = index === 0 || index === 6;
@@ -137,7 +141,9 @@ export default function MonthCalendarGrid({
       {/* Calendar Grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(7, 1fr)',
+        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+        width: '100%',
+        minWidth: 0,
       }}>
         {monthGrid.flat().map((date, index) => {
           const dateKey = date.toDateString();
@@ -236,6 +242,9 @@ function MonthDayCell({
         opacity: isCurrentMonth ? 1 : 0.4,
         cursor: onCellClick ? 'pointer' : 'default',
         boxShadow: isToday ? 'inset 0 0 0 2px #0066FF' : 'none',
+        // Prevent grid item from expanding beyond its cell
+        minWidth: 0,
+        overflow: 'hidden',
       }}
       onClick={handleCellClick}
       onMouseEnter={() => setIsHovered(true)}
@@ -290,6 +299,9 @@ function MonthDayCell({
         flexDirection: 'column',
         gap: '2px',
         overflow: 'hidden',
+        // Ensure events container fits within cell
+        width: '100%',
+        maxWidth: '100%',
       }}>
         {visibleEvents.map(event => (
           <MonthEventBar
@@ -385,7 +397,7 @@ function MonthEventBar({ event, onClick, timezone, isMobile }: MonthEventBarProp
   const isTentative = event.status === 'tentative';
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }}>
       <div
         style={{
           fontSize: isMobile ? '11px' : '12px',
@@ -396,6 +408,10 @@ function MonthEventBar({ event, onClick, timezone, isMobile }: MonthEventBarProp
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
+          // Ensure event bar fits within cell
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
           backgroundColor: safeColor,
           borderLeft: `3px solid ${adjustColorBrightness(safeColor, -20)}`,
           borderTop: isTentative ? '1px dashed rgba(0,0,0,0.3)' : 'none',
