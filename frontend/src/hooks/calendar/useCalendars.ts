@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { calendarApi, type Calendar } from '../../api/calendar/calendar';
+import { calendarApi, type Calendar, type CalendarEvent } from '../../api/calendar/calendar';
 import { queryKeys } from '../../lib/queryKeys';
 
 interface ValidationResult {
@@ -123,8 +123,17 @@ export function useCalendars() {
         (old) =>
           old?.map((cal) => (cal.id === updatedCalendar.id ? updatedCalendar : cal)) || []
       );
-      // Invalidate events to refresh with new color
-      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.events() });
+      // Update events in cache in-place (no refetch needed)
+      // This is much faster than invalidating and refetching all events
+      queryClient.setQueriesData<CalendarEvent[]>(
+        { queryKey: queryKeys.calendar.events() },
+        (oldEvents) =>
+          oldEvents?.map((event) =>
+            event.calendarId === updatedCalendar.calendarId
+              ? { ...event, calendarColor: updatedCalendar.calendarColor }
+              : event
+          )
+      );
     },
   });
 
