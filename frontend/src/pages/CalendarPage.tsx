@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCalendars } from '../hooks/calendar/useCalendars';
 import useAuthStore from '../utils/authStore';
 import CalendarSidebar from '../components/calendar/CalendarSidebar';
@@ -19,6 +19,7 @@ import { useIsMobile } from '../hooks/useIsMobile';
  */
 export default function CalendarPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout } = useAuthStore();
   const { calendars, isLoading, error, fetchCalendars } = useCalendars();
   const isMobile = useIsMobile(768);
@@ -33,7 +34,15 @@ export default function CalendarPage() {
   const [freeTimeSlots, setFreeTimeSlots] = useState<FreeSlot[] | null>(null);
   const currentUserId = String(useAuthStore.getState().user?.id || '');
 
-  // No useEffect needed - React Query automatically fetches and caches data
+  // Handle navigation state from dashboard preview click
+  useEffect(() => {
+    const state = location.state as { selectedEventId?: string; eventDate?: string } | null;
+    if (state?.selectedEventId) {
+      setSelectedEventId(state.selectedEventId);
+      // Clear the state to prevent re-opening on refresh
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, navigate, location.pathname]);
 
   const handleOpenConnectModal = () => {
     setShowConnectModal(true);
