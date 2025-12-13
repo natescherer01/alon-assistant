@@ -4,7 +4,7 @@ import useConfirm from '../hooks/useConfirm';
 import useAuthStore from '../utils/authStore';
 import { useIsMobile } from '../hooks/useIsMobile';
 
-function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = false }) {
+function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = false, isLast = false }) {
   const { user } = useAuthStore();
   const isMobile = useIsMobile(768);
   const { ConfirmDialog, confirm, alert } = useConfirm();
@@ -245,6 +245,27 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
   const isWaiting = task.status === 'waiting_on';
   const isInProgress = task.status === 'in_progress';
 
+  // Shared input styles
+  const inputStyle = {
+    width: '100%',
+    padding: '10px 14px',
+    fontSize: '14px',
+    border: '1px solid rgba(0, 0, 0, 0.08)',
+    borderRadius: '10px',
+    outline: 'none',
+    background: '#fafafa',
+    transition: 'all 0.2s ease',
+  };
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: '12px',
+    fontWeight: '500',
+    color: '#6b7280',
+    marginBottom: '6px',
+    letterSpacing: '0.01em',
+  };
+
   // Edit mode
   if (isEditing) {
     return (
@@ -252,10 +273,11 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
         <ConfirmDialog />
         <div style={{
           background: '#fff',
-          borderRadius: '8px',
-          border: '1px solid #e5e5e5',
-          padding: isMobile ? '16px' : '20px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+          borderRadius: '14px',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
+          padding: isMobile ? '20px' : '24px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
+          margin: isMobile ? '12px 16px' : '12px 20px',
         }}>
           <form onSubmit={handleSaveEdit} onKeyDown={handleKeyDown}>
             <input
@@ -269,12 +291,14 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               style={{
                 width: '100%',
                 padding: '8px 0',
-                fontSize: '15px',
-                fontWeight: '500',
+                fontSize: '16px',
+                fontWeight: '600',
                 border: 'none',
                 outline: 'none',
                 background: 'transparent',
-                marginBottom: '12px',
+                marginBottom: '16px',
+                color: '#111',
+                letterSpacing: '-0.01em',
               }}
             />
 
@@ -285,156 +309,119 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               placeholder="Add notes..."
               rows={2}
               style={{
-                width: '100%',
-                padding: '8px 12px',
-                fontSize: '14px',
-                border: '1px solid #e5e5e5',
-                borderRadius: '6px',
-                outline: 'none',
+                ...inputStyle,
                 resize: 'none',
                 fontFamily: 'inherit',
-                background: '#fafafa',
-                marginBottom: '12px',
+                marginBottom: '16px',
               }}
             />
 
             <div style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-              gap: '12px',
-              marginBottom: '12px',
+              gap: '14px',
+              marginBottom: '16px',
             }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                  Project
-                </label>
+                <label style={labelStyle}>Project</label>
                 <input
                   type="text"
                   name="project"
                   value={formData.project}
                   onChange={handleChange}
                   placeholder="None"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '13px',
-                    border: '1px solid #e5e5e5',
-                    borderRadius: '6px',
-                    outline: 'none',
-                    background: '#fafafa',
-                  }}
+                  style={inputStyle}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                  Due date
-                </label>
+                <label style={labelStyle}>Due date</label>
                 <input
                   type="date"
                   name="deadline"
                   value={formData.deadline}
                   onChange={handleChange}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '13px',
-                    border: '1px solid #e5e5e5',
-                    borderRadius: '6px',
-                    outline: 'none',
-                    background: '#fafafa',
-                  }}
+                  style={inputStyle}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                  Priority
-                </label>
+                <label style={labelStyle}>Priority</label>
                 <select
                   name="intensity"
                   value={formData.intensity}
                   onChange={handleChange}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: '13px',
-                    border: '1px solid #e5e5e5',
-                    borderRadius: '6px',
-                    outline: 'none',
-                    background: '#fafafa',
-                    cursor: 'pointer',
-                  }}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
                 >
                   <option value={1}>P4 - Low</option>
                   <option value={2}>P3</option>
                   <option value={3}>P2</option>
-                  <option value={4}>P1</option>
+                  <option value={4}>P1 - High</option>
                   <option value={5}>P0 - Critical</option>
                 </select>
               </div>
             </div>
 
             {/* Waiting On */}
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                Waiting on (optional)
-              </label>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={labelStyle}>Waiting on (optional)</label>
               <input
                 type="text"
                 name="waiting_on"
                 value={formData.waiting_on}
                 onChange={handleChange}
                 placeholder="Person or thing you're waiting on"
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  fontSize: '13px',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: '6px',
-                  outline: 'none',
-                  background: '#fafafa',
-                }}
+                style={inputStyle}
               />
             </div>
 
             {/* Recurring */}
             <div style={{
-              borderTop: '1px solid #eee',
-              paddingTop: '12px',
-              marginBottom: '16px',
+              borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+              paddingTop: '16px',
+              marginBottom: '20px',
             }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <div style={{
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '5px',
+                  border: formData.is_recurring ? 'none' : '1.5px solid rgba(0, 0, 0, 0.2)',
+                  background: formData.is_recurring ? '#111' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                }}>
+                  {formData.is_recurring && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
                 <input
                   type="checkbox"
                   name="is_recurring"
                   checked={formData.is_recurring}
                   onChange={handleChange}
-                  style={{ width: '14px', height: '14px', accentColor: '#000' }}
+                  style={{ display: 'none' }}
                 />
-                <span style={{ fontSize: '13px', color: '#666' }}>Repeat this task</span>
+                <span style={{ fontSize: '14px', color: '#374151', fontWeight: '450' }}>Repeat this task</span>
               </label>
 
               {formData.is_recurring && (
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: isMobile ? '1fr' : '1fr 80px 1fr',
-                  gap: '8px',
-                  marginTop: '12px',
-                  paddingLeft: '22px',
+                  gap: '10px',
+                  marginTop: '14px',
+                  paddingLeft: '28px',
                 }}>
                   <select
                     name="recurrence_type"
                     value={formData.recurrence_type}
                     onChange={handleChange}
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '13px',
-                      border: '1px solid #e5e5e5',
-                      borderRadius: '6px',
-                      outline: 'none',
-                      background: '#fafafa',
-                    }}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
                   >
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
@@ -448,15 +435,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                     min="1"
                     value={formData.recurrence_interval}
                     onChange={handleChange}
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '13px',
-                      border: '1px solid #e5e5e5',
-                      borderRadius: '6px',
-                      outline: 'none',
-                      background: '#fafafa',
-                      textAlign: 'center',
-                    }}
+                    style={{ ...inputStyle, textAlign: 'center' }}
                   />
 
                   <input
@@ -465,33 +444,27 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                     value={formData.recurrence_end_date}
                     onChange={handleChange}
                     placeholder="End date"
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '13px',
-                      border: '1px solid #e5e5e5',
-                      borderRadius: '6px',
-                      outline: 'none',
-                      background: '#fafafa',
-                    }}
+                    style={inputStyle}
                   />
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button
                 type="button"
                 onClick={handleCancelEdit}
                 disabled={isSaving}
                 style={{
-                  padding: '8px 16px',
-                  fontSize: '13px',
+                  padding: '10px 20px',
+                  fontSize: '14px',
                   fontWeight: '500',
-                  color: '#666',
-                  background: '#f5f5f5',
+                  color: '#6b7280',
+                  background: 'rgba(0, 0, 0, 0.04)',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '10px',
                   cursor: isSaving ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
                 }}
               >
                 Cancel
@@ -500,14 +473,15 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 type="submit"
                 disabled={isSaving}
                 style={{
-                  padding: '8px 16px',
-                  fontSize: '13px',
+                  padding: '10px 24px',
+                  fontSize: '14px',
                   fontWeight: '500',
                   color: '#fff',
-                  background: isSaving ? '#999' : '#000',
+                  background: isSaving ? '#9ca3af' : '#111',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '10px',
                   cursor: isSaving ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
                 }}
               >
                 {isSaving ? 'Saving...' : 'Save'}
@@ -527,44 +501,49 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
         style={{
           display: 'flex',
           alignItems: 'flex-start',
-          gap: '12px',
-          padding: isMobile ? '12px 0' : '10px 0',
-          borderBottom: '1px solid #f0f0f0',
-          background: isHovered && !isMobile ? '#fafafa' : 'transparent',
-          marginLeft: isMobile ? 0 : '-8px',
-          marginRight: isMobile ? 0 : '-8px',
-          paddingLeft: isMobile ? 0 : '8px',
-          paddingRight: isMobile ? 0 : '8px',
-          borderRadius: '6px',
-          transition: 'background 0.1s ease',
+          gap: '14px',
+          padding: isMobile ? '16px 20px' : '14px 24px',
+          borderBottom: isLast ? 'none' : '1px solid rgba(0, 0, 0, 0.04)',
+          background: isHovered && !isMobile ? 'rgba(0, 0, 0, 0.015)' : 'transparent',
+          transition: 'background 0.15s ease',
+          cursor: isDeleted || isCompleted ? 'default' : 'pointer',
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={() => !isDeleted && !isCompleted && setIsEditing(true)}
       >
         {/* Checkbox */}
         <button
-          onClick={isDeleted ? handleRestore : (isCompleted ? null : handleComplete)}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isDeleted) {
+              handleRestore();
+            } else if (!isCompleted) {
+              handleComplete();
+            }
+          }}
           disabled={isCompleting || isSaving}
           style={{
-            width: '20px',
-            height: '20px',
-            minWidth: '20px',
-            marginTop: '2px',
-            borderRadius: '50%',
+            width: '22px',
+            height: '22px',
+            minWidth: '22px',
+            marginTop: '1px',
+            borderRadius: '7px',
             border: isCompleted
-              ? '2px solid #22c55e'
+              ? 'none'
               : isDeleted
-                ? '2px solid #d1d5db'
-                : `2px solid ${isHovered || isMobile ? '#9ca3af' : '#d1d5db'}`,
+                ? '1.5px solid #d1d5db'
+                : `1.5px solid ${isHovered || isMobile ? '#9ca3af' : '#d1d5db'}`,
             background: isCompleted
-              ? '#22c55e'
+              ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
               : 'transparent',
             cursor: isCompleting || isSaving ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.15s ease',
+            transition: 'all 0.2s ease',
             opacity: isCompleting || isSaving ? 0.5 : 1,
+            boxShadow: isCompleted ? '0 2px 4px rgba(16, 185, 129, 0.2)' : 'none',
           }}
           title={isDeleted ? 'Restore' : (isCompleted ? 'Completed' : 'Complete task')}
         >
@@ -582,17 +561,15 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
         </button>
 
         {/* Content */}
-        <div
-          style={{ flex: 1, minWidth: 0, cursor: isDeleted || isCompleted ? 'default' : 'pointer' }}
-          onClick={() => !isDeleted && !isCompleted && setIsEditing(true)}
-        >
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{
-              fontSize: '14px',
-              fontWeight: '400',
+              fontSize: '15px',
+              fontWeight: '450',
               color: isCompleted || isDeleted ? '#9ca3af' : '#111',
               textDecoration: isCompleted ? 'line-through' : 'none',
-              lineHeight: '1.4',
+              lineHeight: '1.5',
+              letterSpacing: '-0.01em',
             }}>
               {task.title}
             </span>
@@ -603,15 +580,20 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '16px',
-                height: '16px',
-                borderRadius: '3px',
-                background: task.intensity === 5 ? '#dc2626' : '#f97316',
+                padding: '2px 6px',
+                borderRadius: '5px',
+                background: task.intensity === 5
+                  ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                  : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
                 color: '#fff',
                 fontSize: '10px',
                 fontWeight: '600',
+                letterSpacing: '0.02em',
+                boxShadow: task.intensity === 5
+                  ? '0 2px 4px rgba(239, 68, 68, 0.25)'
+                  : '0 2px 4px rgba(249, 115, 22, 0.25)',
               }}>
-                {task.intensity === 5 ? '!' : 'P'}
+                {task.intensity === 5 ? 'URGENT' : 'HIGH'}
               </span>
             )}
 
@@ -628,8 +610,8 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               <span style={{
                 width: '14px',
                 height: '14px',
-                border: '2px solid #e5e5e5',
-                borderTop: '2px solid #666',
+                border: '2px solid rgba(0, 0, 0, 0.06)',
+                borderTop: '2px solid #111',
                 borderRadius: '50%',
                 animation: 'spin 0.8s linear infinite',
               }} />
@@ -642,7 +624,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               fontSize: '13px',
               color: '#6b7280',
               margin: '4px 0 0 0',
-              lineHeight: '1.4',
+              lineHeight: '1.5',
               textDecoration: isCompleted ? 'line-through' : 'none',
             }}>
               {task.description}
@@ -654,26 +636,9 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            marginTop: '6px',
+            marginTop: '8px',
             flexWrap: 'wrap',
           }}>
-            {/* Project */}
-            {task.project && (
-              <span style={{
-                fontSize: '12px',
-                color: '#6b7280',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                </svg>
-                {task.project}
-              </span>
-            )}
-
             {/* Deadline */}
             {deadlineInfo && !isCompleted && !isDeleted && (
               <span style={{
@@ -682,7 +647,14 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 fontWeight: deadlineInfo.isOverdue || deadlineInfo.isToday ? '500' : '400',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '5px',
+                padding: deadlineInfo.isOverdue || deadlineInfo.isToday ? '3px 8px' : '0',
+                background: deadlineInfo.isOverdue
+                  ? 'rgba(220, 38, 38, 0.08)'
+                  : deadlineInfo.isToday
+                    ? 'rgba(234, 88, 12, 0.08)'
+                    : 'transparent',
+                borderRadius: '6px',
               }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -694,6 +666,22 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               </span>
             )}
 
+            {/* Project */}
+            {task.project && (
+              <span style={{
+                fontSize: '12px',
+                color: '#6b7280',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
+                {task.project}
+              </span>
+            )}
+
             {/* Waiting on */}
             {isWaiting && task.waiting_on && (
               <span style={{
@@ -701,13 +689,17 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 color: '#8b5cf6',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '5px',
+                padding: '3px 8px',
+                background: 'rgba(139, 92, 246, 0.08)',
+                borderRadius: '6px',
+                fontWeight: '500',
               }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
-                Waiting: {task.waiting_on}
+                {task.waiting_on}
               </span>
             )}
 
@@ -718,7 +710,11 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 color: '#2563eb',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '5px',
+                padding: '3px 8px',
+                background: 'rgba(37, 99, 235, 0.08)',
+                borderRadius: '6px',
+                fontWeight: '500',
               }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polygon points="5 3 19 12 5 21 5 3" />
@@ -734,23 +730,25 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
+            gap: '6px',
             flexShrink: 0,
-          }}>
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
             {/* Status dropdown */}
             <select
               value={task.status}
               onChange={(e) => handleStatusChange(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
               style={{
-                padding: '4px 8px',
+                padding: '6px 10px',
                 fontSize: '12px',
-                border: '1px solid #e5e5e5',
-                borderRadius: '4px',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                borderRadius: '8px',
                 background: '#fff',
                 cursor: 'pointer',
                 outline: 'none',
-                color: '#666',
+                color: '#374151',
+                fontWeight: '450',
               }}
             >
               <option value="not_started">To Do</option>
@@ -760,21 +758,22 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
 
             {/* Delete button */}
             <button
-              onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+              onClick={handleDelete}
               style={{
-                padding: '4px',
+                padding: '6px',
                 background: 'transparent',
-                border: 'none',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
                 cursor: 'pointer',
                 color: '#9ca3af',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '4px',
+                borderRadius: '8px',
+                transition: 'all 0.15s ease',
               }}
               title="Delete"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
               </svg>
@@ -787,14 +786,15 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
           <button
             onClick={(e) => { e.stopPropagation(); handleRestore(); }}
             style={{
-              padding: '4px 12px',
+              padding: '6px 14px',
               fontSize: '12px',
               fontWeight: '500',
-              color: '#666',
-              background: '#f5f5f5',
+              color: '#374151',
+              background: 'rgba(0, 0, 0, 0.04)',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '8px',
               cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
             Restore
