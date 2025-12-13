@@ -385,7 +385,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 <div style={{
                   width: '18px',
                   height: '18px',
-                  borderRadius: '5px',
+                  borderRadius: '2px',
                   border: formData.is_recurring ? 'none' : '1.5px solid rgba(0, 0, 0, 0.2)',
                   background: formData.is_recurring ? '#111' : 'transparent',
                   display: 'flex',
@@ -561,7 +561,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               height: '20px',
               minWidth: '20px',
               marginTop: '2px',
-              borderRadius: '6px',
+              borderRadius: '2px',
               border: isCompleted ? 'none' : '2px solid #d1d5db',
               background: isCompleted ? '#059669' : '#fff',
               cursor: isCompleting || isSaving ? 'not-allowed' : 'pointer',
@@ -721,7 +721,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
             style={{
               width: '18px',
               height: '18px',
-              borderRadius: '4px',
+              borderRadius: '2px',
               border: isCompleted
                 ? 'none'
                 : isDeleted

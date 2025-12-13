@@ -5,7 +5,6 @@ import useAuthStore from '../utils/authStore';
 import { tasksAPI } from '../api/client';
 import { queryKeys } from '../lib/queryKeys';
 import TaskItem from '../components/TaskItem';
-import AddTaskForm from '../components/AddTaskForm';
 import { useIsMobile } from '../hooks/useIsMobile';
 
 function TasksPage() {
@@ -387,11 +386,6 @@ function TasksPage() {
             }}>
               {counts.all === 0 ? 'No active tasks' : `${counts.all} active${counts.upcoming > 0 ? ` · ${counts.upcoming} scheduled` : ''}`}
             </p>
-          </div>
-
-          {/* Add Task - Desktop inline */}
-          <div style={{ width: isMobile ? '100%' : 'auto', minWidth: isMobile ? 'auto' : '400px' }}>
-            <AddTaskForm onTaskAdded={handleTaskUpdate} />
           </div>
         </div>
 

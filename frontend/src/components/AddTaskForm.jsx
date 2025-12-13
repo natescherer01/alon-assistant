@@ -239,7 +239,7 @@ function AddTaskForm({ onTaskAdded }) {
                 <div style={{
                   width: '18px',
                   height: '18px',
-                  borderRadius: '5px',
+                  borderRadius: '2px',
                   border: formData.is_recurring ? 'none' : '1.5px solid rgba(0, 0, 0, 0.2)',
                   background: formData.is_recurring ? '#111' : 'transparent',
                   display: 'flex',
