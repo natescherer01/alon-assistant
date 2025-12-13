@@ -229,6 +229,30 @@ function Dashboard() {
           {/* Desktop: Full Navigation */}
           {!isMobile && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Chat Button - Active state since we're on chat page */}
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: '#0066FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                Chat
+              </button>
+
               {/* Tasks Button */}
               <button
                 onClick={() => navigate('/tasks')}
@@ -360,6 +384,22 @@ function Dashboard() {
             flexDirection: 'column',
             gap: '8px',
           }}>
+            <button
+              onClick={() => { setMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              style={{
+                padding: '12px 16px',
+                fontSize: '15px',
+                fontWeight: '500',
+                color: '#fff',
+                background: '#0066FF',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              💬 Chat
+            </button>
             <button
               onClick={() => { navigate('/tasks'); setMobileMenuOpen(false); }}
               style={{
