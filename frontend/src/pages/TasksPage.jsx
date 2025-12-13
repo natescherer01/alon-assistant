@@ -232,7 +232,7 @@ function TasksPage() {
               src="/alon-logo.png"
               alt="Alon"
               style={{
-                height: isMobile ? '24px' : '28px',
+                height: isMobile ? '32px' : '40px',
                 cursor: 'pointer',
               }}
               onClick={() => navigate('/dashboard')}
