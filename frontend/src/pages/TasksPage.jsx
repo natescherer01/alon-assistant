@@ -361,38 +361,12 @@ function TasksPage() {
         margin: '0 auto',
         padding: isMobile ? '24px 20px 40px' : '40px 48px 60px',
       }}>
-        {/* Header Row */}
+        {/* Add Task - Prominent */}
         <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: isMobile ? 'flex-start' : 'center',
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? '16px' : '24px',
-          marginBottom: '32px',
+          marginBottom: '24px',
+          maxWidth: '600px',
         }}>
-          <div>
-            <h1 style={{
-              fontSize: isMobile ? '28px' : '28px',
-              fontWeight: '600',
-              color: '#111827',
-              margin: '0 0 4px 0',
-              letterSpacing: '-0.02em',
-            }}>
-              Tasks
-            </h1>
-            <p style={{
-              fontSize: '14px',
-              color: '#6b7280',
-              margin: 0,
-            }}>
-              {counts.all === 0 ? 'No active tasks' : `${counts.all} active${counts.upcoming > 0 ? ` · ${counts.upcoming} scheduled` : ''}`}
-            </p>
-          </div>
-
-          {/* Add Task - Desktop inline */}
-          <div style={{ width: isMobile ? '100%' : 'auto', minWidth: isMobile ? 'auto' : '400px' }}>
-            <AddTaskForm onTaskAdded={handleTaskUpdate} />
-          </div>
+          <AddTaskForm onTaskAdded={handleTaskUpdate} />
         </div>
 
         {/* Filters & Search Row */}
