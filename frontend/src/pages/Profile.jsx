@@ -158,118 +158,141 @@ function Profile() {
         WebkitBackdropFilter: 'blur(12px)',
         borderBottom: '1px solid #eee',
       }}>
-        <div className="navbar-container" style={{
-          maxWidth: '1600px',
+        <div style={{
+          maxWidth: '1400px',
           margin: '0 auto',
-          padding: isMobile ? '12px 16px' : '16px 24px',
+          padding: isMobile ? '12px 16px' : '12px 32px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
           {/* Logo */}
-          <img
-            src="/alon-logo.png"
-            alt="Alon"
-            style={{
-              height: isMobile ? '28px' : '36px',
-              cursor: 'pointer',
-            }}
-            onClick={() => navigate('/dashboard')}
-          />
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img
+              src="/alon-logo.png"
+              alt="Alon"
+              style={{
+                height: isMobile ? '24px' : '28px',
+                cursor: 'pointer',
+              }}
+              onClick={() => navigate('/dashboard')}
+            />
+          </div>
 
-          {/* Mobile: Hamburger Menu Button */}
+          {/* Mobile: Menu Button */}
           {isMobile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {/* Back to Dashboard - always visible on mobile */}
-              <button
-                onClick={() => navigate('/dashboard')}
-                style={{
-                  padding: '8px 12px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  color: '#fff',
-                  background: '#000',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                }}
-              >
-                ← Back
-              </button>
-
-              {/* Hamburger Menu */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                style={{
-                  padding: '8px',
-                  background: 'transparent',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                aria-label="Menu"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
-                  {mobileMenuOpen ? (
-                    <path d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <>
-                      <path d="M3 12h18M3 6h18M3 18h18" />
-                    </>
-                  )}
-                </svg>
-              </button>
-            </div>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{
+                padding: '8px',
+                background: 'transparent',
+                border: '1px solid #eee',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              aria-label="Menu"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="1.5">
+                {mobileMenuOpen ? (
+                  <path d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path d="M3 12h18M3 6h18M3 18h18" />
+                )}
+              </svg>
+            </button>
           )}
 
-          {/* Desktop: Full Navigation */}
+          {/* Desktop: Navigation */}
           {!isMobile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <button
                 onClick={() => navigate('/dashboard')}
                 style={{
                   padding: '8px 16px',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: '500',
-                  color: '#fff',
-                  background: '#000',
+                  color: '#666',
+                  background: 'transparent',
                   border: 'none',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#333';
+                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                onMouseLeave={(e) => e.target.style.background = 'transparent'}
+              >
+                Chat
+              </button>
+
+              <button
+                onClick={() => navigate('/tasks')}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
                 }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = '#000';
+                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                onMouseLeave={(e) => e.target.style.background = 'transparent'}
+              >
+                Tasks
+              </button>
+
+              <button
+                onClick={() => navigate('/calendar')}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                onMouseLeave={(e) => e.target.style.background = 'transparent'}
+              >
+                Calendar
+              </button>
+
+              <button
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#000',
+                  background: '#f5f5f5',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'default',
                 }}
               >
-                ← Back to Dashboard
+                Profile
               </button>
+
+              <div style={{ width: '1px', height: '20px', background: '#eee', margin: '0 8px' }} />
 
               <button
                 onClick={handleLogout}
                 style={{
                   padding: '8px 16px',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: '500',
                   color: '#666',
                   background: 'transparent',
-                  border: '1px solid #eee',
+                  border: 'none',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#f5f5f5';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent';
-                }}
+                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
+                onMouseLeave={(e) => e.target.style.background = 'transparent'}
               >
                 Logout
               </button>
@@ -285,16 +308,48 @@ function Profile() {
             left: 0,
             right: 0,
             background: '#fff',
-            padding: '12px 16px',
+            padding: '8px',
             borderBottom: '1px solid #eee',
             display: 'flex',
             flexDirection: 'column',
-            gap: '4px',
+            gap: '2px',
           }}>
+            <button
+              onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}
+              style={{
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#333',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              Chat
+            </button>
+            <button
+              onClick={() => { navigate('/tasks'); setMobileMenuOpen(false); }}
+              style={{
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#333',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              Tasks
+            </button>
             <button
               onClick={() => { navigate('/calendar'); setMobileMenuOpen(false); }}
               style={{
-                padding: '10px 12px',
+                padding: '12px 16px',
                 fontSize: '14px',
                 fontWeight: '500',
                 color: '#333',
@@ -308,9 +363,26 @@ function Profile() {
               Calendar
             </button>
             <button
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#000',
+                background: '#f5f5f5',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              Profile
+            </button>
+            <div style={{ height: '1px', background: '#eee', margin: '4px 0' }} />
+            <button
               onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
               style={{
-                padding: '10px 12px',
+                padding: '12px 16px',
                 fontSize: '14px',
                 fontWeight: '500',
                 color: '#999',
