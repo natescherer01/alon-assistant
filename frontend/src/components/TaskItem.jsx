@@ -37,26 +37,25 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
     recurrence_end_date: task.recurrence_end_date || '',
   });
 
-  const getIntensityColor = (intensity) => {
-    const colors = {
-      1: { bg: '#D1FAE5', text: '#065F46' },
-      2: { bg: '#DBEAFE', text: '#1E40AF' },
-      3: { bg: '#FEF3C7', text: '#92400E' },
-      4: { bg: '#FED7AA', text: '#9A3412' },
-      5: { bg: '#FEE2E2', text: '#991B1B' },
+  const getIntensityStyle = (intensity) => {
+    // Minimalist monochrome intensity display
+    const opacity = 0.3 + (intensity * 0.14);
+    return {
+      bg: `rgba(0, 0, 0, ${opacity * 0.15})`,
+      text: '#666',
     };
-    return colors[intensity] || colors[3];
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      not_started: { bg: '#F3F4F6', text: '#4B5563' },
-      in_progress: { bg: '#DBEAFE', text: '#1E40AF' },
-      waiting_on: { bg: '#FEF3C7', text: '#92400E' },
-      completed: { bg: '#D1FAE5', text: '#065F46' },
-      deleted: { bg: '#FEE2E2', text: '#991B1B' },
+  const getStatusStyle = (status) => {
+    // Minimalist status colors
+    const styles = {
+      not_started: { bg: '#f5f5f5', text: '#999' },
+      in_progress: { bg: '#f5f5f5', text: '#000' },
+      waiting_on: { bg: '#fafafa', text: '#666' },
+      completed: { bg: '#f5f5f5', text: '#999' },
+      deleted: { bg: '#fafafa', text: '#999' },
     };
-    return colors[status] || colors.not_started;
+    return styles[status] || styles.not_started;
   };
 
   const formatDeadline = (deadline) => {
@@ -81,26 +80,26 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
 
     if (diffDays < 0) {
       return {
-        text: `OVERDUE by ${Math.abs(diffDays)} days`,
-        color: '#DC2626',
+        text: `Overdue by ${Math.abs(diffDays)} days`,
+        color: '#000',
         fontWeight: '600',
       };
     } else if (diffDays === 0) {
       return {
-        text: 'DUE TODAY',
-        color: '#DC2626',
+        text: 'Due today',
+        color: '#000',
         fontWeight: '600',
       };
     } else if (diffDays === 1) {
       return {
         text: 'Due tomorrow',
-        color: '#EA580C',
+        color: '#666',
         fontWeight: '500',
       };
     } else {
       return {
         text: `Due in ${diffDays} days`,
-        color: '#6B7280',
+        color: '#999',
         fontWeight: '400',
       };
     }
@@ -426,8 +425,8 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
     });
   };
 
-  const intensityColors = getIntensityColor(task.intensity);
-  const statusColors = getStatusColor(task.status);
+  const intensityStyle = getIntensityStyle(task.intensity);
+  const statusStyle = getStatusStyle(task.status);
   const deadlineInfo = task.deadline ? formatDeadline(task.deadline) : null;
 
   // If editing, show edit form
@@ -437,18 +436,18 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
         <ConfirmDialog />
         <div style={{
         background: '#fff',
-        borderRadius: '16px',
-        padding: '24px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        borderRadius: '12px',
+        border: '1px solid #eee',
+        padding: '20px',
       }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '24px',
+          marginBottom: '20px',
         }}>
           <h3 style={{
-            fontSize: '18px',
+            fontSize: '15px',
             fontWeight: '600',
             color: '#000',
             margin: 0,
@@ -457,16 +456,18 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
           </h3>
         </div>
 
-        <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label htmlFor="title" style={{
               display: 'block',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px',
+              color: '#999',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: '6px',
             }}>
-              Task Title *
+              Title
             </label>
             <input
               type="text"
@@ -477,20 +478,21 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               onChange={handleChange}
               style={{
                 width: '100%',
-                padding: '12px 16px',
-                fontSize: '15px',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
+                padding: '10px 12px',
+                fontSize: '14px',
+                border: '1px solid #eee',
+                borderRadius: '6px',
                 outline: 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
+                background: '#fafafa',
+                transition: 'all 0.2s',
               }}
               onFocus={(e) => {
-                e.target.style.borderColor = '#0066FF';
-                e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+                e.target.style.borderColor = '#ccc';
+                e.target.style.background = '#fff';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
-                e.target.style.boxShadow = 'none';
+                e.target.style.borderColor = '#eee';
+                e.target.style.background = '#fafafa';
               }}
             />
           </div>
@@ -498,10 +500,12 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
           <div>
             <label htmlFor="description" style={{
               display: 'block',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px',
+              color: '#999',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: '6px',
             }}>
               Description
             </label>
@@ -513,22 +517,23 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               rows={3}
               style={{
                 width: '100%',
-                padding: '12px 16px',
-                fontSize: '15px',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
+                padding: '10px 12px',
+                fontSize: '14px',
+                border: '1px solid #eee',
+                borderRadius: '6px',
                 outline: 'none',
                 resize: 'vertical',
                 fontFamily: 'inherit',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
+                background: '#fafafa',
+                transition: 'all 0.2s',
               }}
               onFocus={(e) => {
-                e.target.style.borderColor = '#0066FF';
-                e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+                e.target.style.borderColor = '#ccc';
+                e.target.style.background = '#fff';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
-                e.target.style.boxShadow = 'none';
+                e.target.style.borderColor = '#eee';
+                e.target.style.background = '#fafafa';
               }}
             />
           </div>
@@ -536,10 +541,12 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
           <div>
             <label htmlFor="project" style={{
               display: 'block',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px',
+              color: '#999',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: '6px',
             }}>
               Project
             </label>
@@ -551,32 +558,35 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               onChange={handleChange}
               style={{
                 width: '100%',
-                padding: '12px 16px',
-                fontSize: '15px',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
+                padding: '10px 12px',
+                fontSize: '14px',
+                border: '1px solid #eee',
+                borderRadius: '6px',
                 outline: 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
+                background: '#fafafa',
+                transition: 'all 0.2s',
               }}
               onFocus={(e) => {
-                e.target.style.borderColor = '#0066FF';
-                e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+                e.target.style.borderColor = '#ccc';
+                e.target.style.background = '#fff';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
-                e.target.style.boxShadow = 'none';
+                e.target.style.borderColor = '#eee';
+                e.target.style.background = '#fafafa';
               }}
             />
           </div>
 
-          <div className="task-form-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+          <div className="task-form-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
             <div>
               <label htmlFor="deadline" style={{
                 display: 'block',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: '600',
-                color: '#374151',
-                marginBottom: '8px',
+                color: '#999',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                marginBottom: '6px',
               }}>
                 Deadline
               </label>
@@ -588,20 +598,21 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 onChange={handleChange}
                 style={{
                   width: '100%',
-                  padding: '12px 16px',
-                  fontSize: '16px',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  fontSize: '14px',
+                  border: '1px solid #eee',
+                  borderRadius: '6px',
                   outline: 'none',
-                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                  background: '#fafafa',
+                  transition: 'all 0.2s',
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#0066FF';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+                  e.target.style.borderColor = '#ccc';
+                  e.target.style.background = '#fff';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
-                  e.target.style.boxShadow = 'none';
+                  e.target.style.borderColor = '#eee';
+                  e.target.style.background = '#fafafa';
                 }}
               />
             </div>
@@ -609,10 +620,12 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
             <div>
               <label htmlFor="intensity" style={{
                 display: 'block',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: '600',
-                color: '#374151',
-                marginBottom: '8px',
+                color: '#999',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                marginBottom: '6px',
               }}>
                 Intensity
               </label>
@@ -623,22 +636,22 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 onChange={handleChange}
                 style={{
                   width: '100%',
-                  padding: '12px 16px',
-                  fontSize: '16px',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  fontSize: '14px',
+                  border: '1px solid #eee',
+                  borderRadius: '6px',
                   outline: 'none',
-                  background: '#fff',
+                  background: '#fafafa',
                   cursor: 'pointer',
-                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                  transition: 'all 0.2s',
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#0066FF';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+                  e.target.style.borderColor = '#ccc';
+                  e.target.style.background = '#fff';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
-                  e.target.style.boxShadow = 'none';
+                  e.target.style.borderColor = '#eee';
+                  e.target.style.background = '#fafafa';
                 }}
               >
                 <option value={1}>1 - Very Light</option>
@@ -653,10 +666,12 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
           <div>
             <label htmlFor="waiting_on" style={{
               display: 'block',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px',
+              color: '#999',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: '6px',
             }}>
               Waiting On
             </label>
@@ -669,36 +684,37 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               placeholder="Who or what are you waiting on?"
               style={{
                 width: '100%',
-                padding: '12px 16px',
-                fontSize: '15px',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
+                padding: '10px 12px',
+                fontSize: '14px',
+                border: '1px solid #eee',
+                borderRadius: '6px',
                 outline: 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
+                background: '#fafafa',
+                transition: 'all 0.2s',
               }}
               onFocus={(e) => {
-                e.target.style.borderColor = '#0066FF';
-                e.target.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.1)';
+                e.target.style.borderColor = '#ccc';
+                e.target.style.background = '#fff';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
-                e.target.style.boxShadow = 'none';
+                e.target.style.borderColor = '#eee';
+                e.target.style.background = '#fafafa';
               }}
             />
           </div>
 
           {/* Recurring Task Section */}
           <div style={{
-            borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-            paddingTop: '20px',
-            marginTop: '8px',
+            borderTop: '1px solid #eee',
+            paddingTop: '16px',
+            marginTop: '4px',
           }}>
             <label style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
+              gap: '8px',
               cursor: 'pointer',
-              marginBottom: formData.is_recurring ? '16px' : '0',
+              marginBottom: formData.is_recurring ? '12px' : '0',
             }}>
               <input
                 type="checkbox"
@@ -706,31 +722,33 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 checked={formData.is_recurring}
                 onChange={handleChange}
                 style={{
-                  width: '18px',
-                  height: '18px',
+                  width: '16px',
+                  height: '16px',
                   cursor: 'pointer',
-                  accentColor: '#0066FF',
+                  accentColor: '#000',
                 }}
               />
               <span style={{
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#374151',
+                fontSize: '13px',
+                fontWeight: '500',
+                color: '#666',
               }}>
                 Make this a recurring task
               </span>
             </label>
 
             {formData.is_recurring && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingLeft: '28px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingLeft: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}>
                   <div>
                     <label htmlFor="recurrence_type" style={{
                       display: 'block',
-                      fontSize: '13px',
+                      fontSize: '12px',
                       fontWeight: '600',
-                      color: '#374151',
-                      marginBottom: '8px',
+                      color: '#999',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '6px',
                     }}>
                       Repeats
                     </label>
@@ -741,12 +759,12 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                       onChange={handleChange}
                       style={{
                         width: '100%',
-                        padding: '12px 16px',
-                        fontSize: '14px',
-                        border: '1px solid rgba(0, 0, 0, 0.1)',
-                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        fontSize: '13px',
+                        border: '1px solid #eee',
+                        borderRadius: '6px',
                         outline: 'none',
-                        background: '#fff',
+                        background: '#fafafa',
                         cursor: 'pointer',
                       }}
                     >
@@ -760,10 +778,12 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                   <div>
                     <label htmlFor="recurrence_interval" style={{
                       display: 'block',
-                      fontSize: '13px',
+                      fontSize: '12px',
                       fontWeight: '600',
-                      color: '#374151',
-                      marginBottom: '8px',
+                      color: '#999',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '6px',
                     }}>
                       Every
                     </label>
@@ -776,11 +796,12 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                       onChange={handleChange}
                       style={{
                         width: '100%',
-                        padding: '12px 16px',
-                        fontSize: '14px',
-                        border: '1px solid rgba(0, 0, 0, 0.1)',
-                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        fontSize: '13px',
+                        border: '1px solid #eee',
+                        borderRadius: '6px',
                         outline: 'none',
+                        background: '#fafafa',
                       }}
                     />
                   </div>
@@ -789,10 +810,12 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 <div>
                   <label htmlFor="recurrence_end_date" style={{
                     display: 'block',
-                    fontSize: '13px',
+                    fontSize: '12px',
                     fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
+                    color: '#999',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '6px',
                   }}>
                     End Date (Optional)
                   </label>
@@ -804,11 +827,12 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                     onChange={handleChange}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      fontSize: '14px',
-                      border: '1px solid rgba(0, 0, 0, 0.1)',
-                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      fontSize: '13px',
+                      border: '1px solid #eee',
+                      borderRadius: '6px',
                       outline: 'none',
+                      background: '#fafafa',
                     }}
                   />
                 </div>
@@ -816,50 +840,50 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '8px' }}>
             <button
               type="submit"
               disabled={isSaving}
               style={{
                 flex: 1,
-                padding: '14px',
-                fontSize: '15px',
-                fontWeight: '600',
+                padding: '10px',
+                fontSize: '13px',
+                fontWeight: '500',
                 color: '#fff',
-                background: isSaving ? '#9CA3AF' : '#0066FF',
+                background: isSaving ? '#ccc' : '#000',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 cursor: isSaving ? 'not-allowed' : 'pointer',
                 opacity: isSaving ? 0.7 : 1,
                 transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => {
-                if (!isSaving) e.target.style.background = '#0052CC';
+                if (!isSaving) e.target.style.background = '#333';
               }}
               onMouseLeave={(e) => {
-                if (!isSaving) e.target.style.background = '#0066FF';
+                if (!isSaving) e.target.style.background = '#000';
               }}
             >
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              {isSaving ? 'Saving...' : 'Save'}
             </button>
             <button
               type="button"
               onClick={handleCancelEdit}
               disabled={isSaving}
               style={{
-                padding: '14px 20px',
-                fontSize: '15px',
-                fontWeight: '600',
-                color: isSaving ? '#9CA3AF' : '#6B7280',
+                padding: '10px 16px',
+                fontSize: '13px',
+                fontWeight: '500',
+                color: isSaving ? '#ccc' : '#666',
                 background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: '8px',
+                border: '1px solid #eee',
+                borderRadius: '6px',
                 cursor: isSaving ? 'not-allowed' : 'pointer',
                 opacity: isSaving ? 0.5 : 1,
                 transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => {
-                if (!isSaving) e.target.style.background = '#F3F4F6';
+                if (!isSaving) e.target.style.background = '#fafafa';
               }}
               onMouseLeave={(e) => {
                 if (!isSaving) e.target.style.background = 'transparent';
@@ -880,25 +904,25 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
       <ConfirmDialog />
       <div className="task-item" style={{
       background: '#fff',
-      borderRadius: '16px',
-      padding: isMobile ? '16px' : '20px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-      transition: 'box-shadow 0.2s',
+      borderRadius: '12px',
+      border: '1px solid #eee',
+      padding: isMobile ? '14px' : '16px 20px',
+      transition: 'all 0.2s',
     }}
     onMouseEnter={(e) => {
-      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.12)';
+      e.currentTarget.style.background = '#fafafa';
     }}
     onMouseLeave={(e) => {
-      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+      e.currentTarget.style.background = '#fff';
     }}
     >
       <div className="task-item-header" style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-start', gap: isMobile ? '12px' : '16px' }}>
         {/* Main Content */}
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
             <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
+              fontSize: '15px',
+              fontWeight: '500',
               color: '#000',
               margin: 0,
             }}>
@@ -907,98 +931,98 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
 
             {isSaving && (
               <span style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: '600',
-                background: '#DBEAFE',
-                color: '#1E40AF',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: '500',
+                background: '#f5f5f5',
+                color: '#666',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '4px',
               }}>
                 <span style={{
                   display: 'inline-block',
-                  width: '12px',
-                  height: '12px',
-                  border: '2px solid #1E40AF',
-                  borderTop: '2px solid transparent',
+                  width: '10px',
+                  height: '10px',
+                  border: '1.5px solid #666',
+                  borderTop: '1.5px solid transparent',
                   borderRadius: '50%',
                   animation: 'spin 0.8s linear infinite',
                 }}></span>
-                Saving...
+                Saving
               </span>
             )}
+          </div>
 
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: task.description ? '8px' : '0' }}>
             <span style={{
-              padding: '4px 10px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: '600',
-              background: intensityColors.bg,
-              color: intensityColors.text,
+              padding: '2px 8px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: '500',
+              background: intensityStyle.bg,
+              color: intensityStyle.text,
             }}>
-              Intensity {task.intensity}
+              {task.intensity}
             </span>
 
             <span style={{
-              padding: '4px 10px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: '600',
-              background: statusColors.bg,
-              color: statusColors.text,
+              padding: '2px 8px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: '500',
+              background: statusStyle.bg,
+              color: statusStyle.text,
             }}>
               {task.status.replace('_', ' ')}
             </span>
 
             {task.is_recurring && (
               <span style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: '600',
-                background: '#E0E7FF',
-                color: '#4338CA',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: '500',
+                background: '#f5f5f5',
+                color: '#666',
               }}>
-                🔁 Recurring
+                Recurring
               </span>
             )}
 
             {task.project && (
               <span style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: '600',
-                background: '#FEF3C7',
-                color: '#92400E',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: '500',
+                background: '#f5f5f5',
+                color: '#666',
               }}>
-                📁 {task.project}
+                {task.project}
               </span>
             )}
           </div>
 
           {task.description && (
             <p style={{
-              fontSize: '14px',
-              color: '#6B7280',
-              lineHeight: '1.6',
-              marginBottom: '12px',
+              fontSize: '13px',
+              color: '#666',
+              lineHeight: '1.5',
+              marginBottom: '8px',
+              margin: 0,
             }}>
               {task.description}
             </p>
           )}
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '14px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '13px', marginTop: '8px' }}>
             {deadlineInfo && (
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '4px',
                 color: deadlineInfo.color,
                 fontWeight: deadlineInfo.fontWeight,
               }}>
@@ -1010,8 +1034,8 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                color: '#92400E',
+                gap: '4px',
+                color: '#666',
               }}>
                 Waiting on: {task.waiting_on}
               </div>
@@ -1021,9 +1045,8 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                color: '#4338CA',
-                fontWeight: '500',
+                gap: '4px',
+                color: '#999',
               }}>
                 {formatRecurrence()}
               </div>
@@ -1032,26 +1055,26 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
         </div>
 
         {/* Actions */}
-        <div className="task-item-actions" style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: '8px', flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
+        <div className="task-item-actions" style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: '6px', flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
           {task.status === 'deleted' ? (
             <button
               onClick={handleRestore}
               style={{
-                padding: '8px 14px',
-                fontSize: '13px',
+                padding: '6px 12px',
+                fontSize: '12px',
                 fontWeight: '500',
-                color: '#fff',
-                background: '#0066FF',
+                color: '#000',
+                background: '#f5f5f5',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 cursor: 'pointer',
                 transition: 'background 0.2s',
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = '#0052CC';
+                e.target.style.background = '#eee';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = '#0066FF';
+                e.target.style.background = '#f5f5f5';
               }}
             >
               Restore
@@ -1064,39 +1087,40 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                     onClick={handleComplete}
                     disabled={isCompleting}
                     style={{
-                      padding: '8px 14px',
-                      fontSize: '13px',
+                      padding: '6px 12px',
+                      fontSize: '12px',
                       fontWeight: '500',
                       color: '#fff',
-                      background: '#10B981',
+                      background: '#000',
                       border: 'none',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       cursor: isCompleting ? 'not-allowed' : 'pointer',
                       opacity: isCompleting ? 0.6 : 1,
                       transition: 'background 0.2s',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isCompleting) e.target.style.background = '#059669';
+                      if (!isCompleting) e.target.style.background = '#333';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.background = '#10B981';
+                      e.target.style.background = '#000';
                     }}
                   >
-                    Complete
+                    Done
                   </button>
 
                   <select
                     value={task.status}
                     onChange={(e) => handleStatusChange(e.target.value)}
                     style={{
-                      padding: '8px 10px',
-                      fontSize: '13px',
+                      padding: '6px 8px',
+                      fontSize: '12px',
                       fontWeight: '500',
-                      border: '1px solid rgba(0, 0, 0, 0.1)',
-                      borderRadius: '8px',
+                      border: '1px solid #eee',
+                      borderRadius: '6px',
                       background: '#fff',
                       cursor: 'pointer',
                       outline: 'none',
+                      color: '#666',
                     }}
                   >
                     <option value="not_started">Not Started</option>
@@ -1109,21 +1133,21 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               <button
                 onClick={handleEdit}
                 style={{
-                  padding: '8px 14px',
-                  fontSize: '13px',
+                  padding: '6px 12px',
+                  fontSize: '12px',
                   fontWeight: '500',
-                  color: '#fff',
-                  background: '#0066FF',
+                  color: '#666',
+                  background: '#f5f5f5',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   cursor: 'pointer',
                   transition: 'background 0.2s',
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = '#0052CC';
+                  e.target.style.background = '#eee';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = '#0066FF';
+                  e.target.style.background = '#f5f5f5';
                 }}
               >
                 Edit
@@ -1132,21 +1156,23 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               <button
                 onClick={handleDelete}
                 style={{
-                  padding: '8px 14px',
-                  fontSize: '13px',
+                  padding: '6px 12px',
+                  fontSize: '12px',
                   fontWeight: '500',
-                  color: '#fff',
-                  background: '#EF4444',
-                  border: 'none',
-                  borderRadius: '8px',
+                  color: '#999',
+                  background: 'transparent',
+                  border: '1px solid #eee',
+                  borderRadius: '6px',
                   cursor: 'pointer',
-                  transition: 'background 0.2s',
+                  transition: 'all 0.2s',
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = '#DC2626';
+                  e.target.style.background = '#fafafa';
+                  e.target.style.color = '#666';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = '#EF4444';
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#999';
                 }}
               >
                 Delete
