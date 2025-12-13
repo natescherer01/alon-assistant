@@ -24,6 +24,7 @@ function ChatInterface({ onTaskUpdate }) {
   } = useChatStore();
 
   const [inputMessage, setInputMessage] = useState('');
+  const [inputFocused, setInputFocused] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -85,453 +86,539 @@ function ChatInterface({ onTaskUpdate }) {
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        maxWidth: '1200px',
+        maxWidth: '900px',
         margin: '0 auto',
         width: '100%',
-        padding: isMobile ? '12px' : '24px 12px',
+        padding: isMobile ? '16px' : '32px 24px',
       }}>
         {/* Messages Container */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        marginBottom: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '24px',
-      }}>
-        {isLoadingHistory ? (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '48px 24px',
-          }}>
-            <span style={{
-              fontSize: '14px',
-              color: '#999',
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          marginBottom: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+        }}>
+          {isLoadingHistory ? (
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '60px 24px',
             }}>
-              Loading...
-            </span>
-          </div>
-        ) : messages.length === 0 ? (
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            padding: '48px 24px',
-          }}>
-            <p style={{
-              color: '#999',
-              fontSize: '15px',
-              margin: 0,
+              <div className="chat-loading-spinner" style={{
+                width: '32px',
+                height: '32px',
+                border: '2px solid #E5E7EB',
+                borderTopColor: '#0066FF',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+              }} />
+            </div>
+          ) : messages.length === 0 ? (
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              padding: '60px 24px',
+              animation: 'fadeIn 0.5s ease-out',
             }}>
-              What would you like to do?
-            </p>
-          </div>
-        ) : (
-          messages.map((msg, index) => (
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                background: '#F3F4F6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '16px',
+                overflow: 'hidden',
+              }}>
+                <img src="/Sam.png" alt="Sam" style={{ width: '64px', height: '64px', objectFit: 'cover' }} />
+              </div>
+              <p style={{
+                color: '#6B7280',
+                fontSize: '15px',
+                fontWeight: '500',
+                margin: 0,
+              }}>
+                How can I help you today?
+              </p>
+            </div>
+          ) : (
+            messages.map((msg, index) => (
+              <div
+                key={index}
+                className="chat-message"
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  alignItems: 'flex-start',
+                  flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
+                  animation: 'messageSlideIn 0.3s ease-out',
+                  animationFillMode: 'backwards',
+                  animationDelay: `${Math.min(index * 0.05, 0.3)}s`,
+                }}
+              >
+                {/* Avatar */}
+                <div className="chat-avatar" style={{
+                  width: isMobile ? '36px' : '40px',
+                  height: isMobile ? '36px' : '40px',
+                  minWidth: isMobile ? '36px' : '40px',
+                  borderRadius: '50%',
+                  background: msg.role === 'user' ? '#0066FF' : '#F3F4F6',
+                  color: msg.role === 'user' ? '#fff' : '#000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: msg.role === 'user' ? (isMobile ? '13px' : '14px') : '18px',
+                  fontWeight: msg.role === 'user' ? '600' : '400',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                }}>
+                  {msg.role === 'user' ? (
+                    getInitials(user?.full_name || user?.email)
+                  ) : (
+                    <img src="/Sam.png" alt="Sam" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
+                </div>
+
+                {/* Message Bubble */}
+                <div className="chat-message-bubble" style={{
+                  maxWidth: isMobile ? '82%' : '70%',
+                  padding: isMobile ? '14px 16px' : '16px 20px',
+                  background: msg.role === 'user'
+                    ? '#0066FF'
+                    : msg.role === 'error'
+                      ? '#FEF2F2'
+                      : '#FFFFFF',
+                  color: msg.role === 'user' ? '#fff' : msg.role === 'error' ? '#DC2626' : '#1F2937',
+                  borderRadius: msg.role === 'user' ? '20px 20px 6px 20px' : '20px 20px 20px 6px',
+                  fontSize: '15px',
+                  lineHeight: '1.6',
+                  wordBreak: 'break-word',
+                  boxShadow: msg.role === 'user'
+                    ? '0 2px 12px rgba(0, 102, 255, 0.2)'
+                    : '0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)',
+                  border: msg.role === 'user' ? 'none' : msg.role === 'error' ? '1px solid #FECACA' : '1px solid rgba(0, 0, 0, 0.04)',
+                }}>
+                  {msg.role === 'user' || msg.role === 'error' ? (
+                    <p style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: '15px' }}>{msg.content}</p>
+                  ) : (
+                    <div className="chat-markdown" style={{
+                      fontSize: '15px',
+                      lineHeight: '1.6',
+                    }}>
+                      <ReactMarkdown
+                        components={{
+                          p: ({node, ...props}) => <p style={{ margin: '0 0 8px 0', fontSize: '15px', lineHeight: '1.6' }} {...props} />,
+                          ul: ({node, ...props}) => <ul style={{ margin: '8px 0', paddingLeft: '20px', fontSize: '15px' }} {...props} />,
+                          ol: ({node, ...props}) => <ol style={{ margin: '8px 0', paddingLeft: '20px', fontSize: '15px' }} {...props} />,
+                          li: ({node, ...props}) => <li style={{ margin: '4px 0', fontSize: '15px', lineHeight: '1.6' }} {...props} />,
+                          h1: ({node, ...props}) => (
+                            <h1 style={{
+                              fontSize: '16px',
+                              fontWeight: '600',
+                              margin: '16px 0 8px 0',
+                              color: '#111827',
+                            }} {...props} />
+                          ),
+                          h2: ({node, ...props}) => (
+                            <h2 style={{
+                              fontSize: '15px',
+                              fontWeight: '600',
+                              margin: '14px 0 6px 0',
+                              color: '#111827',
+                            }} {...props} />
+                          ),
+                          h3: ({node, ...props}) => (
+                            <h3 style={{
+                              fontSize: '15px',
+                              fontWeight: '600',
+                              margin: '12px 0 4px 0',
+                              color: '#111827',
+                            }} {...props} />
+                          ),
+                          strong: ({node, ...props}) => <strong style={{ fontWeight: '600', color: '#111827' }} {...props} />,
+                          blockquote: ({node, ...props}) => (
+                            <blockquote style={{
+                              borderLeft: '3px solid #E5E7EB',
+                              margin: '12px 0',
+                              background: '#F9FAFB',
+                              padding: '12px 16px',
+                              borderRadius: '0 8px 8px 0',
+                              fontSize: '14px',
+                              lineHeight: '1.6',
+                              color: '#4B5563',
+                            }} {...props} />
+                          ),
+                          code: ({node, inline, ...props}) => inline ? (
+                            <code style={{
+                              background: '#F3F4F6',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '13px',
+                              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+                              color: '#0066FF',
+                            }} {...props} />
+                          ) : (
+                            <code style={{
+                              display: 'block',
+                              background: '#F9FAFB',
+                              padding: '12px 16px',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace',
+                              margin: '8px 0',
+                              overflowX: 'auto',
+                              border: '1px solid #E5E7EB',
+                            }} {...props} />
+                          ),
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+
+          {/* Streaming Message Display - Clean Modern Style */}
+          {isStreaming && streamingContent && (
             <div
-              key={index}
+              className="chat-message"
               style={{
                 display: 'flex',
                 gap: '12px',
                 alignItems: 'flex-start',
-                flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
+                animation: 'messageSlideIn 0.3s ease-out',
               }}
             >
-              {/* Avatar */}
-              <div className="chat-avatar" style={{
-                width: isMobile ? '32px' : '40px',
-                height: isMobile ? '32px' : '40px',
-                minWidth: isMobile ? '32px' : '40px',
+              {/* Assistant Avatar */}
+              <div style={{
+                width: isMobile ? '36px' : '40px',
+                height: isMobile ? '36px' : '40px',
+                minWidth: isMobile ? '36px' : '40px',
                 borderRadius: '50%',
-                background: msg.role === 'user' ? '#0066FF' : '#F3F4F6',
-                color: msg.role === 'user' ? '#fff' : '#000',
+                background: '#F3F4F6',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: msg.role === 'user' ? (isMobile ? '12px' : '14px') : '18px',
-                fontWeight: msg.role === 'user' ? '600' : '400',
                 overflow: 'hidden',
+                flexShrink: 0,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
               }}>
-                {msg.role === 'user' ? (
-                  getInitials(user?.full_name || user?.email)
-                ) : (
-                  <img src="/Sam.png" alt="Sam" style={{ width: isMobile ? '32px' : '40px', height: isMobile ? '32px' : '40px', objectFit: 'cover' }} />
-                )}
+                <img src="/Sam.png" alt="Sam" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
 
-              {/* Message Bubble */}
-              <div className="chat-message-bubble" style={{
-                maxWidth: isMobile ? '85%' : '70%',
-                padding: isMobile ? '12px 14px' : '14px 18px',
-                background: msg.role === 'user' ? '#0066FF' : msg.role === 'error' ? '#FEE2E2' : '#F3F4F6',
-                color: msg.role === 'user' ? '#fff' : msg.role === 'error' ? '#DC2626' : '#000',
-                borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                fontSize: '14px',
-                lineHeight: '1.5',
-                wordBreak: 'break-word',
-              }}>
-                {msg.role === 'user' || msg.role === 'error' ? (
-                  <p style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: '14px' }}>{msg.content}</p>
-                ) : (
-                  <div style={{
-                    fontSize: '14px',
-                    lineHeight: '1.5',
-                  }}>
-                    <ReactMarkdown
-                      components={{
-                        p: ({node, ...props}) => <p style={{ margin: '0 0 6px 0', fontSize: '14px' }} {...props} />,
-                        ul: ({node, ...props}) => <ul style={{ margin: '6px 0', paddingLeft: '18px', fontSize: '14px' }} {...props} />,
-                        ol: ({node, ...props}) => <ol style={{ margin: '6px 0', paddingLeft: '18px', fontSize: '14px' }} {...props} />,
-                        li: ({node, ...props}) => <li style={{ margin: '3px 0', fontSize: '14px' }} {...props} />,
-                        h1: ({node, ...props}) => (
-                          <h1 style={{
-                            fontSize: '15px',
-                            fontWeight: '700',
-                            margin: '12px 0 6px 0',
-                            color: '#0066FF',
-                          }} {...props} />
-                        ),
-                        h2: ({node, ...props}) => (
-                          <h2 style={{
-                            fontSize: '14px',
-                            fontWeight: '700',
-                            margin: '10px 0 5px 0',
-                            color: '#0066FF',
-                          }} {...props} />
-                        ),
-                        h3: ({node, ...props}) => (
-                          <h3 style={{
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            margin: '8px 0 4px 0',
-                            color: '#0066FF',
-                          }} {...props} />
-                        ),
-                        strong: ({node, ...props}) => <strong style={{ fontWeight: '600', color: '#1a1a1a', fontSize: '14px' }} {...props} />,
-                        blockquote: ({node, ...props}) => (
-                          <blockquote style={{
-                            borderLeft: '3px solid #0066FF',
-                            margin: '8px 0',
-                            background: 'rgba(0, 102, 255, 0.08)',
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            lineHeight: '1.5',
-                            boxShadow: '0 1px 2px rgba(0, 102, 255, 0.1)',
-                          }} {...props} />
-                        ),
-                        code: ({node, inline, ...props}) => inline ? (
-                          <code style={{
-                            background: 'rgba(0, 0, 0, 0.05)',
-                            padding: '2px 5px',
-                            borderRadius: '3px',
-                            fontSize: '12px',
-                            fontFamily: 'monospace',
-                          }} {...props} />
-                        ) : (
-                          <code style={{
-                            display: 'block',
-                            background: 'rgba(0, 0, 0, 0.05)',
-                            padding: '8px',
-                            borderRadius: '6px',
-                            fontSize: '12px',
-                            fontFamily: 'monospace',
-                            margin: '6px 0',
-                          }} {...props} />
-                        ),
-                      }}
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-
-        {/* Streaming Message Display - Terminal Style */}
-        {isStreaming && streamingContent && (
-          <div style={{
-            display: 'flex',
-            gap: '12px',
-            alignItems: 'flex-start',
-          }}>
-            {/* Assistant Avatar */}
-            <div style={{
-              width: '40px',
-              height: '40px',
-              minWidth: '40px',
-              borderRadius: '50%',
-              background: '#F3F4F6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-            }}>
-              <img src="/Sam.png" alt="Sam" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
-            </div>
-
-            {/* Terminal-style Streaming Bubble */}
-            <div style={{
-              maxWidth: '70%',
-              padding: '14px 18px',
-              background: '#1a1a2e',
-              borderRadius: '12px',
-              fontSize: '13px',
-              lineHeight: '1.6',
-              wordBreak: 'break-word',
-              position: 'relative',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-            }}>
-              {/* Terminal header */}
+              {/* Clean Streaming Bubble */}
               <div style={{
+                maxWidth: isMobile ? '82%' : '70%',
+                padding: isMobile ? '14px 16px' : '16px 20px',
+                background: '#FFFFFF',
+                borderRadius: '20px 20px 20px 6px',
+                fontSize: '15px',
+                lineHeight: '1.6',
+                wordBreak: 'break-word',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)',
+                border: '1px solid rgba(0, 0, 0, 0.04)',
+                position: 'relative',
+              }}>
+                <div style={{
+                  color: '#1F2937',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}>
+                  {streamingContent.replace(/^ACTION:.*$\n?/gm, '').trim()}
+                  <span className="typing-cursor" style={{
+                    display: 'inline-block',
+                    width: '2px',
+                    height: '18px',
+                    background: '#0066FF',
+                    marginLeft: '2px',
+                    animation: 'cursorBlink 1s ease-in-out infinite',
+                    verticalAlign: 'text-bottom',
+                    borderRadius: '1px',
+                  }} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Loading Indicator - Elegant Wave Animation */}
+          {isLoadingMessage && !streamingContent && (
+            <div
+              className="chat-message"
+              style={{
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'flex-start',
+                animation: 'messageSlideIn 0.3s ease-out',
+              }}
+            >
+              {/* Assistant Avatar */}
+              <div style={{
+                width: isMobile ? '36px' : '40px',
+                height: isMobile ? '36px' : '40px',
+                minWidth: isMobile ? '36px' : '40px',
+                borderRadius: '50%',
+                background: '#F3F4F6',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                marginBottom: '10px',
-                paddingBottom: '8px',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                flexShrink: 0,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
               }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff5f56' }} />
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ffbd2e' }} />
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#27ca40' }} />
-                <span style={{
-                  marginLeft: '8px',
-                  fontSize: '11px',
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
-                }}>
-                  generating response...
-                </span>
+                <img src="/Sam.png" alt="Sam" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
 
-              {/* Terminal content */}
-              <pre style={{
-                margin: 0,
-                fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
-                fontSize: '13px',
-                lineHeight: '1.6',
-                color: '#e0e0e0',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
+              {/* Minimal Typing Indicator */}
+              <div style={{
+                padding: '18px 24px',
+                background: '#FFFFFF',
+                borderRadius: '20px 20px 20px 6px',
+                display: 'flex',
+                gap: '5px',
+                alignItems: 'center',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)',
+                border: '1px solid rgba(0, 0, 0, 0.04)',
               }}>
-                {streamingContent.replace(/^ACTION:.*$\n?/gm, '').trim()}
-                <span style={{
-                  display: 'inline-block',
+                <div className="typing-dot" style={{
                   width: '8px',
-                  height: '16px',
+                  height: '8px',
+                  borderRadius: '50%',
                   background: '#0066FF',
-                  marginLeft: '2px',
-                  animation: 'blink 1s step-end infinite',
-                  verticalAlign: 'text-bottom',
+                  animation: 'typingWave 1.4s ease-in-out infinite',
+                  animationDelay: '0s',
                 }} />
-              </pre>
+                <div className="typing-dot" style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: '#0066FF',
+                  animation: 'typingWave 1.4s ease-in-out infinite',
+                  animationDelay: '0.15s',
+                }} />
+                <div className="typing-dot" style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: '#0066FF',
+                  animation: 'typingWave 1.4s ease-in-out infinite',
+                  animationDelay: '0.3s',
+                }} />
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Loading Indicator - shown when waiting for first token */}
-        {isLoadingMessage && !streamingContent && (
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Clear Chat Button - Subtle */}
+        {messages.length > 0 && (
           <div style={{
             display: 'flex',
-            gap: '12px',
-            alignItems: 'flex-start',
+            justifyContent: 'center',
+            marginBottom: '16px',
           }}>
-            {/* Assistant Avatar */}
-            <div style={{
-              width: '40px',
-              height: '40px',
-              minWidth: '40px',
-              borderRadius: '50%',
-              background: '#F3F4F6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-            }}>
-              <img src="/Sam.png" alt="Sam" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
-            </div>
-
-            {/* Modern Typing Indicator */}
-            <div style={{
-              padding: '18px 24px',
-              background: 'linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%)',
-              borderRadius: '20px 20px 20px 4px',
-              display: 'flex',
-              gap: '6px',
-              alignItems: 'center',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-            }}>
-              <div style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
-                animation: 'pulse 1.5s ease-in-out infinite',
-                animationDelay: '0s',
-                boxShadow: '0 2px 4px rgba(0, 102, 255, 0.3)',
-              }} />
-              <div style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
-                animation: 'pulse 1.5s ease-in-out infinite',
-                animationDelay: '0.2s',
-                boxShadow: '0 2px 4px rgba(0, 102, 255, 0.3)',
-              }} />
-              <div style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
-                animation: 'pulse 1.5s ease-in-out infinite',
-                animationDelay: '0.4s',
-                boxShadow: '0 2px 4px rgba(0, 102, 255, 0.3)',
-              }} />
-            </div>
+            <button
+              onClick={handleClearChat}
+              className="clear-chat-btn"
+              style={{
+                padding: '8px 20px',
+                fontSize: '13px',
+                fontWeight: '500',
+                color: '#9CA3AF',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#FEF2F2';
+                e.target.style.color = '#EF4444';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.color = '#9CA3AF';
+              }}
+            >
+              Clear conversation
+            </button>
           </div>
         )}
 
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Clear Chat Button */}
-      {messages.length > 0 && (
-        <div style={{
+        {/* Input Form - Modern Floating Style */}
+        <form onSubmit={handleSubmit} className="chat-input-container" style={{
           display: 'flex',
-          justifyContent: 'flex-end',
-          marginBottom: '12px',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '10px' : '12px',
+          padding: isMobile ? '12px 14px' : '14px 16px',
+          background: '#FFFFFF',
+          borderRadius: '24px',
+          boxShadow: inputFocused
+            ? '0 0 0 2px rgba(0, 102, 255, 0.2), 0 4px 16px rgba(0, 0, 0, 0.08)'
+            : '0 2px 12px rgba(0, 0, 0, 0.06)',
+          border: inputFocused ? '1px solid #0066FF' : '1px solid rgba(0, 0, 0, 0.04)',
+          transition: 'all 0.2s ease',
         }}>
-          <button
-            onClick={handleClearChat}
+          <input
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
+            placeholder="Message SAM..."
+            disabled={isLoadingMessage}
             style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              fontWeight: '500',
-              color: '#666',
+              flex: 1,
+              padding: '12px 16px',
+              fontSize: '15px',
+              border: 'none',
+              borderRadius: '16px',
               background: 'transparent',
-              border: '1px solid rgba(0, 0, 0, 0.1)',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(239, 68, 68, 0.1)';
-              e.target.style.borderColor = '#EF4444';
-              e.target.style.color = '#DC2626';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'transparent';
-              e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
-              e.target.style.color = '#666';
-            }}
-          >
-            Clear Chat
-          </button>
-        </div>
-      )}
-
-      {/* Input Form */}
-      <form onSubmit={handleSubmit} className="chat-input-container" style={{
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: isMobile ? '8px' : '12px',
-        padding: isMobile ? '12px' : '16px',
-        background: '#F9FAFB',
-        borderRadius: '16px',
-        border: '1px solid rgba(0, 0, 0, 0.06)',
-      }}>
-        <input
-          type="text"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          placeholder="Type your message..."
-          disabled={isLoadingMessage}
-          style={{
-            flex: 1,
-            padding: '12px 16px',
-            fontSize: '16px',
-            border: 'none',
-            borderRadius: '12px',
-            background: '#fff',
-            outline: 'none',
-            color: '#000',
-            minHeight: '44px',
-          }}
-        />
-        {isStreaming ? (
-          <button
-            type="button"
-            onClick={stopStreaming}
-            className="chat-send-btn"
-            style={{
-              padding: '12px 24px',
-              fontSize: '15px',
-              fontWeight: '600',
-              color: '#fff',
-              background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
-              border: 'none',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              width: isMobile ? '100%' : 'auto',
+              outline: 'none',
+              color: '#1F2937',
               minHeight: '44px',
             }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="6" y="6" width="12" height="12" rx="2" />
-            </svg>
-            Stop
-          </button>
-        ) : (
-          <button
-            type="submit"
-            disabled={!inputMessage.trim() || isLoadingMessage}
-            className="chat-send-btn"
-            style={{
-              padding: '12px 24px',
-              fontSize: '15px',
-              fontWeight: '600',
-              color: '#fff',
-              background: '#0066FF',
-              border: 'none',
-              borderRadius: '12px',
-              cursor: (!inputMessage.trim() || isLoadingMessage) ? 'not-allowed' : 'pointer',
-              opacity: (!inputMessage.trim() || isLoadingMessage) ? 0.5 : 1,
-              transition: 'all 0.2s',
-              width: isMobile ? '100%' : 'auto',
-              minHeight: '44px',
-            }}
-          >
-            Send
-          </button>
-        )}
-      </form>
+          />
+          {isStreaming ? (
+            <button
+              type="button"
+              onClick={stopStreaming}
+              className="chat-stop-btn"
+              style={{
+                padding: '12px 24px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#fff',
+                background: '#EF4444',
+                border: 'none',
+                borderRadius: '16px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                width: isMobile ? '100%' : 'auto',
+                minHeight: '44px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#DC2626';
+                e.currentTarget.style.transform = 'scale(1.02)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#EF4444';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" rx="2" />
+              </svg>
+              Stop
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!inputMessage.trim() || isLoadingMessage}
+              className="chat-send-btn"
+              style={{
+                padding: '12px 24px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#fff',
+                background: (!inputMessage.trim() || isLoadingMessage) ? '#E5E7EB' : '#0066FF',
+                border: 'none',
+                borderRadius: '16px',
+                cursor: (!inputMessage.trim() || isLoadingMessage) ? 'default' : 'pointer',
+                transition: 'all 0.2s ease',
+                width: isMobile ? '100%' : 'auto',
+                minHeight: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+              onMouseEnter={(e) => {
+                if (inputMessage.trim() && !isLoadingMessage) {
+                  e.currentTarget.style.background = '#0052CC';
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (inputMessage.trim() && !isLoadingMessage) {
+                  e.currentTarget.style.background = '#0066FF';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }
+              }}
+            >
+              Send
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          )}
+        </form>
 
-      {/* Animation Styles */}
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { transform: scale(0.8); opacity: 0.5; }
-          50% { transform: scale(1.2); opacity: 1; }
-        }
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-      `}</style>
-    </div>
+        {/* Animation Styles */}
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+
+          @keyframes messageSlideIn {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes typingWave {
+            0%, 60%, 100% {
+              transform: translateY(0);
+              opacity: 0.4;
+            }
+            30% {
+              transform: translateY(-6px);
+              opacity: 1;
+            }
+          }
+
+          @keyframes cursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+          }
+
+          .chat-message-bubble:last-child p:last-child {
+            margin-bottom: 0 !important;
+          }
+
+          .chat-markdown p:last-child {
+            margin-bottom: 0 !important;
+          }
+        `}</style>
+      </div>
     </>
   );
 }
