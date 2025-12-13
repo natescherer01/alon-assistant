@@ -22,6 +22,7 @@ from cal.schemas import (
     EventResponse, EventDetailResponse, CreateEventRequest, CreateEventResponse,
     UpdateEventRequest, UpdateEventResponse, DeleteEventResponse,
     SyncAllResponse, SyncStatsResponse, ErrorResponse,
+    UpdateCalendarColorRequest,
     # Multi-user calendar view schemas
     UserListItem, BusyTimesRequest, BusyTimesResponse, BusyBlock,
     FreeTimesRequest, FreeTimesResponse, FreeSlot,
@@ -243,6 +244,37 @@ async def disconnect_calendar(
     logger.info(f"Disconnected calendar {connection.id} for user {calendar_user.id}")
 
     return {"message": "Calendar disconnected successfully", "id": str(connection.id)}
+
+
+@router.patch("/calendars/{connection_id}/color", response_model=CalendarConnectionResponse)
+async def update_calendar_color(
+    body: UpdateCalendarColorRequest,
+    connection: CalendarConnection = Depends(get_calendar_connection),
+    calendar_user: CalendarUser = Depends(get_calendar_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Update the display color for a calendar connection.
+    """
+    # Update the calendar color
+    connection.calendar_color = body.color
+    db.commit()
+    db.refresh(connection)
+
+    logger.info(f"Updated calendar {connection.id} color to {body.color} for user {calendar_user.id}")
+
+    return CalendarConnectionResponse(
+        id=connection.id,
+        provider=connection.provider,
+        calendar_id=connection.calendar_id,
+        calendar_name=connection.calendar_name,
+        calendar_color=connection.calendar_color,
+        is_primary=connection.is_primary,
+        is_connected=connection.is_connected,
+        is_read_only=connection.is_read_only,
+        last_synced_at=connection.last_synced_at,
+        created_at=connection.created_at,
+    )
 
 
 @router.post("/calendars/{connection_id}/sync")

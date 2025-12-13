@@ -112,6 +112,22 @@ export function useCalendars() {
     },
   });
 
+  // Update calendar color mutation
+  const updateColorMutation = useMutation({
+    mutationFn: ({ connectionId, color }: { connectionId: string; color: string }) =>
+      calendarApi.updateCalendarColor(connectionId, color),
+    onSuccess: (updatedCalendar) => {
+      // Update calendar in cache
+      queryClient.setQueryData<Calendar[]>(
+        queryKeys.calendar.calendars(),
+        (old) =>
+          old?.map((cal) => (cal.id === updatedCalendar.id ? updatedCalendar : cal)) || []
+      );
+      // Invalidate events to refresh with new color
+      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.events() });
+    },
+  });
+
   // Initiate OAuth (redirects to provider)
   const initiateOAuth = async (provider: 'GOOGLE' | 'MICROSOFT') => {
     try {
@@ -160,12 +176,15 @@ export function useCalendars() {
       connectIcsMutation.mutateAsync({ url, displayName }),
     updateIcsCalendar: (connectionId: string, url?: string, displayName?: string) =>
       updateIcsMutation.mutateAsync({ connectionId, url, displayName }),
+    updateCalendarColor: (connectionId: string, color: string) =>
+      updateColorMutation.mutateAsync({ connectionId, color }),
 
     // Loading states for mutations
     isDisconnecting: disconnectMutation.isPending,
     isSyncing: syncMutation.isPending,
     isSyncingAll: syncAllMutation.isPending,
     isConnecting: connectIcsMutation.isPending,
+    isUpdatingColor: updateColorMutation.isPending,
 
     // Clear error (for backwards compatibility - React Query handles this)
     clearError: () => {},

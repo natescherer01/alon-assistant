@@ -349,6 +349,27 @@ class UpcomingEventResponse(BaseModel):
 # Calendar connection schemas
 # ============================================================================
 
+class UpdateCalendarColorRequest(BaseModel):
+    """Request schema for updating a calendar's display color"""
+    color: str = Field(min_length=4, max_length=7)
+
+    @field_validator('color')
+    @classmethod
+    def validate_hex_color(cls, v: str) -> str:
+        """Validate that the color is a valid hex color"""
+        import re
+        # Accept both #RGB and #RRGGBB formats
+        if not re.match(r'^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$', v):
+            raise ValueError('Color must be a valid hex color (e.g., #FF5733 or #F53)')
+        # Normalize 3-digit hex to 6-digit
+        if len(v) == 4:
+            r, g, b = v[1], v[2], v[3]
+            v = f'#{r}{r}{g}{g}{b}{b}'
+        return v.upper()
+
+    model_config = {"populate_by_name": True}
+
+
 class CalendarConnectionResponse(BaseModel):
     """Response for a calendar connection"""
     id: UUID

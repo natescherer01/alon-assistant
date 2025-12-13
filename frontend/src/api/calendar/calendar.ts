@@ -222,6 +222,17 @@ export const calendarApi = {
     );
     return response.data.connection;
   },
+
+  /**
+   * Update a calendar's display color
+   */
+  updateCalendarColor: async (connectionId: string, color: string): Promise<Calendar> => {
+    const response = await api.patch<Calendar>(
+      `/calendars/${connectionId}/color`,
+      { color }
+    );
+    return response.data;
+  },
 };
 
 export default calendarApi;
