@@ -24,20 +24,12 @@ function TasksPage() {
   const [highlightedTaskId, setHighlightedTaskId] = useState(null);
   const taskRefs = useRef({});
 
-  // Use React Query
   const { data: allTasks = [], isLoading } = useQuery({
     queryKey: queryKeys.tasks.list({ listType: 'all', days: 7 }),
     queryFn: () => tasksAPI.getTasks('all', 7),
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: nextTask = null } = useQuery({
-    queryKey: queryKeys.tasks.next(null),
-    queryFn: () => tasksAPI.getNextTask(),
-    staleTime: 1 * 60 * 1000,
-  });
-
-  // Extract unique projects from tasks
   const projects = useMemo(() => {
     return [...new Set(allTasks.map(t => t.project).filter(p => p))];
   }, [allTasks]);
@@ -53,22 +45,18 @@ function TasksPage() {
 
   const filterTasksBySearch = (tasksToFilter) => {
     if (!searchQuery.trim()) return tasksToFilter;
-
     const query = searchQuery.toLowerCase();
     return tasksToFilter.filter((task) => {
       const titleMatch = task.title?.toLowerCase().includes(query);
       const descriptionMatch = task.description?.toLowerCase().includes(query);
       const projectMatch = task.project?.toLowerCase().includes(query);
-      const waitingOnMatch = task.waiting_on?.toLowerCase().includes(query);
-
-      return titleMatch || descriptionMatch || projectMatch || waitingOnMatch;
+      return titleMatch || descriptionMatch || projectMatch;
     });
   };
 
   const handleTaskUpdate = (updatedTask = null, taskId = null, action = 'update') => {
     if (updatedTask || taskId) {
       setError(null);
-
       queryClient.setQueryData(
         queryKeys.tasks.list({ listType: 'all', days: 7 }),
         (prevTasks = []) => {
@@ -87,7 +75,6 @@ function TasksPage() {
           return prevTasks;
         }
       );
-
       if (action === 'delete' || updatedTask?.status !== 'completed') {
         queryClient.invalidateQueries({ queryKey: queryKeys.tasks.next(null) });
       }
@@ -96,8 +83,8 @@ function TasksPage() {
     }
   };
 
-  const handleError = (message, taskId = null) => {
-    setError({ message, taskId });
+  const handleError = (message) => {
+    setError({ message });
     setTimeout(() => setError(null), 5000);
   };
 
@@ -128,7 +115,6 @@ function TasksPage() {
     navigate('/login');
   };
 
-  // Client-side filtering
   const displayedTasks = useMemo(() => {
     let filtered = allTasks;
 
@@ -160,102 +146,86 @@ function TasksPage() {
     return filterTasksBySearch(sorted);
   }, [allTasks, filter, projectFilter, searchQuery]);
 
-  // Clean up saving states
   useEffect(() => {
     const displayedTaskIds = new Set(displayedTasks.map(t => t.id));
     setSavingTasks(prevSaving => {
       const newSaving = new Set(prevSaving);
       let hasChanges = false;
-
       prevSaving.forEach(taskId => {
         if (!displayedTaskIds.has(taskId)) {
           newSaving.delete(taskId);
           hasChanges = true;
         }
       });
-
       return hasChanges ? newSaving : prevSaving;
     });
   }, [displayedTasks]);
 
-  // Handle navigation state from dashboard preview click
   useEffect(() => {
     const state = location.state;
     if (state?.selectedTaskId) {
       setHighlightedTaskId(state.selectedTaskId);
-      // Clear the state to prevent re-highlighting on refresh
       navigate(location.pathname, { replace: true, state: null });
-
-      // Scroll to the task after a short delay to ensure it's rendered
       setTimeout(() => {
         const taskElement = taskRefs.current[state.selectedTaskId];
         if (taskElement) {
           taskElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        // Remove highlight after animation
         setTimeout(() => setHighlightedTaskId(null), 2000);
       }, 100);
     }
   }, [location.state, navigate, location.pathname]);
 
-  // Memoized counts
   const counts = useMemo(() => {
     const all = allTasks.filter((t) => t.status !== 'completed' && t.status !== 'deleted').length;
     const waiting = allTasks.filter((t) => t.status === 'waiting_on').length;
     const upcoming = allTasks.filter((t) => t.deadline && t.status !== 'completed' && t.status !== 'deleted').length;
-    return { all, waiting, upcoming };
+    const completed = allTasks.filter((t) => t.status === 'completed').length;
+    return { all, waiting, upcoming, completed };
   }, [allTasks]);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
-      {/* Minimal Navbar */}
+      {/* Navbar */}
       <nav style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        background: 'rgba(255, 255, 255, 0.9)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #eee',
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        borderBottom: '1px solid #f0f0f0',
       }}>
         <div style={{
-          maxWidth: '1400px',
+          maxWidth: '800px',
           margin: '0 auto',
-          padding: isMobile ? '12px 16px' : '12px 32px',
+          padding: isMobile ? '12px 16px' : '12px 24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <img
               src="/alon-logo.png"
               alt="Alon"
-              style={{
-                height: isMobile ? '32px' : '40px',
-                cursor: 'pointer',
-              }}
+              style={{ height: isMobile ? '28px' : '32px', cursor: 'pointer' }}
               onClick={() => navigate('/dashboard')}
             />
           </div>
 
-          {/* Mobile: Menu Button */}
           {isMobile && (
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               style={{
                 padding: '8px',
                 background: 'transparent',
-                border: '1px solid #eee',
-                borderRadius: '6px',
+                border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
               }}
-              aria-label="Menu"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="1.5">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.5">
                 {mobileMenuOpen ? (
                   <path d="M6 18L18 6M6 6l12 12" />
                 ) : (
@@ -265,94 +235,43 @@ function TasksPage() {
             </button>
           )}
 
-          {/* Desktop: Navigation */}
           {!isMobile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <button
-                onClick={() => navigate('/dashboard')}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  color: '#666',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
-                onMouseLeave={(e) => e.target.style.background = 'transparent'}
-              >
-                Chat
-              </button>
-
-              <button
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  color: '#000',
-                  background: '#f5f5f5',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'default',
-                }}
-              >
-                Tasks
-              </button>
-
-              <button
-                onClick={() => navigate('/calendar')}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  color: '#666',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
-                onMouseLeave={(e) => e.target.style.background = 'transparent'}
-              >
-                Calendar
-              </button>
-
-              <button
-                onClick={() => navigate('/profile')}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  color: '#666',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
-                onMouseLeave={(e) => e.target.style.background = 'transparent'}
-              >
-                Profile
-              </button>
-
-              <div style={{ width: '1px', height: '20px', background: '#eee', margin: '0 8px' }} />
-
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+              {[
+                { label: 'Chat', path: '/dashboard' },
+                { label: 'Tasks', path: '/tasks', active: true },
+                { label: 'Calendar', path: '/calendar' },
+                { label: 'Profile', path: '/profile' },
+              ].map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => !item.active && navigate(item.path)}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '13px',
+                    fontWeight: item.active ? '500' : '400',
+                    color: item.active ? '#111' : '#666',
+                    background: item.active ? '#f5f5f5' : 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: item.active ? 'default' : 'pointer',
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+              <div style={{ width: '1px', height: '16px', background: '#e5e5e5', margin: '0 8px' }} />
               <button
                 onClick={handleLogout}
                 style={{
-                  padding: '8px 16px',
+                  padding: '6px 12px',
                   fontSize: '13px',
-                  fontWeight: '500',
                   color: '#666',
                   background: 'transparent',
                   border: 'none',
                   borderRadius: '6px',
                   cursor: 'pointer',
                 }}
-                onMouseEnter={(e) => e.target.style.background = '#f5f5f5'}
-                onMouseLeave={(e) => e.target.style.background = 'transparent'}
               >
                 Logout
               </button>
@@ -360,7 +279,6 @@ function TasksPage() {
           )}
         </div>
 
-        {/* Mobile Dropdown Menu */}
         {isMobile && mobileMenuOpen && (
           <div style={{
             position: 'absolute',
@@ -369,82 +287,41 @@ function TasksPage() {
             right: 0,
             background: '#fff',
             padding: '8px',
-            borderBottom: '1px solid #eee',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2px',
+            borderBottom: '1px solid #f0f0f0',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
           }}>
-            <button
-              onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}
-              style={{
-                padding: '12px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#333',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
-            >
-              Chat
-            </button>
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              style={{
-                padding: '12px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#000',
-                background: '#f5f5f5',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
-            >
-              Tasks
-            </button>
-            <button
-              onClick={() => { navigate('/calendar'); setMobileMenuOpen(false); }}
-              style={{
-                padding: '12px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#333',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
-            >
-              Calendar
-            </button>
-            <button
-              onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}
-              style={{
-                padding: '12px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#333',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
-            >
-              Profile
-            </button>
-            <div style={{ height: '1px', background: '#eee', margin: '4px 0' }} />
+            {[
+              { label: 'Chat', path: '/dashboard' },
+              { label: 'Tasks', path: '/tasks', active: true },
+              { label: 'Calendar', path: '/calendar' },
+              { label: 'Profile', path: '/profile' },
+            ].map((item) => (
+              <button
+                key={item.path}
+                onClick={() => { !item.active && navigate(item.path); setMobileMenuOpen(false); }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  fontWeight: item.active ? '500' : '400',
+                  color: item.active ? '#111' : '#666',
+                  background: item.active ? '#f5f5f5' : 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+            <div style={{ height: '1px', background: '#f0f0f0', margin: '8px 0' }} />
             <button
               onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
               style={{
+                width: '100%',
                 padding: '12px 16px',
                 fontSize: '14px',
-                fontWeight: '500',
                 color: '#999',
                 background: 'transparent',
                 border: 'none',
@@ -462,120 +339,103 @@ function TasksPage() {
       {/* Main Content */}
       <main style={{
         flex: 1,
-        maxWidth: '1400px',
+        maxWidth: '800px',
         width: '100%',
         margin: '0 auto',
-        padding: isMobile ? '16px' : '24px 32px',
+        padding: isMobile ? '20px 16px' : '32px 24px',
       }}>
+        {/* Header */}
+        <div style={{ marginBottom: '24px' }}>
+          <h1 style={{
+            fontSize: isMobile ? '24px' : '28px',
+            fontWeight: '600',
+            color: '#111',
+            margin: '0 0 4px 0',
+            letterSpacing: '-0.02em',
+          }}>
+            Tasks
+          </h1>
+          <p style={{
+            fontSize: '14px',
+            color: '#666',
+            margin: 0,
+          }}>
+            {counts.all} active{counts.upcoming > 0 ? ` · ${counts.upcoming} with due dates` : ''}
+          </p>
+        </div>
+
+        {/* Add Task */}
+        <div style={{ marginBottom: '24px' }}>
+          <AddTaskForm onTaskAdded={handleTaskUpdate} />
+        </div>
+
+        {/* Filters & Search */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1fr 280px',
-          gap: isMobile ? '16px' : '32px',
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: '12px',
+          marginBottom: '20px',
+          alignItems: isMobile ? 'stretch' : 'center',
         }}>
-          {/* Tasks Section */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Next Task - Minimalist Style */}
-            {nextTask && (
-              <div style={{
-                background: '#fff',
-                borderRadius: '12px',
-                border: '1px solid #eee',
-              }}>
-                <div style={{
-                  padding: '16px 20px',
-                  borderBottom: '1px solid #eee',
-                }}>
-                  <div style={{
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    color: '#999',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    marginBottom: '8px',
-                  }}>
-                    Next
-                  </div>
-                  <div style={{
-                    background: '#fafafa',
-                    borderRadius: '8px',
-                    padding: '12px',
-                  }}>
-                    <h4 style={{
-                      fontSize: '15px',
-                      fontWeight: '500',
-                      color: '#000',
-                      margin: '0 0 4px 0',
-                      lineHeight: '1.4',
-                    }}>
-                      {nextTask.title}
-                    </h4>
-                    {nextTask.description && (
-                      <p style={{
-                        fontSize: '13px',
-                        color: '#666',
-                        margin: '0 0 4px 0',
-                        lineHeight: '1.4',
-                      }}>
-                        {nextTask.description}
-                      </p>
-                    )}
-                    {nextTask.deadline && (
-                      <p style={{
-                        fontSize: '13px',
-                        color: '#999',
-                        margin: 0,
-                      }}>
-                        {nextTask.deadline}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Add Task */}
-            <AddTaskForm onTaskAdded={handleTaskUpdate} />
-
-            {/* Search Bar - Minimalist */}
-            <div style={{
-              position: 'relative',
-            }}>
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+          {/* Filter tabs */}
+          <div style={{
+            display: 'flex',
+            gap: '4px',
+            background: '#f5f5f5',
+            borderRadius: '8px',
+            padding: '4px',
+            overflowX: 'auto',
+            flexShrink: 0,
+          }}>
+            {[
+              { key: 'all', label: 'All' },
+              { key: 'upcoming', label: 'Scheduled' },
+              { key: 'waiting', label: 'Waiting' },
+              { key: 'completed', label: 'Done' },
+              { key: 'deleted', label: 'Trash' },
+            ].map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
                 style={{
-                  width: '100%',
-                  padding: '12px 14px 12px 40px',
-                  fontSize: '14px',
-                  border: '1px solid #eee',
-                  borderRadius: '10px',
-                  outline: 'none',
-                  background: '#fff',
+                  padding: '6px 12px',
+                  fontSize: '13px',
+                  fontWeight: filter === f.key ? '500' : '400',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  background: filter === f.key ? '#fff' : 'transparent',
+                  color: filter === f.key ? '#111' : '#666',
+                  boxShadow: filter === f.key ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                  whiteSpace: 'nowrap',
                   transition: 'all 0.15s ease',
                 }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#ddd';
-                  e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#eee';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Search & Project filter */}
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            flex: 1,
+          }}>
+            <div style={{
+              flex: 1,
+              position: 'relative',
+            }}>
               <svg
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#999"
+                stroke="#9ca3af"
                 strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
                 style={{
                   position: 'absolute',
-                  left: '14px',
+                  left: '12px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   pointerEvents: 'none',
@@ -584,260 +444,170 @@ function TasksPage() {
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px 8px 36px',
+                  fontSize: '13px',
+                  border: '1px solid #e5e5e5',
+                  borderRadius: '6px',
+                  outline: 'none',
+                  background: '#fff',
+                }}
+              />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
                   style={{
                     position: 'absolute',
-                    right: '10px',
+                    right: '8px',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    background: '#f5f5f5',
-                    border: 'none',
-                    color: '#666',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    lineHeight: 1,
-                    borderRadius: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#eee';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#f5f5f5';
-                  }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            {/* Task Filters - Minimalist */}
-            <div style={{
-              display: 'flex',
-              gap: '6px',
-              flexWrap: isMobile ? 'nowrap' : 'wrap',
-              alignItems: 'center',
-              overflowX: isMobile ? 'auto' : 'visible',
-              WebkitOverflowScrolling: 'touch',
-              paddingBottom: isMobile ? '4px' : '0',
-            }}>
-              {[
-                { key: 'all', label: 'All', count: counts.all },
-                { key: 'waiting', label: 'Waiting', count: counts.waiting },
-                { key: 'upcoming', label: 'Upcoming', count: counts.upcoming },
-                { key: 'completed', label: 'Done', count: null },
-                { key: 'deleted', label: 'Trash', count: null },
-              ].map((f) => (
-                <button
-                  key={f.key}
-                  onClick={() => setFilter(f.key)}
-                  style={{
-                    padding: '7px 14px',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    background: filter === f.key ? '#000' : '#f5f5f5',
-                    color: filter === f.key ? '#fff' : '#666',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (filter !== f.key) {
-                      e.target.style.background = '#eee';
-                      e.target.style.color = '#333';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (filter !== f.key) {
-                      e.target.style.background = '#f5f5f5';
-                      e.target.style.color = '#666';
-                    }
-                  }}
-                >
-                  {f.label}{f.count !== null ? ` (${f.count})` : ''}
-                </button>
-              ))}
-
-              {/* Project Filter Dropdown */}
-              {projects.length > 0 && (
-                <>
-                  <div style={{ width: '1px', height: '24px', background: '#eee', margin: '0 6px' }} />
-                  <select
-                    value={projectFilter}
-                    onChange={(e) => setProjectFilter(e.target.value)}
-                    style={{
-                      padding: '7px 12px',
-                      fontSize: '13px',
-                      fontWeight: '500',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      background: projectFilter !== 'all' ? '#000' : '#f5f5f5',
-                      color: projectFilter !== 'all' ? '#fff' : '#666',
-                      outline: 'none',
-                      transition: 'all 0.15s ease',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      paddingRight: '28px',
-                      backgroundImage: projectFilter !== 'all'
-                        ? `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`
-                        : `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 10px center',
-                    }}
-                  >
-                    <option value="all">All Projects</option>
-                    {projects.map((project) => (
-                      <option key={project} value={project}>
-                        {project}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
-            </div>
-
-            {/* Error Banner */}
-            {error && (
-              <div style={{
-                background: '#fafafa',
-                border: '1px solid #eee',
-                borderRadius: '8px',
-                padding: '12px 16px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}>
-                <p style={{ color: '#666', margin: 0, fontSize: '13px' }}>
-                  {error.message}
-                </p>
-                <button
-                  onClick={() => setError(null)}
-                  style={{
                     background: 'transparent',
                     border: 'none',
-                    color: '#999',
                     cursor: 'pointer',
-                    fontSize: '16px',
-                    padding: '4px 8px',
+                    padding: '4px',
+                    display: 'flex',
+                    color: '#9ca3af',
                   }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 </button>
-              </div>
-            )}
-
-            {/* Task List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {isLoading ? (
-                <div style={{
-                  background: '#fff',
-                  borderRadius: '12px',
-                  border: '1px solid #eee',
-                  padding: '48px',
-                  textAlign: 'center',
-                }}>
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    border: '2px solid #eee',
-                    borderTop: '2px solid #000',
-                    borderRadius: '50%',
-                    margin: '0 auto 12px',
-                    animation: 'spin 1s linear infinite',
-                  }} />
-                  <p style={{ color: '#999', fontSize: '14px', margin: 0 }}>Loading tasks...</p>
-                </div>
-              ) : displayedTasks.length === 0 ? (
-                <div style={{
-                  background: '#fff',
-                  borderRadius: '12px',
-                  border: '1px solid #eee',
-                  padding: '48px',
-                  textAlign: 'center',
-                }}>
-                  <p style={{ color: '#999', fontSize: '14px', margin: 0 }}>
-                    {searchQuery ? `No tasks found matching "${searchQuery}"` : 'No tasks yet'}
-                  </p>
-                </div>
-              ) : (
-                displayedTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    ref={(el) => { taskRefs.current[task.id] = el; }}
-                    style={{
-                      transition: 'all 0.3s ease',
-                      borderRadius: '12px',
-                      boxShadow: highlightedTaskId === task.id ? '0 0 0 2px #000' : 'none',
-                    }}
-                  >
-                    <TaskItem
-                      task={task}
-                      onUpdate={handleTaskUpdate}
-                      onDelete={handleTaskUpdate}
-                      onError={handleError}
-                      markSaving={markTaskSaving}
-                      isSaving={savingTasks.has(task.id)}
-                    />
-                  </div>
-                ))
               )}
             </div>
+
+            {projects.length > 0 && (
+              <select
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '13px',
+                  border: '1px solid #e5e5e5',
+                  borderRadius: '6px',
+                  outline: 'none',
+                  background: projectFilter !== 'all' ? '#111' : '#fff',
+                  color: projectFilter !== 'all' ? '#fff' : '#666',
+                  cursor: 'pointer',
+                  minWidth: '120px',
+                }}
+              >
+                <option value="all">All projects</option>
+                {projects.map((project) => (
+                  <option key={project} value={project}>{project}</option>
+                ))}
+              </select>
+            )}
           </div>
+        </div>
 
-          {/* Sidebar - Hidden on mobile */}
-          {!isMobile && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              {/* Overview Card */}
+        {/* Error */}
+        {error && (
+          <div style={{
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <span style={{ fontSize: '13px', color: '#991b1b' }}>{error.message}</span>
+            <button
+              onClick={() => setError(null)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#991b1b',
+                padding: '4px',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Task List */}
+        <div style={{
+          background: '#fff',
+          borderRadius: '12px',
+          border: '1px solid #e5e5e5',
+          padding: isMobile ? '8px 16px' : '8px 20px',
+        }}>
+          {isLoading ? (
+            <div style={{ padding: '40px', textAlign: 'center' }}>
               <div style={{
-                background: '#fff',
-                borderRadius: '12px',
-                border: '1px solid #eee',
-              }}>
-                <div style={{
-                  padding: '16px 20px',
-                  borderBottom: '1px solid #eee',
-                }}>
-                  <span style={{ fontSize: '15px', fontWeight: '600', color: '#000', letterSpacing: '-0.01em' }}>
-                    Overview
-                  </span>
-                </div>
-                <div style={{ padding: '16px 20px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '14px', color: '#666' }}>Active</span>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#000' }}>{counts.all}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '14px', color: '#666' }}>Waiting</span>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#666' }}>{counts.waiting}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '14px', color: '#666' }}>With Deadlines</span>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#666' }}>{counts.upcoming}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+                width: '24px',
+                height: '24px',
+                border: '2px solid #e5e5e5',
+                borderTop: '2px solid #666',
+                borderRadius: '50%',
+                margin: '0 auto 12px',
+                animation: 'spin 0.8s linear infinite',
+              }} />
+              <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>Loading...</p>
             </div>
+          ) : displayedTasks.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+              <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
+                {searchQuery
+                  ? `No tasks matching "${searchQuery}"`
+                  : filter === 'completed'
+                    ? 'No completed tasks'
+                    : filter === 'deleted'
+                      ? 'Trash is empty'
+                      : filter === 'waiting'
+                        ? 'No waiting tasks'
+                        : 'No tasks yet. Add one above!'}
+              </p>
+            </div>
+          ) : (
+            displayedTasks.map((task) => (
+              <div
+                key={task.id}
+                ref={(el) => { taskRefs.current[task.id] = el; }}
+                style={{
+                  transition: 'all 0.3s ease',
+                  borderRadius: '8px',
+                  background: highlightedTaskId === task.id ? '#fffbeb' : 'transparent',
+                }}
+              >
+                <TaskItem
+                  task={task}
+                  onUpdate={handleTaskUpdate}
+                  onDelete={handleTaskUpdate}
+                  onError={handleError}
+                  markSaving={markTaskSaving}
+                  isSaving={savingTasks.has(task.id)}
+                />
+              </div>
+            ))
           )}
         </div>
+
+        {/* Keyboard hint */}
+        {!isMobile && (
+          <p style={{
+            textAlign: 'center',
+            fontSize: '12px',
+            color: '#9ca3af',
+            marginTop: '24px',
+          }}>
+            Click a task to edit · Press <kbd style={{ background: '#f5f5f5', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>Esc</kbd> to cancel
+          </p>
+        )}
       </main>
 
-      {/* Spin Animation */}
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }

@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { tasksAPI } from '../api/client';
 import useConfirm from '../hooks/useConfirm';
 import { useIsMobile } from '../hooks/useIsMobile';
 
 function AddTaskForm({ onTaskAdded }) {
   const isMobile = useIsMobile(768);
-  const [isOpen, setIsOpen] = useState(false);
+  const inputRef = useRef(null);
+  const [title, setTitle] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
     description: '',
     project: '',
     deadline: '',
@@ -20,558 +22,439 @@ function AddTaskForm({ onTaskAdded }) {
 
   const { ConfirmDialog, alert } = useConfirm();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (isExpanded && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isExpanded]);
 
+  const resetForm = () => {
+    setTitle('');
+    setFormData({
+      description: '',
+      project: '',
+      deadline: '',
+      intensity: 3,
+      is_recurring: false,
+      recurrence_type: 'daily',
+      recurrence_interval: 1,
+      recurrence_end_date: '',
+    });
+    setIsExpanded(false);
+  };
+
+  const handleQuickAdd = async (e) => {
+    e.preventDefault();
+    if (!title.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
     try {
       const taskData = {
-        title: formData.title,
+        title: title.trim(),
+        intensity: 3,
+        is_recurring: false,
+      };
+
+      const newTask = await tasksAPI.createTask(taskData);
+      setTitle('');
+      onTaskAdded(newTask, null, 'add');
+    } catch (error) {
+      await alert('Error', error.response?.data?.detail || error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleExpandedSubmit = async (e) => {
+    e.preventDefault();
+    if (!title.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const taskData = {
+        title: title.trim(),
         description: formData.description,
         intensity: parseInt(formData.intensity),
         is_recurring: formData.is_recurring,
       };
 
-      if (formData.project) {
-        taskData.project = formData.project;
-      }
+      if (formData.project) taskData.project = formData.project;
+      if (formData.deadline) taskData.deadline = formData.deadline;
 
-      if (formData.deadline) {
-        taskData.deadline = formData.deadline;
-      }
-
-      // Only include recurrence data if task is recurring
       if (formData.is_recurring) {
         taskData.recurrence_type = formData.recurrence_type;
         taskData.recurrence_interval = parseInt(formData.recurrence_interval);
-        if (formData.recurrence_end_date) {
-          taskData.recurrence_end_date = formData.recurrence_end_date;
-        }
+        if (formData.recurrence_end_date) taskData.recurrence_end_date = formData.recurrence_end_date;
       }
 
-      // Create task and get the response
       const newTask = await tasksAPI.createTask(taskData);
-
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        project: '',
-        deadline: '',
-        intensity: 3,
-        is_recurring: false,
-        recurrence_type: 'daily',
-        recurrence_interval: 1,
-        recurrence_end_date: '',
-      });
-
-      setIsOpen(false);
-
-      // Pass the new task to parent for optimistic update
+      resetForm();
       onTaskAdded(newTask, null, 'add');
     } catch (error) {
-      await alert('Failed to create task', error.response?.data?.detail || error.message);
+      await alert('Error', error.response?.data?.detail || error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    setFormData({
-      ...formData,
-      [e.target.name]: value,
-    });
+    setFormData({ ...formData, [e.target.name]: value });
   };
 
-  if (!isOpen) {
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      if (isExpanded) {
+        resetForm();
+      } else {
+        setTitle('');
+        inputRef.current?.blur();
+      }
+    }
+  };
+
+  // Expanded form
+  if (isExpanded) {
     return (
       <>
         <ConfirmDialog />
-        <button
-          onClick={() => setIsOpen(true)}
-          style={{
-            width: '100%',
-            padding: '14px 18px',
-            fontSize: '14px',
-            fontWeight: '500',
-            color: '#666',
-            background: '#fff',
-            border: '1px solid #eee',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            textAlign: 'left',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#fafafa';
-            e.currentTarget.style.borderColor = '#ddd';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#fff';
-            e.currentTarget.style.borderColor = '#eee';
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Add task
-        </button>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <ConfirmDialog />
-      <div style={{
-        background: '#fff',
-        borderRadius: '12px',
-        border: '1px solid #eee',
-        padding: '20px',
-      }}>
         <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
+          background: '#fff',
+          borderRadius: '8px',
+          border: '1px solid #e5e5e5',
+          padding: isMobile ? '16px' : '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
         }}>
-          <h3 style={{
-            fontSize: '15px',
-            fontWeight: '600',
-            color: '#000',
-            margin: 0,
-          }}>
-            Add Task
-          </h3>
-          <button
-            onClick={() => setIsOpen(false)}
-            style={{
-              width: '28px',
-              height: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: 'none',
-              background: 'transparent',
-              color: '#999',
-              cursor: 'pointer',
-              borderRadius: '6px',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#f5f5f5';
-              e.target.style.color = '#666';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'transparent';
-              e.target.style.color = '#999';
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label htmlFor="title" style={{
-              display: 'block',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#999',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '6px',
-            }}>
-              Title
-            </label>
+          <form onSubmit={handleExpandedSubmit} onKeyDown={handleKeyDown}>
             <input
+              ref={inputRef}
               type="text"
-              id="title"
-              name="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Task name"
               required
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="What needs to be done?"
               style={{
                 width: '100%',
-                padding: '10px 12px',
-                fontSize: '14px',
-                border: '1px solid #eee',
-                borderRadius: '6px',
+                padding: '8px 0',
+                fontSize: '15px',
+                fontWeight: '500',
+                border: 'none',
                 outline: 'none',
-                background: '#fafafa',
-                transition: 'all 0.2s',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#ccc';
-                e.target.style.background = '#fff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#eee';
-                e.target.style.background = '#fafafa';
+                background: 'transparent',
+                marginBottom: '12px',
               }}
             />
-          </div>
 
-          <div>
-            <label htmlFor="description" style={{
-              display: 'block',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#999',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '6px',
-            }}>
-              Description
-            </label>
             <textarea
-              id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
+              placeholder="Description (optional)"
               rows={2}
-              placeholder="Additional details..."
               style={{
                 width: '100%',
-                padding: '10px 12px',
+                padding: '8px 12px',
                 fontSize: '14px',
-                border: '1px solid #eee',
+                border: '1px solid #e5e5e5',
                 borderRadius: '6px',
                 outline: 'none',
-                resize: 'vertical',
+                resize: 'none',
                 fontFamily: 'inherit',
                 background: '#fafafa',
-                transition: 'all 0.2s',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#ccc';
-                e.target.style.background = '#fff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#eee';
-                e.target.style.background = '#fafafa';
+                marginBottom: '12px',
               }}
             />
-          </div>
 
-          <div>
-            <label htmlFor="project" style={{
-              display: 'block',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#999',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '6px',
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+              gap: '12px',
+              marginBottom: '12px',
             }}>
-              Project
-            </label>
-            <input
-              type="text"
-              id="project"
-              name="project"
-              value={formData.project}
-              onChange={handleChange}
-              placeholder="e.g., Work, Personal"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: '14px',
-                border: '1px solid #eee',
-                borderRadius: '6px',
-                outline: 'none',
-                background: '#fafafa',
-                transition: 'all 0.2s',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#ccc';
-                e.target.style.background = '#fff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#eee';
-                e.target.style.background = '#fafafa';
-              }}
-            />
-          </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                  Project
+                </label>
+                <input
+                  type="text"
+                  name="project"
+                  value={formData.project}
+                  onChange={handleChange}
+                  placeholder="None"
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: '13px',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '6px',
+                    outline: 'none',
+                    background: '#fafafa',
+                  }}
+                />
+              </div>
 
-          <div className="task-form-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label htmlFor="deadline" style={{
-                display: 'block',
-                fontSize: '12px',
-                fontWeight: '600',
-                color: '#999',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: '6px',
-              }}>
-                Deadline
-              </label>
-              <input
-                type="date"
-                id="deadline"
-                name="deadline"
-                value={formData.deadline}
-                onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  fontSize: '14px',
-                  border: '1px solid #eee',
-                  borderRadius: '6px',
-                  outline: 'none',
-                  background: '#fafafa',
-                  transition: 'all 0.2s',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#ccc';
-                  e.target.style.background = '#fff';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#eee';
-                  e.target.style.background = '#fafafa';
-                }}
-              />
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                  Due date
+                </label>
+                <input
+                  type="date"
+                  name="deadline"
+                  value={formData.deadline}
+                  onChange={handleChange}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: '13px',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '6px',
+                    outline: 'none',
+                    background: '#fafafa',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                  Priority
+                </label>
+                <select
+                  name="intensity"
+                  value={formData.intensity}
+                  onChange={handleChange}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: '13px',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '6px',
+                    outline: 'none',
+                    background: '#fafafa',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value={1}>P4 - Low</option>
+                  <option value={2}>P3</option>
+                  <option value={3}>P2 - Normal</option>
+                  <option value={4}>P1 - High</option>
+                  <option value={5}>P0 - Critical</option>
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="intensity" style={{
-                display: 'block',
-                fontSize: '12px',
-                fontWeight: '600',
-                color: '#999',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: '6px',
-              }}>
-                Intensity
-              </label>
-              <select
-                id="intensity"
-                name="intensity"
-                value={formData.intensity}
-                onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  fontSize: '14px',
-                  border: '1px solid #eee',
-                  borderRadius: '6px',
-                  outline: 'none',
-                  background: '#fafafa',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#ccc';
-                  e.target.style.background = '#fff';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#eee';
-                  e.target.style.background = '#fafafa';
-                }}
-              >
-                <option value={1}>1 - Very Light</option>
-                <option value={2}>2 - Light</option>
-                <option value={3}>3 - Medium</option>
-                <option value={4}>4 - Heavy</option>
-                <option value={5}>5 - Very Heavy</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Recurring Task Section */}
-          <div style={{
-            borderTop: '1px solid #eee',
-            paddingTop: '16px',
-            marginTop: '4px',
-          }}>
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              marginBottom: formData.is_recurring ? '12px' : '0',
+            {/* Recurring */}
+            <div style={{
+              borderTop: '1px solid #eee',
+              paddingTop: '12px',
+              marginBottom: '16px',
             }}>
-              <input
-                type="checkbox"
-                name="is_recurring"
-                checked={formData.is_recurring}
-                onChange={handleChange}
-                style={{
-                  width: '16px',
-                  height: '16px',
-                  cursor: 'pointer',
-                  accentColor: '#000',
-                }}
-              />
-              <span style={{
-                fontSize: '13px',
-                fontWeight: '500',
-                color: '#666',
-              }}>
-                Make this a recurring task
-              </span>
-            </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  name="is_recurring"
+                  checked={formData.is_recurring}
+                  onChange={handleChange}
+                  style={{ width: '14px', height: '14px', accentColor: '#000' }}
+                />
+                <span style={{ fontSize: '13px', color: '#666' }}>Repeat this task</span>
+              </label>
 
-            {formData.is_recurring && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingLeft: isMobile ? '0' : '24px' }}>
-                <div className="recurrence-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '8px' }}>
-                  <div>
-                    <label htmlFor="recurrence_type" style={{
-                      display: 'block',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: '#999',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      marginBottom: '6px',
-                    }}>
-                      Repeats
-                    </label>
-                    <select
-                      id="recurrence_type"
-                      name="recurrence_type"
-                      value={formData.recurrence_type}
-                      onChange={handleChange}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        fontSize: '13px',
-                        border: '1px solid #eee',
-                        borderRadius: '6px',
-                        outline: 'none',
-                        background: '#fafafa',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="yearly">Yearly</option>
-                    </select>
-                  </div>
+              {formData.is_recurring && (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : '1fr 80px 1fr',
+                  gap: '8px',
+                  marginTop: '12px',
+                  paddingLeft: '22px',
+                }}>
+                  <select
+                    name="recurrence_type"
+                    value={formData.recurrence_type}
+                    onChange={handleChange}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '13px',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: '6px',
+                      outline: 'none',
+                      background: '#fafafa',
+                    }}
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
 
-                  <div>
-                    <label htmlFor="recurrence_interval" style={{
-                      display: 'block',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: '#999',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      marginBottom: '6px',
-                    }}>
-                      Every
-                    </label>
-                    <input
-                      type="number"
-                      id="recurrence_interval"
-                      name="recurrence_interval"
-                      min="1"
-                      value={formData.recurrence_interval}
-                      onChange={handleChange}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        fontSize: '13px',
-                        border: '1px solid #eee',
-                        borderRadius: '6px',
-                        outline: 'none',
-                        background: '#fafafa',
-                      }}
-                    />
-                  </div>
-                </div>
+                  <input
+                    type="number"
+                    name="recurrence_interval"
+                    min="1"
+                    value={formData.recurrence_interval}
+                    onChange={handleChange}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '13px',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: '6px',
+                      outline: 'none',
+                      background: '#fafafa',
+                      textAlign: 'center',
+                    }}
+                  />
 
-                <div>
-                  <label htmlFor="recurrence_end_date" style={{
-                    display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    color: '#999',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    marginBottom: '6px',
-                  }}>
-                    End Date (Optional)
-                  </label>
                   <input
                     type="date"
-                    id="recurrence_end_date"
                     name="recurrence_end_date"
                     value={formData.recurrence_end_date}
                     onChange={handleChange}
                     style={{
-                      width: '100%',
-                      padding: '10px 12px',
+                      padding: '8px 12px',
                       fontSize: '13px',
-                      border: '1px solid #eee',
+                      border: '1px solid #e5e5e5',
                       borderRadius: '6px',
                       outline: 'none',
                       background: '#fafafa',
                     }}
                   />
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <div style={{ display: 'flex', gap: '8px', paddingTop: '8px' }}>
-            <button
-              type="submit"
-              style={{
-                flex: 1,
-                padding: '11px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#fff',
-                background: '#000',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = '#222';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = '#000';
-              }}
-            >
-              Create Task
-            </button>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={resetForm}
+                disabled={isSubmitting}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: '#f5f5f5',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || !title.trim()}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: isSubmitting || !title.trim() ? '#999' : '#000',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: isSubmitting || !title.trim() ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isSubmitting ? 'Adding...' : 'Add Task'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </>
+    );
+  }
+
+  // Quick add input
+  return (
+    <>
+      <ConfirmDialog />
+      <form onSubmit={handleQuickAdd} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          background: '#fff',
+          border: '1px solid #e5e5e5',
+          borderRadius: '8px',
+          padding: '0 12px',
+          transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+        }}>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#9ca3af"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <input
+            ref={inputRef}
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Add a task..."
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              fontSize: '14px',
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+            }}
+          />
+          {title.trim() && (
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={() => setIsExpanded(true)}
               style={{
-                padding: '11px 20px',
-                fontSize: '14px',
-                fontWeight: '500',
+                padding: '4px 8px',
+                fontSize: '12px',
                 color: '#666',
                 background: '#f5f5f5',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '4px',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
               }}
-              onMouseEnter={(e) => {
-                e.target.style.background = '#eee';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = '#f5f5f5';
-              }}
+              title="More options"
             >
-              Cancel
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="1" />
+                <circle cx="19" cy="12" r="1" />
+                <circle cx="5" cy="12" r="1" />
+              </svg>
+              More
             </button>
-          </div>
-        </form>
-      </div>
+          )}
+        </div>
+        {title.trim() && (
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            style={{
+              padding: '12px 20px',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: '#fff',
+              background: isSubmitting ? '#666' : '#000',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              transition: 'background 0.15s ease',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {isSubmitting ? 'Adding...' : 'Add'}
+          </button>
+        )}
+      </form>
     </>
   );
 }
