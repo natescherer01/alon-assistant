@@ -183,54 +183,59 @@ export default function CalendarSidebar({
 
   return (
     <>
-      {/* Mobile Overlay */}
-      {!isCollapsed && (
+      {/* Mobile Overlay - Only show on mobile when expanded */}
+      {!isCollapsed && isMobile && (
         <div
           style={{
             position: 'fixed',
-            top: '64px',
+            top: 0,
             left: 0,
             right: 0,
             bottom: 0,
             background: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 40,
+            zIndex: 45,
           }}
           onClick={onToggle}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar - Hidden on mobile when collapsed, only shown when expanded via hamburger menu */}
+      {/* Sidebar - Part of flex layout on desktop, fixed overlay on mobile */}
       <aside
         style={{
-          position: 'fixed',
-          top: '64px',
-          left: 0,
-          height: 'calc(100vh - 64px)',
-          background: '#fff',
+          // Mobile: fixed overlay | Desktop: relative in flex container
+          position: isMobile ? 'fixed' : 'relative',
+          top: isMobile ? 0 : undefined,
+          left: isMobile ? 0 : undefined,
+          height: isMobile ? '100vh' : '100%',
+          background: '#FAFBFC',
           borderRight: '1px solid #E5E7EB',
-          transition: 'all 0.3s ease-in-out',
-          zIndex: 40,
-          width: isCollapsed ? '64px' : '288px',
-          boxShadow: !isCollapsed ? '0 10px 25px rgba(0, 0, 0, 0.1)' : 'none',
+          transition: 'width 0.3s ease-in-out',
+          zIndex: isMobile ? 50 : 1,
+          width: isCollapsed ? '64px' : '280px',
+          minWidth: isCollapsed ? '64px' : '280px',
+          flexShrink: 0,
           // Hide sidebar completely on mobile when collapsed (accessed via hamburger menu instead)
-          display: isCollapsed && isMobile ? 'none' : 'block',
+          display: isCollapsed && isMobile ? 'none' : 'flex',
+          flexDirection: 'column',
         }}
         aria-label="Calendar sidebar"
       >
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Header */}
           <div style={{
-            padding: '16px',
+            padding: isCollapsed ? '12px' : '16px 16px 12px 16px',
             borderBottom: '1px solid #E5E7EB',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: isCollapsed ? 'center' : 'space-between',
+            gap: '12px',
+            background: '#fff',
           }}>
             {!isCollapsed && (
-              <div style={{ flex: 1 }}>
-                <h2 style={{ fontSize: '14px', fontWeight: '600', color: '#000', margin: 0 }}>Calendars</h2>
-                <p style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2 style={{ fontSize: '15px', fontWeight: '600', color: '#111', margin: 0, letterSpacing: '-0.01em' }}>Calendars</h2>
+                <p style={{ fontSize: '12px', color: '#888', marginTop: '2px', margin: 0 }}>
                   {calendars.length} connected
                 </p>
               </div>
@@ -241,22 +246,23 @@ export default function CalendarSidebar({
               onClick={onToggle}
               style={{
                 padding: '8px',
-                background: 'transparent',
-                border: 'none',
+                background: isCollapsed ? '#fff' : 'rgba(0, 0, 0, 0.04)',
+                border: isCollapsed ? '1px solid #E5E7EB' : 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <svg
                 style={{
-                  width: '20px',
-                  height: '20px',
+                  width: '18px',
+                  height: '18px',
                   color: '#666',
                   transition: 'transform 0.2s',
                   transform: isCollapsed ? 'rotate(180deg)' : 'none',
@@ -276,10 +282,10 @@ export default function CalendarSidebar({
           </div>
 
           {/* Calendar List */}
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
             {isCollapsed ? (
               // Collapsed view: Show colored dots/indicators
-              <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
                 {calendars.map((calendar) => {
                   const calColor = getCalendarColor(calendar.calendarColor, calendar.provider as Provider);
                   return (
@@ -289,13 +295,13 @@ export default function CalendarSidebar({
                       style={{
                         width: '40px',
                         height: '40px',
-                        borderRadius: '8px',
+                        borderRadius: '10px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         transition: 'all 0.2s',
                         position: 'relative',
-                        background: `${calColor}33`,
+                        background: `${calColor}20`,
                         border: 'none',
                         cursor: 'pointer',
                       }}
@@ -306,12 +312,12 @@ export default function CalendarSidebar({
                       <div
                         style={{
                           position: 'absolute',
-                          top: 0,
-                          right: 0,
-                          width: '12px',
-                          height: '12px',
+                          top: '-2px',
+                          right: '-2px',
+                          width: '10px',
+                          height: '10px',
                           borderRadius: '50%',
-                          border: '2px solid #fff',
+                          border: '2px solid #FAFBFC',
                           background: getStatusColor(calendar),
                           animation: calendar.isSyncing ? 'pulse 2s infinite' : 'none',
                         }}
@@ -320,8 +326,8 @@ export default function CalendarSidebar({
                       {/* Calendar color dot */}
                       <div
                         style={{
-                          width: '16px',
-                          height: '16px',
+                          width: '14px',
+                          height: '14px',
                           borderRadius: '50%',
                           backgroundColor: calColor,
                         }}
@@ -336,7 +342,7 @@ export default function CalendarSidebar({
                   style={{
                     width: '40px',
                     height: '40px',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     border: '2px dashed #D1D5DB',
                     display: 'flex',
                     alignItems: 'center',
@@ -348,16 +354,16 @@ export default function CalendarSidebar({
                   aria-label="Connect calendar"
                   title="Connect calendar"
                 >
-                  <svg style={{ width: '20px', height: '20px', color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg style={{ width: '18px', height: '18px', color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               </div>
             ) : (
               // Expanded view: Show full calendar details
-              <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {/* Provider Statistics */}
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
                   {Object.entries(providerCounts).map(([provider, count]) => (
                     <span
                       key={provider}
@@ -390,10 +396,11 @@ export default function CalendarSidebar({
                     <div
                       key={calendar.id}
                       style={{
-                        border: '1px solid #E5E7EB',
-                        borderRadius: '12px',
+                        background: '#fff',
+                        borderRadius: '10px',
                         overflow: 'hidden',
-                        borderLeft: `4px solid ${calColor}`,
+                        borderLeft: `3px solid ${calColor}`,
+                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                       }}
                     >
                       {/* Calendar Header */}
@@ -401,15 +408,15 @@ export default function CalendarSidebar({
                         onClick={() => handleCalendarClick(calendar.id)}
                         style={{
                           width: '100%',
-                          padding: '12px',
+                          padding: '10px 12px',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '12px',
+                          gap: '10px',
                           background: 'transparent',
                           border: 'none',
                           cursor: 'pointer',
                           textAlign: 'left',
-                          transition: 'all 0.2s',
+                          transition: 'all 0.15s',
                         }}
                       >
                         <ProviderIcon provider={calendar.provider} size="sm" />
@@ -667,15 +674,15 @@ export default function CalendarSidebar({
                   onClick={() => setShowConnectModal(true)}
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    border: '2px dashed #D1D5DB',
-                    borderRadius: '12px',
-                    fontSize: '14px',
+                    padding: '10px',
+                    border: '1px dashed #D1D5DB',
+                    borderRadius: '10px',
+                    fontSize: '13px',
                     fontWeight: '500',
-                    color: '#666',
+                    color: '#888',
                     background: 'transparent',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'all 0.15s',
                   }}
                 >
                   + Connect Calendar
@@ -683,8 +690,8 @@ export default function CalendarSidebar({
 
                 {/* Team Section Divider */}
                 <div style={{
-                  marginTop: '16px',
-                  paddingTop: '16px',
+                  marginTop: '8px',
+                  paddingTop: '12px',
                   borderTop: '1px solid #E5E7EB',
                 }}>
                   {/* Team Header */}
@@ -695,13 +702,13 @@ export default function CalendarSidebar({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '8px 0',
+                      padding: '6px 0',
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
                     }}
                   >
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#000' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#111' }}>
                       Team
                     </span>
                     <svg
