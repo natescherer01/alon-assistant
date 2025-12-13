@@ -356,11 +356,13 @@ function AddTaskForm({ onTaskAdded }) {
           alignItems: 'center',
           gap: '12px',
           background: '#fff',
-          border: `1px solid ${isFocused || title.trim() ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.06)'}`,
+          border: `1px solid ${isFocused || title.trim() ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.08)'}`,
           borderRadius: '14px',
-          padding: '4px 6px 4px 18px',
+          padding: '6px 8px 6px 18px',
           transition: 'all 0.2s ease',
-          boxShadow: isFocused || title.trim() ? '0 4px 20px rgba(0, 0, 0, 0.06)' : '0 1px 3px rgba(0, 0, 0, 0.02)',
+          boxShadow: isFocused || title.trim()
+            ? '0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)'
+            : '0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04)',
         }}>
           <div style={{
             width: '20px',
