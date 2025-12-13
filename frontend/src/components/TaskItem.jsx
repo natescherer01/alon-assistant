@@ -10,20 +10,28 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
   const { ConfirmDialog, confirm, alert } = useConfirm();
   const [isCompleting, setIsCompleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const isMountedRef = useRef(true);
   const previousTaskRef = useRef(task);
+  const titleInputRef = useRef(null);
 
-  // Update previous task ref when task changes
   useEffect(() => {
     previousTaskRef.current = task;
   }, [task]);
 
-  // Cleanup on unmount to prevent state updates
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (isEditing && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [isEditing]);
+
   const [formData, setFormData] = useState({
     title: task.title,
     description: task.description || '',
@@ -37,105 +45,37 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
     recurrence_end_date: task.recurrence_end_date || '',
   });
 
-  const getIntensityStyle = (intensity) => {
-    // Minimalist monochrome intensity display
-    const opacity = 0.3 + (intensity * 0.14);
-    return {
-      bg: `rgba(0, 0, 0, ${opacity * 0.15})`,
-      text: '#666',
-    };
-  };
-
-  const getStatusStyle = (status) => {
-    // Minimalist status colors
-    const styles = {
-      not_started: { bg: '#f5f5f5', text: '#999' },
-      in_progress: { bg: '#f5f5f5', text: '#000' },
-      waiting_on: { bg: '#fafafa', text: '#666' },
-      completed: { bg: '#f5f5f5', text: '#999' },
-      deleted: { bg: '#fafafa', text: '#999' },
-    };
-    return styles[status] || styles.not_started;
-  };
-
   const formatDeadline = (deadline) => {
     if (!deadline) return null;
-
-    // Get user's timezone, default to UTC
     const userTimezone = user?.timezone || 'UTC';
-
-    // Parse deadline as a date (deadline is YYYY-MM-DD format)
-    // Add time to avoid timezone issues when parsing
     const deadlineDate = new Date(deadline + 'T00:00:00');
-
-    // Get today's date in user's timezone
     const now = new Date();
     const todayInUserTz = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
     const today = new Date(todayInUserTz.getFullYear(), todayInUserTz.getMonth(), todayInUserTz.getDate());
-
-    // Calculate difference in days
     const deadlineDateOnly = new Date(deadlineDate.getFullYear(), deadlineDate.getMonth(), deadlineDate.getDate());
     const diffTime = deadlineDateOnly - today;
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
-      return {
-        text: `Overdue by ${Math.abs(diffDays)} days`,
-        color: '#000',
-        fontWeight: '600',
-      };
+      return { text: `${Math.abs(diffDays)}d overdue`, isOverdue: true };
     } else if (diffDays === 0) {
-      return {
-        text: 'Due today',
-        color: '#000',
-        fontWeight: '600',
-      };
+      return { text: 'Today', isOverdue: false, isToday: true };
     } else if (diffDays === 1) {
-      return {
-        text: 'Due tomorrow',
-        color: '#666',
-        fontWeight: '500',
-      };
+      return { text: 'Tomorrow', isOverdue: false };
+    } else if (diffDays <= 7) {
+      return { text: `${diffDays}d`, isOverdue: false };
     } else {
-      return {
-        text: `Due in ${diffDays} days`,
-        color: '#999',
-        fontWeight: '400',
-      };
+      const options = { month: 'short', day: 'numeric' };
+      return { text: deadlineDate.toLocaleDateString('en-US', options), isOverdue: false };
     }
-  };
-
-  const formatRecurrence = () => {
-    if (!task.is_recurring || !task.recurrence_type) return null;
-
-    const interval = task.recurrence_interval || 1;
-    const type = task.recurrence_type;
-    const userTimezone = user?.timezone || 'UTC';
-
-    let text = 'Repeats ';
-    if (interval === 1) {
-      text += type;
-    } else {
-      text += `every ${interval} ${type === 'daily' ? 'days' : type === 'weekly' ? 'weeks' : type === 'monthly' ? 'months' : 'years'}`;
-    }
-
-    if (task.recurrence_end_date) {
-      const endDate = new Date(task.recurrence_end_date + 'T00:00:00');
-      text += ` until ${endDate.toLocaleDateString('en-US', { timeZone: userTimezone })}`;
-    }
-
-    return text;
   };
 
   const handleComplete = async () => {
-    const confirmed = await confirm('Complete task?', 'Mark this task as completed?', 'Complete', 'Cancel');
-    if (!confirmed) return;
-    if (isSaving) return; // Prevent duplicate requests
+    if (isSaving || isCompleting) return;
 
     setIsCompleting(true);
     const previousTask = previousTaskRef.current;
 
-    // Create optimistically updated task
     const optimisticTask = {
       ...task,
       status: 'completed',
@@ -143,182 +83,94 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
       updated_at: new Date().toISOString()
     };
 
-    // Mark as saving
     if (markSaving) markSaving(task.id, true);
-
-    // Optimistically update UI
     onUpdate(optimisticTask, null, 'complete');
-    setIsCompleting(false);
 
     try {
-      // Make API call in background
       const updatedTask = await tasksAPI.completeTask(task.id);
-
       if (!isMountedRef.current) return;
-
-      // Update with real data from server
       onUpdate(updatedTask, null, 'complete');
     } catch (error) {
       if (!isMountedRef.current) return;
-
-      // Rollback to previous state
       onUpdate(previousTask, null, 'update');
-
-      // Show error
       const errorMessage = error.response?.data?.detail || error.message || 'Failed to complete task';
       if (onError) {
         onError(errorMessage, task.id);
-      } else {
-        await alert('Failed to complete task', errorMessage);
       }
-
-      setIsCompleting(false);
     } finally {
-      if (isMountedRef.current && markSaving) {
-        markSaving(task.id, false);
+      if (isMountedRef.current) {
+        setIsCompleting(false);
+        if (markSaving) markSaving(task.id, false);
       }
     }
   };
 
   const handleStatusChange = async (newStatus) => {
-    if (isSaving) return; // Prevent duplicate requests
-
+    if (isSaving) return;
     const previousTask = previousTaskRef.current;
+    const optimisticTask = { ...task, status: newStatus, updated_at: new Date().toISOString() };
 
-    // Create optimistically updated task
-    const optimisticTask = {
-      ...task,
-      status: newStatus,
-      updated_at: new Date().toISOString()
-    };
-
-    // Mark as saving
     if (markSaving) markSaving(task.id, true);
-
-    // Optimistically update UI
     onUpdate(optimisticTask, null, 'update');
 
     try {
-      // Make API call in background
       const updatedTask = await tasksAPI.updateTask(task.id, { status: newStatus });
-
       if (!isMountedRef.current) return;
-
-      // Update with real data from server
       onUpdate(updatedTask, null, 'update');
     } catch (error) {
       if (!isMountedRef.current) return;
-
-      // Rollback to previous state
       onUpdate(previousTask, null, 'update');
-
-      // Show error
       const errorMessage = error.response?.data?.detail || error.message || 'Failed to update status';
-      if (onError) {
-        onError(errorMessage, task.id);
-      } else {
-        await alert('Failed to update status', errorMessage);
-      }
+      if (onError) onError(errorMessage, task.id);
     } finally {
-      if (isMountedRef.current && markSaving) {
-        markSaving(task.id, false);
-      }
+      if (isMountedRef.current && markSaving) markSaving(task.id, false);
     }
   };
 
   const handleDelete = async () => {
-    const confirmed = await confirm('Delete task?', 'Are you sure you want to delete this task?', 'Delete', 'Cancel');
-    if (!confirmed) return;
-    if (isSaving) return; // Prevent duplicate requests
+    const confirmed = await confirm('Delete task?', 'This will move the task to trash.', 'Delete', 'Cancel');
+    if (!confirmed || isSaving) return;
 
     const previousTask = previousTaskRef.current;
-
-    // Mark as saving
     if (markSaving) markSaving(task.id, true);
-
-    // Optimistically remove from UI
     onUpdate(null, task.id, 'delete');
 
     try {
-      // Make API call in background
       await tasksAPI.deleteTask(task.id);
-
-      if (!isMountedRef.current) return;
-
-      // Task successfully deleted, already removed from UI
     } catch (error) {
       if (!isMountedRef.current) return;
-
-      // Restore task to UI
       onUpdate(previousTask, null, 'update');
-
-      // Show error
       const errorMessage = error.response?.data?.detail || error.message || 'Failed to delete task';
-      if (onError) {
-        onError(errorMessage, task.id);
-      } else {
-        await alert('Failed to delete task', errorMessage);
-      }
+      if (onError) onError(errorMessage, task.id);
     } finally {
-      if (isMountedRef.current && markSaving) {
-        markSaving(task.id, false);
-      }
+      if (isMountedRef.current && markSaving) markSaving(task.id, false);
     }
   };
 
   const handleRestore = async () => {
-    if (isSaving) return; // Prevent duplicate requests
-
+    if (isSaving) return;
     const previousTask = previousTaskRef.current;
+    const optimisticTask = { ...task, status: 'not_started', updated_at: new Date().toISOString() };
 
-    // Create optimistically updated task
-    const optimisticTask = {
-      ...task,
-      status: 'not_started',
-      updated_at: new Date().toISOString()
-    };
-
-    // Mark as saving
     if (markSaving) markSaving(task.id, true);
-
-    // Optimistically update UI
     onUpdate(optimisticTask, null, 'restore');
 
     try {
-      // Make API call in background
       const updatedTask = await tasksAPI.restoreTask(task.id);
-
       if (!isMountedRef.current) return;
-
-      // Update with real data from server
       onUpdate(updatedTask, null, 'restore');
     } catch (error) {
       if (!isMountedRef.current) return;
-
-      // Rollback to previous state
       onUpdate(previousTask, null, 'update');
-
-      // Show error
       const errorMessage = error.response?.data?.detail || error.message || 'Failed to restore task';
-      if (onError) {
-        onError(errorMessage, task.id);
-      } else {
-        await alert('Failed to restore task', errorMessage);
-      }
+      if (onError) onError(errorMessage, task.id);
     } finally {
-      if (isMountedRef.current && markSaving) {
-        markSaving(task.id, false);
-      }
+      if (isMountedRef.current && markSaving) markSaving(task.id, false);
     }
-  };
-
-  const handleEdit = () => {
-    setIsEditing(true);
   };
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    // Reset form data to original task values
     setFormData({
       title: task.title,
       description: task.description || '',
@@ -335,8 +187,6 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
-
-    // Prevent saving if already saving
     if (isSaving) return;
 
     const updateData = {
@@ -346,872 +196,618 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
       is_recurring: formData.is_recurring,
     };
 
-    if (formData.project) {
-      updateData.project = formData.project;
-    }
+    if (formData.project) updateData.project = formData.project;
+    if (formData.deadline) updateData.deadline = formData.deadline;
+    if (formData.waiting_on) updateData.waiting_on = formData.waiting_on;
 
-    if (formData.deadline) {
-      updateData.deadline = formData.deadline;
-    }
-
-    if (formData.waiting_on) {
-      updateData.waiting_on = formData.waiting_on;
-    }
-
-    // Only include recurrence data if task is recurring
     if (formData.is_recurring) {
       updateData.recurrence_type = formData.recurrence_type;
       updateData.recurrence_interval = parseInt(formData.recurrence_interval);
-      if (formData.recurrence_end_date) {
-        updateData.recurrence_end_date = formData.recurrence_end_date;
-      }
+      if (formData.recurrence_end_date) updateData.recurrence_end_date = formData.recurrence_end_date;
     }
 
-    // Save previous state for rollback
     const previousTask = previousTaskRef.current;
+    const optimisticTask = { ...task, ...updateData, updated_at: new Date().toISOString() };
 
-    // Create optimistically updated task
-    const optimisticTask = {
-      ...task,
-      ...updateData,
-      updated_at: new Date().toISOString()
-    };
-
-    // Mark as saving
     if (markSaving) markSaving(task.id, true);
-
-    // Optimistically update UI
     onUpdate(optimisticTask, null, 'update');
     setIsEditing(false);
 
     try {
-      // Make API call in background
       const updatedTask = await tasksAPI.updateTask(task.id, updateData);
-
-      // Only update if component is still mounted
       if (!isMountedRef.current) return;
-
-      // Update with real data from server
       onUpdate(updatedTask, null, 'update');
     } catch (error) {
-      // Only handle error if component is still mounted
       if (!isMountedRef.current) return;
-
-      // Rollback to previous state
       onUpdate(previousTask, null, 'update');
-
-      // Show error to user
       const errorMessage = error.response?.data?.detail || error.message || 'Failed to update task';
-      if (onError) {
-        onError(errorMessage, task.id);
-      } else {
-        await alert('Failed to update task', errorMessage);
-      }
-
-      setIsEditing(true); // Re-open edit form
+      if (onError) onError(errorMessage, task.id);
+      setIsEditing(true);
     } finally {
-      // Clear saving state
-      if (isMountedRef.current && markSaving) {
-        markSaving(task.id, false);
-      }
+      if (isMountedRef.current && markSaving) markSaving(task.id, false);
     }
   };
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    setFormData({
-      ...formData,
-      [e.target.name]: value,
-    });
+    setFormData({ ...formData, [e.target.name]: value });
   };
 
-  const intensityStyle = getIntensityStyle(task.intensity);
-  const statusStyle = getStatusStyle(task.status);
-  const deadlineInfo = task.deadline ? formatDeadline(task.deadline) : null;
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
 
-  // If editing, show edit form
+  const deadlineInfo = task.deadline ? formatDeadline(task.deadline) : null;
+  const isDeleted = task.status === 'deleted';
+  const isCompleted = task.status === 'completed';
+  const isWaiting = task.status === 'waiting_on';
+  const isInProgress = task.status === 'in_progress';
+
+  // Edit mode
   if (isEditing) {
     return (
       <>
         <ConfirmDialog />
         <div style={{
-        background: '#fff',
-        borderRadius: '12px',
-        border: '1px solid #eee',
-        padding: '20px',
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
+          background: '#fff',
+          borderRadius: '8px',
+          border: '1px solid #e5e5e5',
+          padding: isMobile ? '16px' : '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
         }}>
-          <h3 style={{
-            fontSize: '15px',
-            fontWeight: '600',
-            color: '#000',
-            margin: 0,
-          }}>
-            Edit Task
-          </h3>
-        </div>
-
-        <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label htmlFor="title" style={{
-              display: 'block',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#999',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '6px',
-            }}>
-              Title
-            </label>
+          <form onSubmit={handleSaveEdit} onKeyDown={handleKeyDown}>
             <input
+              ref={titleInputRef}
               type="text"
-              id="title"
               name="title"
               required
               value={formData.title}
               onChange={handleChange}
+              placeholder="Task title"
               style={{
                 width: '100%',
-                padding: '10px 12px',
-                fontSize: '14px',
-                border: '1px solid #eee',
-                borderRadius: '6px',
+                padding: '8px 0',
+                fontSize: '15px',
+                fontWeight: '500',
+                border: 'none',
                 outline: 'none',
-                background: '#fafafa',
-                transition: 'all 0.2s',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#ccc';
-                e.target.style.background = '#fff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#eee';
-                e.target.style.background = '#fafafa';
+                background: 'transparent',
+                marginBottom: '12px',
               }}
             />
-          </div>
 
-          <div>
-            <label htmlFor="description" style={{
-              display: 'block',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#999',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '6px',
-            }}>
-              Description
-            </label>
             <textarea
-              id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              rows={3}
+              placeholder="Add notes..."
+              rows={2}
               style={{
                 width: '100%',
-                padding: '10px 12px',
+                padding: '8px 12px',
                 fontSize: '14px',
-                border: '1px solid #eee',
+                border: '1px solid #e5e5e5',
                 borderRadius: '6px',
                 outline: 'none',
-                resize: 'vertical',
+                resize: 'none',
                 fontFamily: 'inherit',
                 background: '#fafafa',
-                transition: 'all 0.2s',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#ccc';
-                e.target.style.background = '#fff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#eee';
-                e.target.style.background = '#fafafa';
+                marginBottom: '12px',
               }}
             />
-          </div>
 
-          <div>
-            <label htmlFor="project" style={{
-              display: 'block',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#999',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '6px',
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+              gap: '12px',
+              marginBottom: '12px',
             }}>
-              Project
-            </label>
-            <input
-              type="text"
-              id="project"
-              name="project"
-              value={formData.project}
-              onChange={handleChange}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: '14px',
-                border: '1px solid #eee',
-                borderRadius: '6px',
-                outline: 'none',
-                background: '#fafafa',
-                transition: 'all 0.2s',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#ccc';
-                e.target.style.background = '#fff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#eee';
-                e.target.style.background = '#fafafa';
-              }}
-            />
-          </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                  Project
+                </label>
+                <input
+                  type="text"
+                  name="project"
+                  value={formData.project}
+                  onChange={handleChange}
+                  placeholder="None"
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: '13px',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '6px',
+                    outline: 'none',
+                    background: '#fafafa',
+                  }}
+                />
+              </div>
 
-          <div className="task-form-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label htmlFor="deadline" style={{
-                display: 'block',
-                fontSize: '12px',
-                fontWeight: '600',
-                color: '#999',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: '6px',
-              }}>
-                Deadline
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                  Due date
+                </label>
+                <input
+                  type="date"
+                  name="deadline"
+                  value={formData.deadline}
+                  onChange={handleChange}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: '13px',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '6px',
+                    outline: 'none',
+                    background: '#fafafa',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                  Priority
+                </label>
+                <select
+                  name="intensity"
+                  value={formData.intensity}
+                  onChange={handleChange}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: '13px',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '6px',
+                    outline: 'none',
+                    background: '#fafafa',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value={1}>P4 - Low</option>
+                  <option value={2}>P3</option>
+                  <option value={3}>P2</option>
+                  <option value={4}>P1</option>
+                  <option value={5}>P0 - Critical</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Waiting On */}
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                Waiting on (optional)
               </label>
               <input
-                type="date"
-                id="deadline"
-                name="deadline"
-                value={formData.deadline}
+                type="text"
+                name="waiting_on"
+                value={formData.waiting_on}
                 onChange={handleChange}
+                placeholder="Person or thing you're waiting on"
                 style={{
                   width: '100%',
-                  padding: '10px 12px',
-                  fontSize: '14px',
-                  border: '1px solid #eee',
+                  padding: '8px 12px',
+                  fontSize: '13px',
+                  border: '1px solid #e5e5e5',
                   borderRadius: '6px',
                   outline: 'none',
                   background: '#fafafa',
-                  transition: 'all 0.2s',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#ccc';
-                  e.target.style.background = '#fff';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#eee';
-                  e.target.style.background = '#fafafa';
                 }}
               />
             </div>
 
-            <div>
-              <label htmlFor="intensity" style={{
-                display: 'block',
-                fontSize: '12px',
-                fontWeight: '600',
-                color: '#999',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: '6px',
-              }}>
-                Intensity
+            {/* Recurring */}
+            <div style={{
+              borderTop: '1px solid #eee',
+              paddingTop: '12px',
+              marginBottom: '16px',
+            }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  name="is_recurring"
+                  checked={formData.is_recurring}
+                  onChange={handleChange}
+                  style={{ width: '14px', height: '14px', accentColor: '#000' }}
+                />
+                <span style={{ fontSize: '13px', color: '#666' }}>Repeat this task</span>
               </label>
-              <select
-                id="intensity"
-                name="intensity"
-                value={formData.intensity}
-                onChange={handleChange}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  fontSize: '14px',
-                  border: '1px solid #eee',
-                  borderRadius: '6px',
-                  outline: 'none',
-                  background: '#fafafa',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#ccc';
-                  e.target.style.background = '#fff';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#eee';
-                  e.target.style.background = '#fafafa';
-                }}
-              >
-                <option value={1}>1 - Very Light</option>
-                <option value={2}>2 - Light</option>
-                <option value={3}>3 - Medium</option>
-                <option value={4}>4 - Heavy</option>
-                <option value={5}>5 - Very Heavy</option>
-              </select>
-            </div>
-          </div>
 
-          <div>
-            <label htmlFor="waiting_on" style={{
-              display: 'block',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#999',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '6px',
-            }}>
-              Waiting On
-            </label>
-            <input
-              type="text"
-              id="waiting_on"
-              name="waiting_on"
-              value={formData.waiting_on}
-              onChange={handleChange}
-              placeholder="Who or what are you waiting on?"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: '14px',
-                border: '1px solid #eee',
-                borderRadius: '6px',
-                outline: 'none',
-                background: '#fafafa',
-                transition: 'all 0.2s',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#ccc';
-                e.target.style.background = '#fff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#eee';
-                e.target.style.background = '#fafafa';
-              }}
-            />
-          </div>
+              {formData.is_recurring && (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : '1fr 80px 1fr',
+                  gap: '8px',
+                  marginTop: '12px',
+                  paddingLeft: '22px',
+                }}>
+                  <select
+                    name="recurrence_type"
+                    value={formData.recurrence_type}
+                    onChange={handleChange}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '13px',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: '6px',
+                      outline: 'none',
+                      background: '#fafafa',
+                    }}
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
 
-          {/* Recurring Task Section */}
-          <div style={{
-            borderTop: '1px solid #eee',
-            paddingTop: '16px',
-            marginTop: '4px',
-          }}>
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              marginBottom: formData.is_recurring ? '12px' : '0',
-            }}>
-              <input
-                type="checkbox"
-                name="is_recurring"
-                checked={formData.is_recurring}
-                onChange={handleChange}
-                style={{
-                  width: '16px',
-                  height: '16px',
-                  cursor: 'pointer',
-                  accentColor: '#000',
-                }}
-              />
-              <span style={{
-                fontSize: '13px',
-                fontWeight: '500',
-                color: '#666',
-              }}>
-                Make this a recurring task
-              </span>
-            </label>
+                  <input
+                    type="number"
+                    name="recurrence_interval"
+                    min="1"
+                    value={formData.recurrence_interval}
+                    onChange={handleChange}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '13px',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: '6px',
+                      outline: 'none',
+                      background: '#fafafa',
+                      textAlign: 'center',
+                    }}
+                  />
 
-            {formData.is_recurring && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingLeft: '24px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}>
-                  <div>
-                    <label htmlFor="recurrence_type" style={{
-                      display: 'block',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: '#999',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      marginBottom: '6px',
-                    }}>
-                      Repeats
-                    </label>
-                    <select
-                      id="recurrence_type"
-                      name="recurrence_type"
-                      value={formData.recurrence_type}
-                      onChange={handleChange}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        fontSize: '13px',
-                        border: '1px solid #eee',
-                        borderRadius: '6px',
-                        outline: 'none',
-                        background: '#fafafa',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="yearly">Yearly</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="recurrence_interval" style={{
-                      display: 'block',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: '#999',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      marginBottom: '6px',
-                    }}>
-                      Every
-                    </label>
-                    <input
-                      type="number"
-                      id="recurrence_interval"
-                      name="recurrence_interval"
-                      min="1"
-                      value={formData.recurrence_interval}
-                      onChange={handleChange}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        fontSize: '13px',
-                        border: '1px solid #eee',
-                        borderRadius: '6px',
-                        outline: 'none',
-                        background: '#fafafa',
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="recurrence_end_date" style={{
-                    display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    color: '#999',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    marginBottom: '6px',
-                  }}>
-                    End Date (Optional)
-                  </label>
                   <input
                     type="date"
-                    id="recurrence_end_date"
                     name="recurrence_end_date"
                     value={formData.recurrence_end_date}
                     onChange={handleChange}
+                    placeholder="End date"
                     style={{
-                      width: '100%',
-                      padding: '10px 12px',
+                      padding: '8px 12px',
                       fontSize: '13px',
-                      border: '1px solid #eee',
+                      border: '1px solid #e5e5e5',
                       borderRadius: '6px',
                       outline: 'none',
                       background: '#fafafa',
                     }}
                   />
                 </div>
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', paddingTop: '8px' }}>
-            <button
-              type="submit"
-              disabled={isSaving}
-              style={{
-                flex: 1,
-                padding: '11px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#fff',
-                background: isSaving ? '#999' : '#000',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: isSaving ? 'not-allowed' : 'pointer',
-                opacity: isSaving ? 0.7 : 1,
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (!isSaving) e.target.style.background = '#222';
-              }}
-              onMouseLeave={(e) => {
-                if (!isSaving) e.target.style.background = '#000';
-              }}
-            >
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </button>
-            <button
-              type="button"
-              onClick={handleCancelEdit}
-              disabled={isSaving}
-              style={{
-                padding: '11px 20px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: isSaving ? '#ccc' : '#666',
-                background: '#f5f5f5',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: isSaving ? 'not-allowed' : 'pointer',
-                opacity: isSaving ? 0.5 : 1,
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (!isSaving) e.target.style.background = '#eee';
-              }}
-              onMouseLeave={(e) => {
-                if (!isSaving) e.target.style.background = '#f5f5f5';
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-      </>
-    );
-  }
-
-  // Otherwise show normal task view
-  return (
-    <>
-      <ConfirmDialog />
-      <div className="task-item" style={{
-      background: '#fff',
-      borderRadius: '12px',
-      border: '1px solid #eee',
-      padding: isMobile ? '14px' : '16px 20px',
-      transition: 'all 0.2s',
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.background = '#fafafa';
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.background = '#fff';
-    }}
-    >
-      <div className="task-item-header" style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-start', gap: isMobile ? '12px' : '16px' }}>
-        {/* Main Content */}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-            <h3 style={{
-              fontSize: '15px',
-              fontWeight: '500',
-              color: '#000',
-              margin: 0,
-            }}>
-              {task.title}
-            </h3>
-
-            {isSaving && (
-              <span style={{
-                padding: '2px 8px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                fontWeight: '500',
-                background: '#f5f5f5',
-                color: '#666',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}>
-                <span style={{
-                  display: 'inline-block',
-                  width: '10px',
-                  height: '10px',
-                  border: '1.5px solid #666',
-                  borderTop: '1.5px solid transparent',
-                  borderRadius: '50%',
-                  animation: 'spin 0.8s linear infinite',
-                }}></span>
-                Saving
-              </span>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: task.description ? '8px' : '0' }}>
-            <span style={{
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontSize: '11px',
-              fontWeight: '500',
-              background: intensityStyle.bg,
-              color: intensityStyle.text,
-            }}>
-              {task.intensity}
-            </span>
-
-            <span style={{
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontSize: '11px',
-              fontWeight: '500',
-              background: statusStyle.bg,
-              color: statusStyle.text,
-            }}>
-              {task.status.replace('_', ' ')}
-            </span>
-
-            {task.is_recurring && (
-              <span style={{
-                padding: '2px 8px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                fontWeight: '500',
-                background: '#f5f5f5',
-                color: '#666',
-              }}>
-                Recurring
-              </span>
-            )}
-
-            {task.project && (
-              <span style={{
-                padding: '2px 8px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                fontWeight: '500',
-                background: '#f5f5f5',
-                color: '#666',
-              }}>
-                {task.project}
-              </span>
-            )}
-          </div>
-
-          {task.description && (
-            <p style={{
-              fontSize: '13px',
-              color: '#666',
-              lineHeight: '1.5',
-              marginBottom: '8px',
-              margin: 0,
-            }}>
-              {task.description}
-            </p>
-          )}
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '13px', marginTop: '8px' }}>
-            {deadlineInfo && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                color: deadlineInfo.color,
-                fontWeight: deadlineInfo.fontWeight,
-              }}>
-                {deadlineInfo.text}
-              </div>
-            )}
-
-            {task.waiting_on && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                color: '#666',
-              }}>
-                Waiting on: {task.waiting_on}
-              </div>
-            )}
-
-            {formatRecurrence() && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                color: '#999',
-              }}>
-                {formatRecurrence()}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="task-item-actions" style={{
-          display: 'flex',
-          flexWrap: isMobile ? 'wrap' : 'nowrap',
-          gap: '6px',
-          flexShrink: 0,
-          width: isMobile ? '100%' : 'auto',
-          alignItems: 'center',
-        }}>
-          {task.status === 'deleted' ? (
-            <button
-              onClick={handleRestore}
-              style={{
-                padding: '7px 14px',
-                fontSize: '13px',
-                fontWeight: '500',
-                color: '#000',
-                background: '#f5f5f5',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = '#eee';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = '#f5f5f5';
-              }}
-            >
-              Restore
-            </button>
-          ) : (
-            <>
-              {task.status !== 'completed' && (
-                <>
-                  <button
-                    onClick={handleComplete}
-                    disabled={isCompleting}
-                    style={{
-                      padding: '7px 14px',
-                      fontSize: '13px',
-                      fontWeight: '500',
-                      color: '#fff',
-                      background: '#000',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: isCompleting ? 'not-allowed' : 'pointer',
-                      opacity: isCompleting ? 0.5 : 1,
-                      transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isCompleting) e.target.style.background = '#222';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isCompleting) e.target.style.background = '#000';
-                    }}
-                  >
-                    Done
-                  </button>
-
-                  <select
-                    value={task.status}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    style={{
-                      padding: '7px 12px',
-                      fontSize: '13px',
-                      fontWeight: '500',
-                      border: 'none',
-                      borderRadius: '8px',
-                      background: '#f5f5f5',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      color: '#666',
-                      transition: 'all 0.15s ease',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      paddingRight: '28px',
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 10px center',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#eee';
-                      e.target.style.backgroundImage = `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`;
-                      e.target.style.backgroundRepeat = 'no-repeat';
-                      e.target.style.backgroundPosition = 'right 10px center';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = '#f5f5f5';
-                      e.target.style.backgroundImage = `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`;
-                      e.target.style.backgroundRepeat = 'no-repeat';
-                      e.target.style.backgroundPosition = 'right 10px center';
-                    }}
-                  >
-                    <option value="not_started">Not Started</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="waiting_on">Waiting On</option>
-                  </select>
-                </>
               )}
+            </div>
 
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button
-                onClick={handleEdit}
+                type="button"
+                onClick={handleCancelEdit}
+                disabled={isSaving}
                 style={{
-                  padding: '7px 14px',
+                  padding: '8px 16px',
                   fontSize: '13px',
                   fontWeight: '500',
                   color: '#666',
                   background: '#f5f5f5',
                   border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#eee';
-                  e.target.style.color = '#333';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = '#f5f5f5';
-                  e.target.style.color = '#666';
+                  borderRadius: '6px',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
                 }}
               >
-                Edit
+                Cancel
               </button>
-
               <button
-                onClick={handleDelete}
+                type="submit"
+                disabled={isSaving}
                 style={{
-                  padding: '7px 14px',
+                  padding: '8px 16px',
                   fontSize: '13px',
                   fontWeight: '500',
-                  color: '#999',
-                  background: 'transparent',
-                  border: '1px solid #eee',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#fafafa';
-                  e.target.style.borderColor = '#ddd';
-                  e.target.style.color = '#666';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent';
-                  e.target.style.borderColor = '#eee';
-                  e.target.style.color = '#999';
+                  color: '#fff',
+                  background: isSaving ? '#999' : '#000',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
                 }}
               >
-                Delete
+                {isSaving ? 'Saving...' : 'Save'}
               </button>
-            </>
-          )}
+            </div>
+          </form>
         </div>
+      </>
+    );
+  }
+
+  // Normal view
+  return (
+    <>
+      <ConfirmDialog />
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px',
+          padding: isMobile ? '12px 0' : '10px 0',
+          borderBottom: '1px solid #f0f0f0',
+          background: isHovered && !isMobile ? '#fafafa' : 'transparent',
+          marginLeft: isMobile ? 0 : '-8px',
+          marginRight: isMobile ? 0 : '-8px',
+          paddingLeft: isMobile ? 0 : '8px',
+          paddingRight: isMobile ? 0 : '8px',
+          borderRadius: '6px',
+          transition: 'background 0.1s ease',
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Checkbox */}
+        <button
+          onClick={isDeleted ? handleRestore : (isCompleted ? null : handleComplete)}
+          disabled={isCompleting || isSaving}
+          style={{
+            width: '20px',
+            height: '20px',
+            minWidth: '20px',
+            marginTop: '2px',
+            borderRadius: '50%',
+            border: isCompleted
+              ? '2px solid #22c55e'
+              : isDeleted
+                ? '2px solid #d1d5db'
+                : `2px solid ${isHovered || isMobile ? '#9ca3af' : '#d1d5db'}`,
+            background: isCompleted
+              ? '#22c55e'
+              : 'transparent',
+            cursor: isCompleting || isSaving ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.15s ease',
+            opacity: isCompleting || isSaving ? 0.5 : 1,
+          }}
+          title={isDeleted ? 'Restore' : (isCompleted ? 'Completed' : 'Complete task')}
+        >
+          {isCompleted && (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+          {isDeleted && (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+          )}
+        </button>
+
+        {/* Content */}
+        <div
+          style={{ flex: 1, minWidth: 0, cursor: isDeleted || isCompleted ? 'default' : 'pointer' }}
+          onClick={() => !isDeleted && !isCompleted && setIsEditing(true)}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{
+              fontSize: '14px',
+              fontWeight: '400',
+              color: isCompleted || isDeleted ? '#9ca3af' : '#111',
+              textDecoration: isCompleted ? 'line-through' : 'none',
+              lineHeight: '1.4',
+            }}>
+              {task.title}
+            </span>
+
+            {/* Priority indicator */}
+            {task.intensity >= 4 && !isCompleted && !isDeleted && (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '16px',
+                height: '16px',
+                borderRadius: '3px',
+                background: task.intensity === 5 ? '#dc2626' : '#f97316',
+                color: '#fff',
+                fontSize: '10px',
+                fontWeight: '600',
+              }}>
+                {task.intensity === 5 ? '!' : 'P'}
+              </span>
+            )}
+
+            {/* Recurring indicator */}
+            {task.is_recurring && !isCompleted && !isDeleted && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+            )}
+
+            {isSaving && (
+              <span style={{
+                width: '14px',
+                height: '14px',
+                border: '2px solid #e5e5e5',
+                borderTop: '2px solid #666',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+              }} />
+            )}
+          </div>
+
+          {/* Description */}
+          {task.description && (
+            <p style={{
+              fontSize: '13px',
+              color: '#6b7280',
+              margin: '4px 0 0 0',
+              lineHeight: '1.4',
+              textDecoration: isCompleted ? 'line-through' : 'none',
+            }}>
+              {task.description}
+            </p>
+          )}
+
+          {/* Meta row */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginTop: '6px',
+            flexWrap: 'wrap',
+          }}>
+            {/* Project */}
+            {task.project && (
+              <span style={{
+                fontSize: '12px',
+                color: '#6b7280',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+                {task.project}
+              </span>
+            )}
+
+            {/* Deadline */}
+            {deadlineInfo && !isCompleted && !isDeleted && (
+              <span style={{
+                fontSize: '12px',
+                color: deadlineInfo.isOverdue ? '#dc2626' : deadlineInfo.isToday ? '#ea580c' : '#6b7280',
+                fontWeight: deadlineInfo.isOverdue || deadlineInfo.isToday ? '500' : '400',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                {deadlineInfo.text}
+              </span>
+            )}
+
+            {/* Waiting on */}
+            {isWaiting && task.waiting_on && (
+              <span style={{
+                fontSize: '12px',
+                color: '#8b5cf6',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                Waiting: {task.waiting_on}
+              </span>
+            )}
+
+            {/* In progress indicator */}
+            {isInProgress && !isCompleted && !isDeleted && (
+              <span style={{
+                fontSize: '12px',
+                color: '#2563eb',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                In progress
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        {(isHovered || isMobile) && !isDeleted && !isCompleted && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            flexShrink: 0,
+          }}>
+            {/* Status dropdown */}
+            <select
+              value={task.status}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                padding: '4px 8px',
+                fontSize: '12px',
+                border: '1px solid #e5e5e5',
+                borderRadius: '4px',
+                background: '#fff',
+                cursor: 'pointer',
+                outline: 'none',
+                color: '#666',
+              }}
+            >
+              <option value="not_started">To Do</option>
+              <option value="in_progress">Doing</option>
+              <option value="waiting_on">Waiting</option>
+            </select>
+
+            {/* Delete button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+              style={{
+                padding: '4px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#9ca3af',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
+              }}
+              title="Delete"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Deleted actions */}
+        {isDeleted && (isHovered || isMobile) && (
+          <button
+            onClick={(e) => { e.stopPropagation(); handleRestore(); }}
+            style={{
+              padding: '4px 12px',
+              fontSize: '12px',
+              fontWeight: '500',
+              color: '#666',
+              background: '#f5f5f5',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            Restore
+          </button>
+        )}
       </div>
-    </div>
+
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   );
 }
