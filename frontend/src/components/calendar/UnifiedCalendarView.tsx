@@ -36,6 +36,7 @@ export default function UnifiedCalendarView({
   const [internalViewMode, setInternalViewMode] = useState<'week' | 'month'>('week');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [mobileDay, setMobileDay] = useState(new Date());
   const { user } = useAuth();
 
   // Handle window resize for responsive mobile detection
@@ -138,27 +139,46 @@ export default function UnifiedCalendarView({
 
   // Navigation handlers
   const handlePrevious = () => {
-    const newDate = new Date(currentDate);
-    if (viewMode === 'week') {
+    if (isMobile && viewMode === 'week') {
+      // Mobile day view: navigate by 1 day
+      const prevDay = new Date(mobileDay);
+      prevDay.setDate(mobileDay.getDate() - 1);
+      setMobileDay(prevDay);
+    } else if (viewMode === 'week') {
+      // Desktop week view: navigate by 7 days
+      const newDate = new Date(currentDate);
       newDate.setDate(currentDate.getDate() - 7);
+      setCurrentDate(newDate);
     } else {
+      // Month view: navigate by 1 month
+      const newDate = new Date(currentDate);
       newDate.setMonth(currentDate.getMonth() - 1);
+      setCurrentDate(newDate);
     }
-    setCurrentDate(newDate);
   };
 
   const handleNext = () => {
-    const newDate = new Date(currentDate);
-    if (viewMode === 'week') {
+    if (isMobile && viewMode === 'week') {
+      // Mobile day view: navigate by 1 day
+      const nextDay = new Date(mobileDay);
+      nextDay.setDate(mobileDay.getDate() + 1);
+      setMobileDay(nextDay);
+    } else if (viewMode === 'week') {
+      // Desktop week view: navigate by 7 days
+      const newDate = new Date(currentDate);
       newDate.setDate(currentDate.getDate() + 7);
+      setCurrentDate(newDate);
     } else {
+      // Month view: navigate by 1 month
+      const newDate = new Date(currentDate);
       newDate.setMonth(currentDate.getMonth() + 1);
+      setCurrentDate(newDate);
     }
-    setCurrentDate(newDate);
   };
 
   const handleToday = () => {
     setCurrentDate(new Date());
+    setMobileDay(new Date());
   };
 
   const { start, end } = getDateRange(currentDate, viewMode);
@@ -182,7 +202,12 @@ export default function UnifiedCalendarView({
 
   // Format header text
   const getHeaderText = () => {
-    if (viewMode === 'week') {
+    if (isMobile && viewMode === 'week') {
+      // Mobile day view: show weekday and full date
+      const weekday = mobileDay.toLocaleDateString('en-US', { weekday: 'long' });
+      const dateStr = mobileDay.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      return `${weekday}, ${dateStr}`;
+    } else if (viewMode === 'week') {
       const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
       const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
       const year = start.getFullYear();
@@ -272,48 +297,43 @@ export default function UnifiedCalendarView({
       }}>
         {/* Left: Date and navigation */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {!(isMobile && viewMode === 'week') && (
-            <button
-              onClick={handlePrevious}
-              disabled={isLoading}
-              style={navButtonStyle}
-              aria-label="Previous"
-              onMouseEnter={(e) => { if (!isLoading) e.currentTarget.style.background = '#f5f5f5'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              <svg style={{ width: '18px', height: '18px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          )}
+          <button
+            onClick={handlePrevious}
+            disabled={isLoading}
+            style={navButtonStyle}
+            aria-label="Previous"
+            onMouseEnter={(e) => { if (!isLoading) e.currentTarget.style.background = '#f5f5f5'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+          >
+            <svg style={{ width: '18px', height: '18px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
 
-          {!(isMobile && viewMode === 'week') && (
-            <h2 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#000',
-              margin: 0,
-              letterSpacing: '-0.02em',
-              minWidth: '160px',
-            }}>
-              {getHeaderText()}
-            </h2>
-          )}
+          <h2 style={{
+            fontSize: isMobile ? '16px' : '18px',
+            fontWeight: '600',
+            color: '#000',
+            margin: 0,
+            letterSpacing: '-0.02em',
+            minWidth: isMobile ? 'auto' : '160px',
+            textAlign: 'center',
+          }}>
+            {getHeaderText()}
+          </h2>
 
-          {!(isMobile && viewMode === 'week') && (
-            <button
-              onClick={handleNext}
-              disabled={isLoading}
-              style={navButtonStyle}
-              aria-label="Next"
-              onMouseEnter={(e) => { if (!isLoading) e.currentTarget.style.background = '#f5f5f5'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              <svg style={{ width: '18px', height: '18px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
+          <button
+            onClick={handleNext}
+            disabled={isLoading}
+            style={navButtonStyle}
+            aria-label="Next"
+            onMouseEnter={(e) => { if (!isLoading) e.currentTarget.style.background = '#f5f5f5'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+          >
+            <svg style={{ width: '18px', height: '18px', color: '#666' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
 
         {/* Right: Controls */}
@@ -339,7 +359,7 @@ export default function UnifiedCalendarView({
                 boxShadow: viewMode === 'week' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
               }}
             >
-              Week
+              {isMobile ? 'Day' : 'Week'}
             </button>
             <button
               onClick={() => setViewMode('month')}
@@ -468,6 +488,7 @@ export default function UnifiedCalendarView({
               countdownInfo={countdownInfo}
               timezone={timezone}
               freeSlots={freeSlots}
+              mobileDay={mobileDay}
             />
           ) : (
             <MonthCalendarGrid
