@@ -40,6 +40,11 @@ export default function CalendarPage() {
 
   // Track if auto-sync has been attempted this mount
   const autoSyncAttempted = useRef(false);
+  // Track if current sync is a background auto-sync (shouldn't show navbar spinner)
+  const isBackgroundSync = useRef(false);
+
+  // Derived state: only show navbar spinner for user-initiated syncs, not background auto-syncs
+  const showNavbarSyncSpinner = isSyncingAll && !isBackgroundSync.current;
 
   // Auto-sync calendars on page mount (throttled to once every 5 minutes)
   useEffect(() => {
@@ -59,6 +64,9 @@ export default function CalendarPage() {
       }
     }
 
+    // Mark as background sync (don't show navbar spinner)
+    isBackgroundSync.current = true;
+
     // Trigger sync in background (don't block UI)
     syncAllCalendars()
       .then(() => {
@@ -68,6 +76,10 @@ export default function CalendarPage() {
       .catch((err) => {
         console.error('Auto-sync failed:', err);
         // Don't update throttle time on failure so retry happens sooner
+      })
+      .finally(() => {
+        // Reset background sync flag when done
+        isBackgroundSync.current = false;
       });
   }, [syncAllCalendars]);
 
@@ -243,7 +255,7 @@ export default function CalendarPage() {
                 }}
               >
                 Calendar
-                {isSyncingAll && (
+                {showNavbarSyncSpinner && (
                   <span
                     style={{
                       width: '12px',
@@ -363,7 +375,7 @@ export default function CalendarPage() {
               }}
             >
               Calendar
-              {isSyncingAll && (
+              {showNavbarSyncSpinner && (
                 <span
                   style={{
                     width: '12px',
