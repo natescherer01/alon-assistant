@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import type { CalendarEvent } from '../../api/calendar/calendar';
 import type { FreeSlot } from '../../api/calendar/users';
 import calendarApi from '../../api/calendar/calendar';
@@ -33,8 +33,19 @@ export default function UnifiedCalendarView({
   const [currentDate, setCurrentDate] = useState(new Date());
   const [internalViewMode, setInternalViewMode] = useState<'week' | 'month'>('week');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const { error: showError } = useToast();
   const { user } = useAuth();
+
+  // Handle window resize for responsive mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Use controlled mode if provided, otherwise use internal state
   const viewMode = controlledViewMode ?? internalViewMode;
@@ -325,52 +336,61 @@ export default function UnifiedCalendarView({
             </button>
           </div>
 
-          {/* Date Navigation */}
+          {/* Date Navigation - Hide week navigation on mobile since WeekCalendarGrid has day-by-day navigation */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
-              onClick={handlePrevious}
-              disabled={isLoading}
-              style={navButtonStyle}
-              aria-label="Previous"
-              onMouseEnter={(e) => {
-                if (!isLoading) (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'transparent';
-              }}
-            >
-              <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
+            {/* Previous button - hidden on mobile for week view (mobile has its own day navigation) */}
+            {!(isMobile && viewMode === 'week') && (
+              <button
+                onClick={handlePrevious}
+                disabled={isLoading}
+                style={navButtonStyle}
+                aria-label="Previous"
+                onMouseEnter={(e) => {
+                  if (!isLoading) (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.background = 'transparent';
+                }}
+              >
+                <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
 
-            <h2 style={{
-              minWidth: '200px',
-              textAlign: 'center',
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#000',
-              margin: 0,
-            }}>
-              {getHeaderText()}
-            </h2>
+            {/* Date range header - hidden on mobile for week view */}
+            {!(isMobile && viewMode === 'week') && (
+              <h2 style={{
+                minWidth: '200px',
+                textAlign: 'center',
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#000',
+                margin: 0,
+              }}>
+                {getHeaderText()}
+              </h2>
+            )}
 
-            <button
-              onClick={handleNext}
-              disabled={isLoading}
-              style={navButtonStyle}
-              aria-label="Next"
-              onMouseEnter={(e) => {
-                if (!isLoading) (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'transparent';
-              }}
-            >
-              <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+            {/* Next button - hidden on mobile for week view (mobile has its own day navigation) */}
+            {!(isMobile && viewMode === 'week') && (
+              <button
+                onClick={handleNext}
+                disabled={isLoading}
+                style={navButtonStyle}
+                aria-label="Next"
+                onMouseEnter={(e) => {
+                  if (!isLoading) (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.background = 'transparent';
+                }}
+              >
+                <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
 
             <button
               onClick={handleToday}

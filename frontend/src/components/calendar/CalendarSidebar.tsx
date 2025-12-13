@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { Calendar } from '../../api/calendar/calendar';
 import type { FreeSlot } from '../../api/calendar/users';
 import ProviderIcon from './ProviderIcon';
@@ -43,6 +43,17 @@ export default function CalendarSidebar({
   const [calendarToDisconnect, setCalendarToDisconnect] = useState<Calendar | null>(null);
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [showTeamSection, setShowTeamSection] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Handle window resize for responsive mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const { disconnectCalendar, syncCalendar } = useCalendars();
   const { success, error: showError } = useToast();
 
@@ -189,7 +200,7 @@ export default function CalendarSidebar({
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Hidden on mobile when collapsed, only shown when expanded via hamburger menu */}
       <aside
         style={{
           position: 'fixed',
@@ -202,6 +213,8 @@ export default function CalendarSidebar({
           zIndex: 40,
           width: isCollapsed ? '64px' : '288px',
           boxShadow: !isCollapsed ? '0 10px 25px rgba(0, 0, 0, 0.1)' : 'none',
+          // Hide sidebar completely on mobile when collapsed (accessed via hamburger menu instead)
+          display: isCollapsed && isMobile ? 'none' : 'block',
         }}
         aria-label="Calendar sidebar"
       >
