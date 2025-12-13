@@ -12,7 +12,28 @@ import {
   getProviderName,
   getCalendarColor,
   type Provider,
+  PROVIDER_HEX_COLORS,
 } from '../../utils/calendar/calendarColors';
+
+// Preset colors for calendar color picker
+const PRESET_COLORS = [
+  '#4285F4', // Google Blue
+  '#0078D4', // Microsoft Blue
+  '#9333EA', // Purple
+  '#DC2626', // Red
+  '#EA4335', // Google Red
+  '#F97316', // Orange
+  '#EAB308', // Yellow
+  '#22C55E', // Green
+  '#14B8A6', // Teal
+  '#06B6D4', // Cyan
+  '#6366F1', // Indigo
+  '#EC4899', // Pink
+  '#8B5CF6', // Violet
+  '#6B7280', // Gray
+  '#78716C', // Warm Gray
+  '#000000', // Black
+];
 
 interface CalendarSidebarProps {
   calendars: Calendar[];
@@ -57,8 +78,9 @@ export default function CalendarSidebar({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  const { disconnectCalendar, syncCalendar } = useCalendars();
+  const { disconnectCalendar, syncCalendar, updateCalendarColor, isUpdatingColor } = useCalendars();
   const { success, error: showError } = useToast();
+  const [updatingColorId, setUpdatingColorId] = useState<string | null>(null);
 
   // Team calendar hooks
   const { data: teamUsers = [] } = useCalendarUsers();
@@ -156,6 +178,19 @@ export default function CalendarSidebar({
       showError('Failed to sync calendar');
     } finally {
       setIsSyncing(null);
+    }
+  };
+
+  const handleColorChange = async (calendar: Calendar, color: string) => {
+    setUpdatingColorId(calendar.id);
+    try {
+      await updateCalendarColor(calendar.id, color);
+      success('Calendar color updated');
+    } catch (error) {
+      console.error('Failed to update calendar color:', error);
+      showError('Failed to update calendar color');
+    } finally {
+      setUpdatingColorId(null);
     }
   };
 
@@ -296,6 +331,53 @@ export default function CalendarSidebar({
                     background: '#fff',
                     borderTop: '1px solid #eee',
                   }}>
+                    {/* Color Picker */}
+                    <div style={{ marginBottom: '14px' }}>
+                      <p style={{ fontSize: '12px', fontWeight: '500', color: '#666', marginBottom: '8px' }}>
+                        Calendar Color
+                      </p>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(8, 1fr)',
+                        gap: '6px',
+                      }}>
+                        {PRESET_COLORS.map((color) => {
+                          const isSelected = calColor.toUpperCase() === color.toUpperCase();
+                          const isUpdating = updatingColorId === calendar.id;
+                          return (
+                            <button
+                              key={color}
+                              onClick={() => !isUpdating && handleColorChange(calendar, color)}
+                              disabled={isUpdating}
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '6px',
+                                background: color,
+                                border: isSelected ? '2px solid #000' : '2px solid transparent',
+                                cursor: isUpdating ? 'wait' : 'pointer',
+                                opacity: isUpdating ? 0.5 : 1,
+                                boxShadow: isSelected ? '0 0 0 2px #fff, 0 0 0 4px #000' : 'none',
+                                transition: 'transform 0.1s, box-shadow 0.1s',
+                              }}
+                              title={color}
+                              onMouseEnter={(e) => {
+                                if (!isUpdating) e.currentTarget.style.transform = 'scale(1.1)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                      {updatingColorId === calendar.id && (
+                        <p style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>
+                          Updating...
+                        </p>
+                      )}
+                    </div>
+
                     {/* Info Row */}
                     <div style={{ marginBottom: '14px' }}>
                       {calendar.ownerEmail && (
@@ -808,6 +890,53 @@ export default function CalendarSidebar({
                           background: '#fff',
                           borderTop: '1px solid #eee',
                         }}>
+                          {/* Color Picker */}
+                          <div style={{ marginBottom: '12px' }}>
+                            <p style={{ fontSize: '11px', fontWeight: '500', color: '#666', marginBottom: '6px' }}>
+                              Calendar Color
+                            </p>
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(8, 1fr)',
+                              gap: '4px',
+                            }}>
+                              {PRESET_COLORS.map((color) => {
+                                const isSelected = calColor.toUpperCase() === color.toUpperCase();
+                                const isUpdating = updatingColorId === calendar.id;
+                                return (
+                                  <button
+                                    key={color}
+                                    onClick={() => !isUpdating && handleColorChange(calendar, color)}
+                                    disabled={isUpdating}
+                                    style={{
+                                      width: '22px',
+                                      height: '22px',
+                                      borderRadius: '4px',
+                                      background: color,
+                                      border: isSelected ? '2px solid #000' : '2px solid transparent',
+                                      cursor: isUpdating ? 'wait' : 'pointer',
+                                      opacity: isUpdating ? 0.5 : 1,
+                                      boxShadow: isSelected ? '0 0 0 1px #fff, 0 0 0 2px #000' : 'none',
+                                      transition: 'transform 0.1s, box-shadow 0.1s',
+                                    }}
+                                    title={color}
+                                    onMouseEnter={(e) => {
+                                      if (!isUpdating) e.currentTarget.style.transform = 'scale(1.1)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.transform = 'scale(1)';
+                                    }}
+                                  />
+                                );
+                              })}
+                            </div>
+                            {updatingColorId === calendar.id && (
+                              <p style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                                Updating...
+                              </p>
+                            )}
+                          </div>
+
                           {/* Info Row */}
                           <div style={{ marginBottom: '12px' }}>
                             {calendar.ownerEmail && (
