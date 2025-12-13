@@ -197,22 +197,22 @@ function TasksPage() {
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      background: 'linear-gradient(180deg, #fafafa 0%, #fff 100%)',
+      background: '#f8f9fa',
     }}>
       {/* Navbar */}
       <nav style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        background: 'rgba(255, 255, 255, 0.8)',
+        background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+        borderBottom: '1px solid #e5e7eb',
       }}>
         <div style={{
-          maxWidth: '720px',
+          maxWidth: isMobile ? '720px' : '1400px',
           margin: '0 auto',
-          padding: isMobile ? '14px 20px' : '14px 32px',
+          padding: isMobile ? '14px 20px' : '14px 48px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -356,51 +356,63 @@ function TasksPage() {
       {/* Main Content */}
       <main style={{
         flex: 1,
-        maxWidth: '720px',
+        maxWidth: isMobile ? '720px' : '1400px',
         width: '100%',
         margin: '0 auto',
-        padding: isMobile ? '24px 20px 40px' : '40px 32px 60px',
+        padding: isMobile ? '24px 20px 40px' : '40px 48px 60px',
       }}>
-        {/* Header */}
-        <div style={{ marginBottom: '32px' }}>
-          <h1 style={{
-            fontSize: isMobile ? '28px' : '32px',
-            fontWeight: '700',
-            color: '#111',
-            margin: '0 0 6px 0',
-            letterSpacing: '-0.03em',
-          }}>
-            Tasks
-          </h1>
-          <p style={{
-            fontSize: '15px',
-            color: '#9ca3af',
-            margin: 0,
-            fontWeight: '400',
-          }}>
-            {counts.all === 0 ? 'No active tasks' : `${counts.all} active${counts.upcoming > 0 ? ` · ${counts.upcoming} scheduled` : ''}`}
-          </p>
-        </div>
-
-        {/* Add Task */}
-        <div style={{ marginBottom: '32px' }}>
-          <AddTaskForm onTaskAdded={handleTaskUpdate} />
-        </div>
-
-        {/* Filters & Search */}
+        {/* Header Row */}
         <div style={{
           display: 'flex',
-          flexDirection: 'column',
+          justifyContent: 'space-between',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '16px' : '24px',
+          marginBottom: '32px',
+        }}>
+          <div>
+            <h1 style={{
+              fontSize: isMobile ? '28px' : '28px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: '0 0 4px 0',
+              letterSpacing: '-0.02em',
+            }}>
+              Tasks
+            </h1>
+            <p style={{
+              fontSize: '14px',
+              color: '#6b7280',
+              margin: 0,
+            }}>
+              {counts.all === 0 ? 'No active tasks' : `${counts.all} active${counts.upcoming > 0 ? ` · ${counts.upcoming} scheduled` : ''}`}
+            </p>
+          </div>
+
+          {/* Add Task - Desktop inline */}
+          <div style={{ width: isMobile ? '100%' : 'auto', minWidth: isMobile ? 'auto' : '400px' }}>
+            <AddTaskForm onTaskAdded={handleTaskUpdate} />
+          </div>
+        </div>
+
+        {/* Filters & Search Row */}
+        <div style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between',
+          alignItems: isMobile ? 'stretch' : 'center',
           gap: '16px',
-          marginBottom: '24px',
+          marginBottom: '20px',
         }}>
           {/* Filter tabs */}
           <div style={{
             display: 'flex',
-            gap: '6px',
+            gap: '4px',
             overflowX: 'auto',
-            paddingBottom: '4px',
-            marginBottom: '-4px',
+            background: '#fff',
+            padding: '4px',
+            borderRadius: '10px',
+            border: '1px solid #e5e7eb',
           }}>
             {filterButtons.map((f) => (
               <button
@@ -411,12 +423,12 @@ function TasksPage() {
                   fontSize: '13px',
                   fontWeight: filter === f.key ? '500' : '400',
                   border: 'none',
-                  borderRadius: '100px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  background: filter === f.key ? '#111' : 'rgba(0, 0, 0, 0.04)',
+                  background: filter === f.key ? '#111827' : 'transparent',
                   color: filter === f.key ? '#fff' : '#6b7280',
                   whiteSpace: 'nowrap',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.15s ease',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
@@ -427,7 +439,10 @@ function TasksPage() {
                   <span style={{
                     fontSize: '11px',
                     fontWeight: '500',
-                    opacity: filter === f.key ? 0.7 : 0.6,
+                    opacity: filter === f.key ? 0.8 : 0.6,
+                    background: filter === f.key ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.08)',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
                   }}>
                     {f.count}
                   </span>
@@ -439,12 +454,12 @@ function TasksPage() {
           {/* Search & Project filter */}
           <div style={{
             display: 'flex',
-            gap: '10px',
+            gap: '12px',
             alignItems: 'center',
           }}>
             <div style={{
-              flex: 1,
               position: 'relative',
+              width: isMobile ? '100%' : '280px',
             }}>
               <svg
                 width="16"
@@ -455,7 +470,7 @@ function TasksPage() {
                 strokeWidth="2"
                 style={{
                   position: 'absolute',
-                  left: '14px',
+                  left: '12px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   pointerEvents: 'none',
@@ -471,22 +486,21 @@ function TasksPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '11px 14px 11px 42px',
-                  fontSize: '14px',
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
-                  borderRadius: '12px',
+                  padding: '9px 12px 9px 38px',
+                  fontSize: '13px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
                   outline: 'none',
                   background: '#fff',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02)',
+                  transition: 'all 0.15s ease',
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = 'rgba(0, 0, 0, 0.15)';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(0, 0, 0, 0.04)';
+                  e.target.style.borderColor = '#111827';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(17, 24, 39, 0.08)';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(0, 0, 0, 0.08)';
-                  e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.02)';
+                  e.target.style.borderColor = '#e5e7eb';
+                  e.target.style.boxShadow = 'none';
                 }}
               />
               {searchQuery && (
@@ -494,20 +508,19 @@ function TasksPage() {
                   onClick={() => setSearchQuery('')}
                   style={{
                     position: 'absolute',
-                    right: '10px',
+                    right: '8px',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    background: 'rgba(0, 0, 0, 0.06)',
+                    background: '#f3f4f6',
                     border: 'none',
                     cursor: 'pointer',
                     padding: '4px',
                     display: 'flex',
                     color: '#6b7280',
-                    borderRadius: '6px',
-                    transition: 'background 0.15s ease',
+                    borderRadius: '4px',
                   }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 </button>
@@ -519,17 +532,16 @@ function TasksPage() {
                 value={projectFilter}
                 onChange={(e) => setProjectFilter(e.target.value)}
                 style={{
-                  padding: '11px 14px',
+                  padding: '9px 12px',
                   fontSize: '13px',
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
-                  borderRadius: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
                   outline: 'none',
-                  background: projectFilter !== 'all' ? '#111' : '#fff',
+                  background: projectFilter !== 'all' ? '#111827' : '#fff',
                   color: projectFilter !== 'all' ? '#fff' : '#6b7280',
                   cursor: 'pointer',
-                  minWidth: '130px',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02)',
+                  minWidth: '140px',
+                  transition: 'all 0.15s ease',
                 }}
               >
                 <option value="all">All projects</option>
@@ -577,31 +589,54 @@ function TasksPage() {
         {/* Task List */}
         <div style={{
           background: '#fff',
-          borderRadius: '16px',
-          border: '1px solid rgba(0, 0, 0, 0.06)',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.02)',
+          borderRadius: '12px',
+          border: '1px solid #e5e7eb',
           overflow: 'hidden',
         }}>
+          {/* Desktop Table Header */}
+          {!isMobile && displayedTasks.length > 0 && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '44px 1fr 140px 120px 100px 80px',
+              gap: '12px',
+              padding: '12px 20px',
+              background: '#f9fafb',
+              borderBottom: '1px solid #e5e7eb',
+              fontSize: '12px',
+              fontWeight: '500',
+              color: '#6b7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}>
+              <div></div>
+              <div>Task</div>
+              <div>Status</div>
+              <div>Due Date</div>
+              <div>Priority</div>
+              <div></div>
+            </div>
+          )}
+
           {isLoading ? (
             <div style={{ padding: '60px 20px', textAlign: 'center' }}>
               <div style={{
                 width: '32px',
                 height: '32px',
-                border: '2px solid rgba(0, 0, 0, 0.06)',
-                borderTop: '2px solid #111',
+                border: '2px solid #e5e7eb',
+                borderTop: '2px solid #111827',
                 borderRadius: '50%',
                 margin: '0 auto 16px',
                 animation: 'spin 0.8s linear infinite',
               }} />
-              <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0, fontWeight: '450' }}>Loading tasks...</p>
+              <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>Loading tasks...</p>
             </div>
           ) : displayedTasks.length === 0 ? (
             <div style={{ padding: '60px 20px', textAlign: 'center' }}>
               <div style={{
                 width: '48px',
                 height: '48px',
-                borderRadius: '14px',
-                background: 'rgba(0, 0, 0, 0.03)',
+                borderRadius: '12px',
+                background: '#f3f4f6',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -617,7 +652,7 @@ function TasksPage() {
                   )}
                 </svg>
               </div>
-              <p style={{ color: '#6b7280', fontSize: '15px', margin: '0 0 4px', fontWeight: '500' }}>
+              <p style={{ color: '#374151', fontSize: '15px', margin: '0 0 4px', fontWeight: '500' }}>
                 {searchQuery
                   ? 'No matching tasks'
                   : filter === 'completed'
@@ -637,14 +672,14 @@ function TasksPage() {
               </p>
             </div>
           ) : (
-            <div style={{ padding: isMobile ? '8px 0' : '8px 0' }}>
+            <div>
               {displayedTasks.map((task, index) => (
                 <div
                   key={task.id}
                   ref={(el) => { taskRefs.current[task.id] = el; }}
                   style={{
-                    transition: 'all 0.3s ease',
-                    background: highlightedTaskId === task.id ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
+                    transition: 'background 0.2s ease',
+                    background: highlightedTaskId === task.id ? 'rgba(251, 191, 36, 0.08)' : 'transparent',
                   }}
                 >
                   <TaskItem
@@ -668,17 +703,16 @@ function TasksPage() {
             textAlign: 'center',
             fontSize: '12px',
             color: '#9ca3af',
-            marginTop: '24px',
-            fontWeight: '400',
+            marginTop: '20px',
           }}>
-            Click to edit · <kbd style={{
-              background: 'rgba(0, 0, 0, 0.04)',
-              padding: '3px 8px',
-              borderRadius: '6px',
+            Click a task to edit · Press <kbd style={{
+              background: '#f3f4f6',
+              padding: '2px 6px',
+              borderRadius: '4px',
               fontSize: '11px',
               fontFamily: 'inherit',
               fontWeight: '500',
-              border: '1px solid rgba(0, 0, 0, 0.06)',
+              border: '1px solid #e5e7eb',
             }}>Esc</kbd> to cancel
           </p>
         )}

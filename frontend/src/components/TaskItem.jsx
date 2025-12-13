@@ -493,313 +493,485 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
     );
   }
 
-  // Normal view
+  // Get status label and color
+  const getStatusInfo = (status) => {
+    switch (status) {
+      case 'not_started':
+        return { label: 'To Do', color: '#6b7280', bg: '#f3f4f6' };
+      case 'in_progress':
+        return { label: 'In Progress', color: '#2563eb', bg: '#eff6ff' };
+      case 'waiting_on':
+        return { label: 'Waiting', color: '#7c3aed', bg: '#f5f3ff' };
+      case 'completed':
+        return { label: 'Done', color: '#059669', bg: '#ecfdf5' };
+      default:
+        return { label: 'To Do', color: '#6b7280', bg: '#f3f4f6' };
+    }
+  };
+
+  const statusInfo = getStatusInfo(task.status);
+
+  // Get priority info
+  const getPriorityInfo = (intensity) => {
+    switch (intensity) {
+      case 5:
+        return { label: 'P0', color: '#dc2626', bg: '#fef2f2' };
+      case 4:
+        return { label: 'P1', color: '#ea580c', bg: '#fff7ed' };
+      case 3:
+        return { label: 'P2', color: '#d97706', bg: '#fffbeb' };
+      case 2:
+        return { label: 'P3', color: '#6b7280', bg: '#f3f4f6' };
+      default:
+        return { label: 'P4', color: '#9ca3af', bg: '#f9fafb' };
+    }
+  };
+
+  const priorityInfo = getPriorityInfo(task.intensity);
+
+  // Mobile view - simpler layout
+  if (isMobile) {
+    return (
+      <>
+        <ConfirmDialog />
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px',
+            padding: '14px 16px',
+            borderBottom: isLast ? 'none' : '1px solid #e5e7eb',
+            background: isHovered ? '#f9fafb' : 'transparent',
+            cursor: isDeleted || isCompleted ? 'default' : 'pointer',
+          }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          onClick={() => !isDeleted && !isCompleted && setIsEditing(true)}
+        >
+          {/* Checkbox */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isDeleted) handleRestore();
+              else if (!isCompleted) handleComplete();
+            }}
+            disabled={isCompleting || isSaving}
+            style={{
+              width: '20px',
+              height: '20px',
+              minWidth: '20px',
+              marginTop: '2px',
+              borderRadius: '6px',
+              border: isCompleted ? 'none' : '2px solid #d1d5db',
+              background: isCompleted ? '#059669' : '#fff',
+              cursor: isCompleting || isSaving ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+              opacity: isCompleting || isSaving ? 0.5 : 1,
+            }}
+          >
+            {isCompleted && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </button>
+
+          {/* Content */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{
+                fontSize: '14px',
+                fontWeight: '500',
+                color: isCompleted || isDeleted ? '#9ca3af' : '#111827',
+                textDecoration: isCompleted ? 'line-through' : 'none',
+              }}>
+                {task.title}
+              </span>
+              {task.intensity >= 4 && !isCompleted && !isDeleted && (
+                <span style={{
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  background: priorityInfo.bg,
+                  color: priorityInfo.color,
+                  fontSize: '10px',
+                  fontWeight: '600',
+                }}>
+                  {priorityInfo.label}
+                </span>
+              )}
+            </div>
+
+            {task.description && (
+              <p style={{
+                fontSize: '13px',
+                color: '#6b7280',
+                margin: '4px 0 0 0',
+                textDecoration: isCompleted ? 'line-through' : 'none',
+              }}>
+                {task.description}
+              </p>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              {deadlineInfo && !isCompleted && !isDeleted && (
+                <span style={{
+                  fontSize: '12px',
+                  color: deadlineInfo.isOverdue ? '#dc2626' : deadlineInfo.isToday ? '#ea580c' : '#6b7280',
+                  fontWeight: deadlineInfo.isOverdue || deadlineInfo.isToday ? '500' : '400',
+                }}>
+                  {deadlineInfo.text}
+                </span>
+              )}
+              {!isCompleted && !isDeleted && (
+                <select
+                  value={task.status}
+                  onChange={(e) => { e.stopPropagation(); handleStatusChange(e.target.value); }}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '4px',
+                    background: '#fff',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    color: '#374151',
+                  }}
+                >
+                  <option value="not_started">To Do</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="waiting_on">Waiting</option>
+                </select>
+              )}
+            </div>
+          </div>
+
+          {/* Delete */}
+          {!isDeleted && !isCompleted && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+              style={{
+                padding: '6px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#9ca3af',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+            </button>
+          )}
+
+          {isDeleted && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleRestore(); }}
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: '500',
+                color: '#374151',
+                background: '#f3f4f6',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+              }}
+            >
+              Restore
+            </button>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  // Desktop view - table row layout
   return (
     <>
       <ConfirmDialog />
       <div
         style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '14px',
-          padding: isMobile ? '16px 20px' : '14px 24px',
-          borderBottom: isLast ? 'none' : '1px solid rgba(0, 0, 0, 0.04)',
-          background: isHovered && !isMobile ? 'rgba(0, 0, 0, 0.015)' : 'transparent',
-          transition: 'background 0.15s ease',
+          display: 'grid',
+          gridTemplateColumns: '44px 1fr 140px 120px 100px 80px',
+          gap: '12px',
+          alignItems: 'center',
+          padding: '12px 20px',
+          borderBottom: isLast ? 'none' : '1px solid #f3f4f6',
+          background: isHovered ? '#f9fafb' : 'transparent',
+          transition: 'background 0.1s ease',
           cursor: isDeleted || isCompleted ? 'default' : 'pointer',
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={() => !isDeleted && !isCompleted && setIsEditing(true)}
       >
-        {/* Checkbox */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (isDeleted) {
-              handleRestore();
-            } else if (!isCompleted) {
-              handleComplete();
-            }
-          }}
-          disabled={isCompleting || isSaving}
-          style={{
-            width: '22px',
-            height: '22px',
-            minWidth: '22px',
-            marginTop: '1px',
-            borderRadius: '7px',
-            border: isCompleted
-              ? 'none'
-              : isDeleted
-                ? '1.5px solid #d1d5db'
-                : `1.5px solid ${isHovered || isMobile ? '#9ca3af' : '#d1d5db'}`,
-            background: isCompleted
-              ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-              : 'transparent',
-            cursor: isCompleting || isSaving ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            opacity: isCompleting || isSaving ? 0.5 : 1,
-            boxShadow: isCompleted ? '0 2px 4px rgba(16, 185, 129, 0.2)' : 'none',
-          }}
-          title={isDeleted ? 'Restore' : (isCompleted ? 'Completed' : 'Complete task')}
-        >
-          {isCompleted && (
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          )}
-          {isDeleted && (
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 4 1 10 7 10" />
-              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-            </svg>
-          )}
-        </button>
+        {/* Checkbox Column */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isDeleted) handleRestore();
+              else if (!isCompleted) handleComplete();
+            }}
+            disabled={isCompleting || isSaving}
+            style={{
+              width: '18px',
+              height: '18px',
+              borderRadius: '4px',
+              border: isCompleted
+                ? 'none'
+                : isDeleted
+                  ? '2px solid #d1d5db'
+                  : '2px solid #d1d5db',
+              background: isCompleted ? '#059669' : '#fff',
+              cursor: isCompleting || isSaving ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
+              opacity: isCompleting || isSaving ? 0.5 : 1,
+            }}
+            onMouseEnter={(e) => {
+              if (!isCompleted && !isDeleted && !isCompleting && !isSaving) {
+                e.currentTarget.style.borderColor = '#9ca3af';
+                e.currentTarget.style.background = '#f9fafb';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isCompleted && !isDeleted) {
+                e.currentTarget.style.borderColor = '#d1d5db';
+                e.currentTarget.style.background = '#fff';
+              }
+            }}
+          >
+            {isCompleted && (
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+            {isDeleted && (
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+            )}
+          </button>
+        </div>
 
-        {/* Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        {/* Task Title & Description Column */}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{
-              fontSize: '15px',
-              fontWeight: '450',
-              color: isCompleted || isDeleted ? '#9ca3af' : '#111',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: isCompleted || isDeleted ? '#9ca3af' : '#111827',
               textDecoration: isCompleted ? 'line-through' : 'none',
-              lineHeight: '1.5',
-              letterSpacing: '-0.01em',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}>
               {task.title}
             </span>
-
-            {/* Priority indicator */}
-            {task.intensity >= 4 && !isCompleted && !isDeleted && (
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '2px 6px',
-                borderRadius: '5px',
-                background: task.intensity === 5
-                  ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                  : 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-                color: '#fff',
-                fontSize: '10px',
-                fontWeight: '600',
-                letterSpacing: '0.02em',
-                boxShadow: task.intensity === 5
-                  ? '0 2px 4px rgba(239, 68, 68, 0.25)'
-                  : '0 2px 4px rgba(249, 115, 22, 0.25)',
-              }}>
-                {task.intensity === 5 ? 'URGENT' : 'HIGH'}
-              </span>
-            )}
-
-            {/* Recurring indicator */}
             {task.is_recurring && !isCompleted && !isDeleted && (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
                 <polyline points="23 4 23 10 17 10" />
                 <polyline points="1 20 1 14 7 14" />
                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
               </svg>
             )}
-
             {isSaving && (
               <span style={{
-                width: '14px',
-                height: '14px',
-                border: '2px solid rgba(0, 0, 0, 0.06)',
-                borderTop: '2px solid #111',
+                width: '12px',
+                height: '12px',
+                border: '2px solid #e5e7eb',
+                borderTop: '2px solid #111827',
                 borderRadius: '50%',
                 animation: 'spin 0.8s linear infinite',
               }} />
             )}
           </div>
-
-          {/* Description */}
           {task.description && (
             <p style={{
-              fontSize: '13px',
+              fontSize: '12px',
               color: '#6b7280',
-              margin: '4px 0 0 0',
-              lineHeight: '1.5',
+              margin: '2px 0 0 0',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
               textDecoration: isCompleted ? 'line-through' : 'none',
             }}>
               {task.description}
             </p>
           )}
-
-          {/* Meta row */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginTop: '8px',
-            flexWrap: 'wrap',
-          }}>
-            {/* Deadline */}
-            {deadlineInfo && !isCompleted && !isDeleted && (
-              <span style={{
-                fontSize: '12px',
-                color: deadlineInfo.isOverdue ? '#dc2626' : deadlineInfo.isToday ? '#ea580c' : '#6b7280',
-                fontWeight: deadlineInfo.isOverdue || deadlineInfo.isToday ? '500' : '400',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: deadlineInfo.isOverdue || deadlineInfo.isToday ? '3px 8px' : '0',
-                background: deadlineInfo.isOverdue
-                  ? 'rgba(220, 38, 38, 0.08)'
-                  : deadlineInfo.isToday
-                    ? 'rgba(234, 88, 12, 0.08)'
-                    : 'transparent',
-                borderRadius: '6px',
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                {deadlineInfo.text}
-              </span>
-            )}
-
-            {/* Project */}
-            {task.project && (
-              <span style={{
-                fontSize: '12px',
-                color: '#6b7280',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                </svg>
-                {task.project}
-              </span>
-            )}
-
-            {/* Waiting on */}
-            {isWaiting && task.waiting_on && (
-              <span style={{
-                fontSize: '12px',
-                color: '#8b5cf6',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '3px 8px',
-                background: 'rgba(139, 92, 246, 0.08)',
-                borderRadius: '6px',
-                fontWeight: '500',
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-                {task.waiting_on}
-              </span>
-            )}
-
-            {/* In progress indicator */}
-            {isInProgress && !isCompleted && !isDeleted && (
-              <span style={{
-                fontSize: '12px',
-                color: '#2563eb',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '3px 8px',
-                background: 'rgba(37, 99, 235, 0.08)',
-                borderRadius: '6px',
-                fontWeight: '500',
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="5 3 19 12 5 21 5 3" />
-                </svg>
-                In progress
-              </span>
-            )}
-          </div>
+          {task.project && (
+            <span style={{
+              fontSize: '11px',
+              color: '#9ca3af',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginTop: '2px',
+            }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              </svg>
+              {task.project}
+            </span>
+          )}
         </div>
 
-        {/* Actions */}
-        {(isHovered || isMobile) && !isDeleted && !isCompleted && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            flexShrink: 0,
-          }}
-          onClick={(e) => e.stopPropagation()}
-          >
-            {/* Status dropdown */}
+        {/* Status Column - Always visible */}
+        <div onClick={(e) => e.stopPropagation()}>
+          {isCompleted ? (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              background: '#ecfdf5',
+              color: '#059669',
+              fontSize: '12px',
+              fontWeight: '500',
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Done
+            </span>
+          ) : isDeleted ? (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              background: '#f3f4f6',
+              color: '#6b7280',
+              fontSize: '12px',
+              fontWeight: '500',
+            }}>
+              Deleted
+            </span>
+          ) : (
             <select
               value={task.status}
               onChange={(e) => handleStatusChange(e.target.value)}
               style={{
                 padding: '6px 10px',
                 fontSize: '12px',
-                border: '1px solid rgba(0, 0, 0, 0.08)',
-                borderRadius: '8px',
+                fontWeight: '500',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
                 background: '#fff',
                 cursor: 'pointer',
                 outline: 'none',
                 color: '#374151',
-                fontWeight: '450',
+                width: '100%',
+                maxWidth: '120px',
               }}
             >
               <option value="not_started">To Do</option>
-              <option value="in_progress">Doing</option>
+              <option value="in_progress">In Progress</option>
               <option value="waiting_on">Waiting</option>
             </select>
+          )}
+        </div>
 
-            {/* Delete button */}
+        {/* Due Date Column */}
+        <div>
+          {deadlineInfo && !isCompleted && !isDeleted ? (
+            <span style={{
+              fontSize: '12px',
+              fontWeight: deadlineInfo.isOverdue || deadlineInfo.isToday ? '500' : '400',
+              color: deadlineInfo.isOverdue ? '#dc2626' : deadlineInfo.isToday ? '#ea580c' : '#6b7280',
+              padding: deadlineInfo.isOverdue || deadlineInfo.isToday ? '4px 8px' : '0',
+              background: deadlineInfo.isOverdue ? '#fef2f2' : deadlineInfo.isToday ? '#fff7ed' : 'transparent',
+              borderRadius: '4px',
+              display: 'inline-block',
+            }}>
+              {deadlineInfo.text}
+            </span>
+          ) : (
+            <span style={{ fontSize: '12px', color: '#d1d5db' }}>—</span>
+          )}
+        </div>
+
+        {/* Priority Column */}
+        <div>
+          {!isCompleted && !isDeleted ? (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              background: priorityInfo.bg,
+              color: priorityInfo.color,
+              fontSize: '11px',
+              fontWeight: '600',
+            }}>
+              {priorityInfo.label}
+            </span>
+          ) : (
+            <span style={{ fontSize: '12px', color: '#d1d5db' }}>—</span>
+          )}
+        </div>
+
+        {/* Actions Column */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
+          {isDeleted ? (
+            <button
+              onClick={handleRestore}
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: '500',
+                color: '#374151',
+                background: '#f3f4f6',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
+            >
+              Restore
+            </button>
+          ) : !isCompleted ? (
             <button
               onClick={handleDelete}
               style={{
                 padding: '6px',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.08)',
+                background: isHovered ? '#f3f4f6' : 'transparent',
+                border: 'none',
                 cursor: 'pointer',
                 color: '#9ca3af',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#fee2e2';
+                e.currentTarget.style.color = '#dc2626';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = isHovered ? '#f3f4f6' : 'transparent';
+                e.currentTarget.style.color = '#9ca3af';
               }}
               title="Delete"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
               </svg>
             </button>
-          </div>
-        )}
-
-        {/* Deleted actions */}
-        {isDeleted && (isHovered || isMobile) && (
-          <button
-            onClick={(e) => { e.stopPropagation(); handleRestore(); }}
-            style={{
-              padding: '6px 14px',
-              fontSize: '12px',
-              fontWeight: '500',
-              color: '#374151',
-              background: 'rgba(0, 0, 0, 0.04)',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            Restore
-          </button>
-        )}
+          ) : null}
+        </div>
       </div>
 
       <style>{`
