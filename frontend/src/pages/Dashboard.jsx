@@ -452,11 +452,11 @@ function Dashboard() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#000', letterSpacing: '-0.01em' }}>
+                <span style={{ fontSize: '15px', fontWeight: '600', color: '#000', letterSpacing: '-0.01em' }}>
                   Tasks
                 </span>
                 <span style={{
-                  fontSize: '11px',
+                  fontSize: '13px',
                   fontWeight: '500',
                   color: '#666',
                   background: '#f5f5f5',
@@ -474,7 +474,7 @@ function Dashboard() {
                   borderBottom: '1px solid #eee',
                 }}>
                   <div style={{
-                    fontSize: '10px',
+                    fontSize: '12px',
                     fontWeight: '600',
                     color: '#999',
                     textTransform: 'uppercase',
@@ -489,7 +489,7 @@ function Dashboard() {
                     padding: '12px',
                   }}>
                     <h4 style={{
-                      fontSize: '13px',
+                      fontSize: '15px',
                       fontWeight: '500',
                       color: '#000',
                       margin: '0 0 4px 0',
@@ -499,7 +499,7 @@ function Dashboard() {
                     </h4>
                     {nextTask.deadline && (
                       <p style={{
-                        fontSize: '11px',
+                        fontSize: '13px',
                         color: '#999',
                         margin: 0,
                       }}>
@@ -514,7 +514,7 @@ function Dashboard() {
               <div style={{ padding: '12px 20px 16px' }}>
                 {activeTasks.length === 0 ? (
                   <p style={{
-                    fontSize: '12px',
+                    fontSize: '14px',
                     color: '#999',
                     textAlign: 'center',
                     padding: '16px 0',
@@ -553,7 +553,7 @@ function Dashboard() {
                           flexShrink: 0,
                         }} />
                         <span style={{
-                          fontSize: '12px',
+                          fontSize: '14px',
                           color: '#333',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -572,7 +572,7 @@ function Dashboard() {
                     width: '100%',
                     padding: '8px',
                     marginTop: '12px',
-                    fontSize: '12px',
+                    fontSize: '14px',
                     fontWeight: '500',
                     color: '#666',
                     background: '#fafafa',
@@ -602,11 +602,11 @@ function Dashboard() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#000', letterSpacing: '-0.01em' }}>
+                <span style={{ fontSize: '15px', fontWeight: '600', color: '#000', letterSpacing: '-0.01em' }}>
                   Calendar
                 </span>
                 <span style={{
-                  fontSize: '11px',
+                  fontSize: '13px',
                   fontWeight: '500',
                   color: '#666',
                   background: '#f5f5f5',
@@ -625,7 +625,7 @@ function Dashboard() {
                 }}>
                   {/* Today */}
                   <div style={{
-                    fontSize: '10px',
+                    fontSize: '12px',
                     fontWeight: '600',
                     color: '#999',
                     textTransform: 'uppercase',
@@ -637,7 +637,7 @@ function Dashboard() {
 
                   {todayEvents.length === 0 ? (
                     <p style={{
-                      fontSize: '12px',
+                      fontSize: '14px',
                       color: '#999',
                       padding: '12px 0',
                       margin: 0,
@@ -663,14 +663,14 @@ function Dashboard() {
                         >
                           <div style={{
                             width: '3px',
-                            height: '16px',
+                            height: '18px',
                             borderRadius: '2px',
                             background: event.calendarColor || '#000',
                             flexShrink: 0,
                           }} />
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{
-                              fontSize: '12px',
+                              fontSize: '14px',
                               color: '#333',
                               margin: 0,
                               overflow: 'hidden',
@@ -680,7 +680,7 @@ function Dashboard() {
                               {event.title}
                             </p>
                             <p style={{
-                              fontSize: '10px',
+                              fontSize: '12px',
                               color: '#999',
                               margin: 0,
                             }}>
@@ -696,7 +696,7 @@ function Dashboard() {
                   {upcomingEvents.length > 0 && (
                     <>
                       <div style={{
-                        fontSize: '10px',
+                        fontSize: '12px',
                         fontWeight: '600',
                         color: '#999',
                         textTransform: 'uppercase',
@@ -724,14 +724,14 @@ function Dashboard() {
                           >
                             <div style={{
                               width: '3px',
-                              height: '16px',
+                              height: '18px',
                               borderRadius: '2px',
                               background: event.calendarColor || '#ccc',
                               flexShrink: 0,
                             }} />
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <p style={{
-                                fontSize: '12px',
+                                fontSize: '14px',
                                 color: '#333',
                                 margin: 0,
                                 overflow: 'hidden',
@@ -741,7 +741,7 @@ function Dashboard() {
                                 {event.title}
                               </p>
                               <p style={{
-                                fontSize: '10px',
+                                fontSize: '12px',
                                 color: '#999',
                                 margin: 0,
                               }}>
@@ -761,7 +761,7 @@ function Dashboard() {
                     width: '100%',
                     padding: '8px',
                     marginTop: '16px',
-                    fontSize: '12px',
+                    fontSize: '14px',
                     fontWeight: '500',
                     color: '#666',
                     background: '#fafafa',
@@ -782,7 +782,7 @@ function Dashboard() {
               onClick={() => setSidebarCollapsed(true)}
               style={{
                 padding: '6px',
-                fontSize: '11px',
+                fontSize: '13px',
                 fontWeight: '500',
                 color: '#999',
                 background: 'transparent',
