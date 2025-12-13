@@ -3,9 +3,11 @@ import ReactMarkdown from 'react-markdown';
 import useAuthStore from '../utils/authStore';
 import useChatStore from '../utils/chatStore';
 import useConfirm from '../hooks/useConfirm';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 function ChatInterface({ onTaskUpdate }) {
   const { user } = useAuthStore();
+  const isMobile = useIsMobile(640);
   const { ConfirmDialog, confirm, alert } = useConfirm();
 
   // Use global chat store instead of local state
@@ -79,14 +81,14 @@ function ChatInterface({ onTaskUpdate }) {
   return (
     <>
       <ConfirmDialog />
-      <div style={{
+      <div className="chat-container" style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         maxWidth: '1200px',
         margin: '0 auto',
         width: '100%',
-        padding: '24px 12px',
+        padding: isMobile ? '12px' : '24px 12px',
       }}>
         {/* Messages Container */}
       <div style={{
@@ -218,7 +220,7 @@ function ChatInterface({ onTaskUpdate }) {
               maxWidth: '600px',
             }}>
               <h2 style={{
-                fontSize: '32px',
+                fontSize: isMobile ? '24px' : '32px',
                 fontWeight: '700',
                 background: 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
                 WebkitBackgroundClip: 'text',
@@ -231,7 +233,7 @@ function ChatInterface({ onTaskUpdate }) {
               </h2>
               <p style={{
                 color: 'rgba(0, 0, 0, 0.6)',
-                fontSize: '18px',
+                fontSize: isMobile ? '15px' : '18px',
                 lineHeight: '1.6',
                 margin: 0,
                 fontWeight: '400',
@@ -241,10 +243,10 @@ function ChatInterface({ onTaskUpdate }) {
             </div>
 
             {/* Suggested Prompts */}
-            <div style={{
+            <div className="suggested-prompts-grid" style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '12px',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: isMobile ? '8px' : '12px',
               width: '100%',
               maxWidth: '800px',
               marginTop: '8px',
@@ -304,31 +306,31 @@ function ChatInterface({ onTaskUpdate }) {
               }}
             >
               {/* Avatar */}
-              <div style={{
-                width: '40px',
-                height: '40px',
-                minWidth: '40px',
+              <div className="chat-avatar" style={{
+                width: isMobile ? '32px' : '40px',
+                height: isMobile ? '32px' : '40px',
+                minWidth: isMobile ? '32px' : '40px',
                 borderRadius: '50%',
                 background: msg.role === 'user' ? '#0066FF' : '#F3F4F6',
                 color: msg.role === 'user' ? '#fff' : '#000',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: msg.role === 'user' ? '14px' : '18px',
+                fontSize: msg.role === 'user' ? (isMobile ? '12px' : '14px') : '18px',
                 fontWeight: msg.role === 'user' ? '600' : '400',
                 overflow: 'hidden',
               }}>
                 {msg.role === 'user' ? (
                   getInitials(user?.full_name || user?.email)
                 ) : (
-                  <img src="/Sam.png" alt="Sam" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
+                  <img src="/Sam.png" alt="Sam" style={{ width: isMobile ? '32px' : '40px', height: isMobile ? '32px' : '40px', objectFit: 'cover' }} />
                 )}
               </div>
 
               {/* Message Bubble */}
-              <div style={{
-                maxWidth: '70%',
-                padding: '14px 18px',
+              <div className="chat-message-bubble" style={{
+                maxWidth: isMobile ? '85%' : '70%',
+                padding: isMobile ? '12px 14px' : '14px 18px',
                 background: msg.role === 'user' ? '#0066FF' : msg.role === 'error' ? '#FEE2E2' : '#F3F4F6',
                 color: msg.role === 'user' ? '#fff' : msg.role === 'error' ? '#DC2626' : '#000',
                 borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
@@ -601,10 +603,11 @@ function ChatInterface({ onTaskUpdate }) {
       )}
 
       {/* Input Form */}
-      <form onSubmit={handleSubmit} style={{
+      <form onSubmit={handleSubmit} className="chat-input-container" style={{
         display: 'flex',
-        gap: '12px',
-        padding: '16px',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? '8px' : '12px',
+        padding: isMobile ? '12px' : '16px',
         background: '#F9FAFB',
         borderRadius: '16px',
         border: '1px solid rgba(0, 0, 0, 0.06)',
@@ -618,18 +621,20 @@ function ChatInterface({ onTaskUpdate }) {
           style={{
             flex: 1,
             padding: '12px 16px',
-            fontSize: '15px',
+            fontSize: '16px',
             border: 'none',
             borderRadius: '12px',
             background: '#fff',
             outline: 'none',
             color: '#000',
+            minHeight: '44px',
           }}
         />
         {isStreaming ? (
           <button
             type="button"
             onClick={stopStreaming}
+            className="chat-send-btn"
             style={{
               padding: '12px 24px',
               fontSize: '15px',
@@ -642,7 +647,10 @@ function ChatInterface({ onTaskUpdate }) {
               transition: 'all 0.2s',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '8px',
+              width: isMobile ? '100%' : 'auto',
+              minHeight: '44px',
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -654,6 +662,7 @@ function ChatInterface({ onTaskUpdate }) {
           <button
             type="submit"
             disabled={!inputMessage.trim() || isLoadingMessage}
+            className="chat-send-btn"
             style={{
               padding: '12px 24px',
               fontSize: '15px',
@@ -665,6 +674,8 @@ function ChatInterface({ onTaskUpdate }) {
               cursor: (!inputMessage.trim() || isLoadingMessage) ? 'not-allowed' : 'pointer',
               opacity: (!inputMessage.trim() || isLoadingMessage) ? 0.5 : 1,
               transition: 'all 0.2s',
+              width: isMobile ? '100%' : 'auto',
+              minHeight: '44px',
             }}
           >
             Send

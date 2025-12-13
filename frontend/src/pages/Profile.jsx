@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../utils/authStore';
 import { authAPI } from '../api/client';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 // Common timezones list
 const TIMEZONES = [
@@ -31,6 +32,7 @@ const TIMEZONES = [
 function Profile() {
   const navigate = useNavigate();
   const { user, setUser, logout } = useAuthStore();
+  const isMobile = useIsMobile(768);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -39,6 +41,7 @@ function Profile() {
     timezone: user?.timezone || 'UTC',
   });
   const [saveMessage, setSaveMessage] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Redirect if not logged in
@@ -159,7 +162,7 @@ function Profile() {
         <div style={{
           maxWidth: '1400px',
           margin: '0 auto',
-          padding: '16px 24px',
+          padding: isMobile ? '12px 16px' : '16px 24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -169,131 +172,238 @@ function Profile() {
             src="/alon-logo.png"
             alt="Alon"
             style={{
-              height: '36px',
+              height: isMobile ? '28px' : '36px',
               cursor: 'pointer',
             }}
             onClick={() => navigate('/dashboard')}
           />
 
-          {/* User Section */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Mobile: Hamburger Menu Button */}
+          {isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* Back to Dashboard - always visible on mobile */}
+              <button
+                onClick={() => navigate('/dashboard')}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: '#0066FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                }}
+              >
+                ← Back
+              </button>
+
+              {/* Hamburger Menu */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                style={{
+                  padding: '8px',
+                  background: 'transparent',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                aria-label="Menu"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                  {mobileMenuOpen ? (
+                    <path d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <>
+                      <path d="M3 12h18M3 6h18M3 18h18" />
+                    </>
+                  )}
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Desktop: Full Navigation */}
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button
+                onClick={() => navigate('/dashboard')}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#fff',
+                  background: '#0066FF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#0052CC';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#0066FF';
+                }}
+              >
+                ← Back to Dashboard
+              </button>
+
+              <button
+                onClick={handleLogout}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: 'transparent',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'transparent';
+                }}
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Dropdown Menu */}
+        {isMobile && mobileMenuOpen && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
+            padding: '16px',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            zIndex: 100,
+          }}>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => { navigate('/calendar'); setMobileMenuOpen(false); }}
               style={{
-                padding: '8px 16px',
-                fontSize: '14px',
+                padding: '12px 16px',
+                fontSize: '15px',
                 fontWeight: '500',
-                color: '#fff',
-                background: '#0066FF',
+                color: '#333',
+                background: '#F3F4F6',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = '#0052CC';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = '#0066FF';
+                textAlign: 'left',
               }}
             >
-              ← Back to Dashboard
+              📅 Calendar
             </button>
-
             <button
-              onClick={handleLogout}
+              onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
               style={{
-                padding: '8px 16px',
-                fontSize: '14px',
+                padding: '12px 16px',
+                fontSize: '15px',
                 fontWeight: '500',
-                color: '#666',
-                background: 'transparent',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
+                color: '#DC2626',
+                background: '#FEE2E2',
+                border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(0, 0, 0, 0.05)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'transparent';
+                textAlign: 'left',
               }}
             >
-              Logout
+              🚪 Logout
             </button>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Main Content */}
-      <main style={{ position: 'relative', zIndex: 1, flex: 1, maxWidth: '800px', width: '100%', margin: '0 auto', padding: '48px 24px' }}>
+      <main className="profile-container" style={{ position: 'relative', zIndex: 1, flex: 1, maxWidth: '800px', width: '100%', margin: '0 auto', padding: isMobile ? '24px 16px' : '48px 24px' }}>
         {/* Header */}
-        <div style={{ marginBottom: '40px' }}>
+        <div style={{ marginBottom: isMobile ? '24px' : '40px' }}>
           <h1 style={{
-            fontSize: '36px',
+            fontSize: isMobile ? '28px' : '36px',
             fontWeight: 'bold',
             color: '#000',
             marginBottom: '8px',
           }}>
             Profile
           </h1>
-          <p style={{ fontSize: '16px', color: 'rgba(0, 0, 0, 0.6)' }}>
+          <p style={{ fontSize: isMobile ? '14px' : '16px', color: 'rgba(0, 0, 0, 0.6)' }}>
             View and edit your account information
           </p>
         </div>
 
         {/* Profile Card */}
-        <div style={{
+        <div className="profile-card" style={{
           background: '#fff',
           borderRadius: '16px',
-          padding: '32px',
+          padding: isMobile ? '20px' : '32px',
           marginBottom: '24px',
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
         }}>
           {/* Avatar Section */}
-          <div style={{
+          <div className="profile-avatar-section" style={{
             display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
             alignItems: 'center',
-            gap: '24px',
-            marginBottom: '32px',
-            paddingBottom: '32px',
+            gap: isMobile ? '16px' : '24px',
+            marginBottom: isMobile ? '24px' : '32px',
+            paddingBottom: isMobile ? '24px' : '32px',
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+            textAlign: isMobile ? 'center' : 'left',
           }}>
             <div style={{
-              width: '80px',
-              height: '80px',
+              width: isMobile ? '64px' : '80px',
+              height: isMobile ? '64px' : '80px',
               borderRadius: '50%',
               background: '#0066FF',
               color: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '32px',
+              fontSize: isMobile ? '24px' : '32px',
               fontWeight: '600',
+              flexShrink: 0,
             }}>
               {getInitials(user?.full_name || user?.email)}
             </div>
             <div>
               <h2 style={{
-                fontSize: '24px',
+                fontSize: isMobile ? '20px' : '24px',
                 fontWeight: 'bold',
                 color: '#000',
                 marginBottom: '4px',
               }}>
                 {user.full_name || 'User'}
               </h2>
-              <p style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.6)' }}>
+              <p style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.6)', wordBreak: 'break-all' }}>
                 {user.email}
               </p>
             </div>
           </div>
 
           {/* Account Details */}
-          <div style={{
+          <div className="profile-header-actions" style={{
             display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: isMobile ? 'stretch' : 'center',
+            gap: isMobile ? '16px' : '0',
             marginBottom: '24px',
           }}>
             <h3 style={{
@@ -575,11 +685,11 @@ function Profile() {
         <div style={{
           background: '#FEE2E2',
           borderRadius: '16px',
-          padding: '32px',
+          padding: isMobile ? '20px' : '32px',
           border: '1px solid #FCA5A5',
         }}>
           <h3 style={{
-            fontSize: '18px',
+            fontSize: isMobile ? '16px' : '18px',
             fontWeight: 'bold',
             color: '#DC2626',
             marginBottom: '12px',
@@ -587,7 +697,7 @@ function Profile() {
             Danger Zone
           </h3>
           <p style={{
-            fontSize: '14px',
+            fontSize: isMobile ? '13px' : '14px',
             color: '#991B1B',
             marginBottom: '24px',
             lineHeight: '1.6',
@@ -598,8 +708,8 @@ function Profile() {
             onClick={handleDeleteAccount}
             disabled={isDeleting}
             style={{
-              padding: '12px 24px',
-              fontSize: '15px',
+              padding: isMobile ? '10px 20px' : '12px 24px',
+              fontSize: isMobile ? '14px' : '15px',
               fontWeight: '600',
               color: '#fff',
               background: '#DC2626',
@@ -608,6 +718,7 @@ function Profile() {
               cursor: isDeleting ? 'not-allowed' : 'pointer',
               opacity: isDeleting ? 0.6 : 1,
               transition: 'background 0.2s',
+              width: isMobile ? '100%' : 'auto',
             }}
             onMouseEnter={(e) => {
               if (!isDeleting) e.target.style.background = '#B91C1C';

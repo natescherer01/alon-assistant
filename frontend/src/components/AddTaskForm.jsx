@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { tasksAPI } from '../api/client';
 import useConfirm from '../hooks/useConfirm';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 function AddTaskForm({ onTaskAdded }) {
+  const isMobile = useIsMobile(768);
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -281,7 +283,7 @@ function AddTaskForm({ onTaskAdded }) {
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="task-form-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
           <div>
             <label htmlFor="deadline" style={{
               display: 'block',
@@ -301,7 +303,7 @@ function AddTaskForm({ onTaskAdded }) {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                fontSize: '15px',
+                fontSize: '16px',
                 border: '1px solid rgba(0, 0, 0, 0.1)',
                 borderRadius: '8px',
                 outline: 'none',
@@ -336,7 +338,7 @@ function AddTaskForm({ onTaskAdded }) {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                fontSize: '15px',
+                fontSize: '16px',
                 border: '1px solid rgba(0, 0, 0, 0.1)',
                 borderRadius: '8px',
                 outline: 'none',
@@ -397,8 +399,8 @@ function AddTaskForm({ onTaskAdded }) {
           </label>
 
           {formData.is_recurring && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingLeft: '28px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingLeft: isMobile ? '0' : '28px' }}>
+              <div className="recurrence-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '12px' }}>
                 <div>
                   <label htmlFor="recurrence_type" style={{
                     display: 'block',

@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { tasksAPI } from '../api/client';
 import useConfirm from '../hooks/useConfirm';
 import useAuthStore from '../utils/authStore';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = false }) {
   const { user } = useAuthStore();
+  const isMobile = useIsMobile(768);
   const { ConfirmDialog, confirm, alert } = useConfirm();
   const [isCompleting, setIsCompleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -567,7 +569,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="task-form-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
             <div>
               <label htmlFor="deadline" style={{
                 display: 'block',
@@ -587,7 +589,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  fontSize: '15px',
+                  fontSize: '16px',
                   border: '1px solid rgba(0, 0, 0, 0.1)',
                   borderRadius: '8px',
                   outline: 'none',
@@ -622,7 +624,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  fontSize: '15px',
+                  fontSize: '16px',
                   border: '1px solid rgba(0, 0, 0, 0.1)',
                   borderRadius: '8px',
                   outline: 'none',
@@ -876,10 +878,10 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
   return (
     <>
       <ConfirmDialog />
-      <div style={{
+      <div className="task-item" style={{
       background: '#fff',
       borderRadius: '16px',
-      padding: '20px',
+      padding: isMobile ? '16px' : '20px',
       boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
       transition: 'box-shadow 0.2s',
     }}
@@ -890,7 +892,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
       e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
     }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+      <div className="task-item-header" style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-start', gap: isMobile ? '12px' : '16px' }}>
         {/* Main Content */}
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
@@ -1030,7 +1032,7 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+        <div className="task-item-actions" style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: '8px', flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
           {task.status === 'deleted' ? (
             <button
               onClick={handleRestore}
