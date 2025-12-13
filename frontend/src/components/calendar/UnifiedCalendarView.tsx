@@ -16,8 +16,6 @@ interface UnifiedCalendarViewProps {
   viewMode?: 'week' | 'month';
   /** Callback when view mode changes (used with controlled viewMode) */
   onViewModeChange?: (mode: 'week' | 'month') => void;
-  /** Callback when events are loaded - useful for external components like Today's Plan */
-  onEventsLoaded?: (events: CalendarEvent[]) => void;
   /** Free time slots to highlight with green overlay */
   freeSlots?: FreeSlot[] | null;
 }
@@ -30,7 +28,6 @@ export default function UnifiedCalendarView({
   onEventClick,
   viewMode: controlledViewMode,
   onViewModeChange,
-  onEventsLoaded,
   freeSlots,
 }: UnifiedCalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -58,13 +55,6 @@ export default function UnifiedCalendarView({
     enabled: viewMode === 'week',
     prefetchDistance: 2, // Preload 2 weeks ahead and behind
   });
-
-  // Notify parent when week events load
-  useEffect(() => {
-    if (viewMode === 'week' && weekEvents.length > 0) {
-      onEventsLoaded?.(weekEvents);
-    }
-  }, [weekEvents, viewMode, onEventsLoaded]);
 
   // Derive current events and loading state based on view mode
   const events = viewMode === 'week' ? weekEvents : monthEvents;
@@ -138,7 +128,6 @@ export default function UnifiedCalendarView({
       const fetchedEvents = await calendarApi.getEvents(start, end);
       console.log('[UnifiedCalendarView] Fetched month events:', fetchedEvents.length);
       setMonthEvents(fetchedEvents);
-      onEventsLoaded?.(fetchedEvents);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load events';
       setMonthError(errorMessage);
@@ -146,7 +135,7 @@ export default function UnifiedCalendarView({
     } finally {
       setMonthLoading(false);
     }
-  }, [currentDate, viewMode, getDateRangeKey, onEventsLoaded, showError]);
+  }, [currentDate, viewMode, getDateRangeKey, showError]);
 
   // Fetch month events when in month view
   useEffect(() => {
