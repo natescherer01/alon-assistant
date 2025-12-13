@@ -238,27 +238,25 @@ export default function UnifiedCalendarView({
 
   const countdownInfo = getCountdownInfo();
 
-  // Styles matching Dashboard
+  // Styles matching Dashboard minimalism
   const buttonStyle = (isActive: boolean): React.CSSProperties => ({
-    padding: '12px 20px',
-    fontSize: '14px',
+    padding: '8px 16px',
+    fontSize: '13px',
     fontWeight: '500',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '6px',
     cursor: 'pointer',
-    transition: 'all 0.2s',
-    background: isActive ? '#0066FF' : '#F3F4F6',
-    color: isActive ? '#fff' : '#000',
+    background: isActive ? '#f5f5f5' : 'transparent',
+    color: isActive ? '#000' : '#666',
   });
 
   const navButtonStyle: React.CSSProperties = {
     padding: '8px',
     background: 'transparent',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '6px',
     cursor: isLoading ? 'not-allowed' : 'pointer',
     opacity: isLoading ? 0.5 : 1,
-    transition: 'all 0.2s',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -269,28 +267,32 @@ export default function UnifiedCalendarView({
       {/* Header with Navigation */}
       <div style={{
         background: '#fff',
-        borderRadius: '16px',
-        padding: '16px 24px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        borderRadius: '12px',
+        border: '1px solid #eee',
+        padding: '12px 20px',
       }}>
         <div style={{
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '16px',
+          gap: '12px',
         }}>
           {/* View Mode Toggle */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '4px' }}>
             <button
               onClick={() => setViewMode('week')}
               style={buttonStyle(viewMode === 'week')}
+              onMouseEnter={(e) => { if (viewMode !== 'week') e.currentTarget.style.background = '#f5f5f5'; }}
+              onMouseLeave={(e) => { if (viewMode !== 'week') e.currentTarget.style.background = 'transparent'; }}
             >
               Week
             </button>
             <button
               onClick={() => setViewMode('month')}
               style={buttonStyle(viewMode === 'month')}
+              onMouseEnter={(e) => { if (viewMode !== 'month') e.currentTarget.style.background = '#f5f5f5'; }}
+              onMouseLeave={(e) => { if (viewMode !== 'month') e.currentTarget.style.background = 'transparent'; }}
             >
               Month
             </button>
@@ -321,12 +323,13 @@ export default function UnifiedCalendarView({
             {/* Date range header - hidden on mobile for week view */}
             {!(isMobile && viewMode === 'week') && (
               <h2 style={{
-                minWidth: '200px',
+                minWidth: '180px',
                 textAlign: 'center',
-                fontSize: '18px',
+                fontSize: '15px',
                 fontWeight: '600',
                 color: '#000',
                 margin: 0,
+                letterSpacing: '-0.01em',
               }}>
                 {getHeaderText()}
               </h2>
@@ -356,21 +359,20 @@ export default function UnifiedCalendarView({
               onClick={handleToday}
               disabled={isLoading}
               style={{
-                padding: '8px 16px',
-                fontSize: '14px',
+                padding: '6px 12px',
+                fontSize: '13px',
                 fontWeight: '500',
-                background: '#F3F4F6',
+                background: '#f5f5f5',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
                 opacity: isLoading ? 0.5 : 1,
-                transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => {
-                if (!isLoading) (e.target as HTMLButtonElement).style.background = '#E5E7EB';
+                if (!isLoading) e.currentTarget.style.background = '#eee';
               }}
               onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.background = '#F3F4F6';
+                e.currentTarget.style.background = '#f5f5f5';
               }}
             >
               Today
@@ -414,50 +416,60 @@ export default function UnifiedCalendarView({
       {isLoading && (
         <div style={{
           background: '#fff',
-          borderRadius: '16px',
+          borderRadius: '12px',
+          border: '1px solid #eee',
           padding: '48px',
           textAlign: 'center',
         }}>
           <div style={{
-            width: '48px',
-            height: '48px',
-            border: '4px solid #F3F4F6',
-            borderTop: '4px solid #0066FF',
+            width: '32px',
+            height: '32px',
+            border: '2px solid #eee',
+            borderTop: '2px solid #000',
             borderRadius: '50%',
             margin: '0 auto 16px',
             animation: 'spin 1s linear infinite',
           }} />
-          <p style={{ color: '#666', margin: 0 }}>Loading events...</p>
+          <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>Loading events...</p>
         </div>
       )}
 
       {/* Error State */}
       {error && !isLoading && (
         <div style={{
-          background: '#FEE2E2',
-          border: '1px solid #FCA5A5',
-          borderRadius: '16px',
+          background: '#fff',
+          border: '1px solid #eee',
+          borderRadius: '12px',
           padding: '24px',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            <span style={{ fontSize: '24px' }}>⚠️</span>
+            <div style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: '#DC2626',
+              marginTop: '8px',
+              flexShrink: 0,
+            }} />
             <div style={{ flex: 1 }}>
-              <h4 style={{ color: '#991B1B', fontWeight: '600', margin: '0 0 8px 0' }}>
+              <h4 style={{ color: '#000', fontWeight: '600', fontSize: '15px', margin: '0 0 8px 0' }}>
                 Failed to load events
               </h4>
-              <p style={{ color: '#B91C1C', fontSize: '14px', margin: '0 0 16px 0' }}>{error}</p>
+              <p style={{ color: '#666', fontSize: '14px', margin: '0 0 16px 0' }}>{error}</p>
               <button
                 onClick={handleRefresh}
                 style={{
-                  background: '#DC2626',
-                  color: '#fff',
+                  background: '#f5f5f5',
+                  color: '#000',
                   border: 'none',
                   padding: '8px 16px',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   fontSize: '14px',
                   fontWeight: '500',
                   cursor: 'pointer',
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#eee'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}
               >
                 Try Again
               </button>

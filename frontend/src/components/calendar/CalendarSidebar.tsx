@@ -208,12 +208,12 @@ export default function CalendarSidebar({
           top: isMobile ? 0 : undefined,
           left: isMobile ? 0 : undefined,
           height: isMobile ? '100vh' : '100%',
-          background: '#FAFBFC',
-          borderRight: '1px solid #E5E7EB',
+          background: '#fff',
+          borderRight: '1px solid #eee',
           transition: 'width 0.3s ease-in-out',
           zIndex: isMobile ? 50 : 1,
-          width: isCollapsed ? '64px' : '280px',
-          minWidth: isCollapsed ? '64px' : '280px',
+          width: isCollapsed ? '56px' : '260px',
+          minWidth: isCollapsed ? '56px' : '260px',
           flexShrink: 0,
           // Hide sidebar completely on mobile when collapsed (accessed via hamburger menu instead)
           display: isCollapsed && isMobile ? 'none' : 'flex',
@@ -224,20 +224,27 @@ export default function CalendarSidebar({
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Header */}
           <div style={{
-            padding: isCollapsed ? '12px' : '16px 16px 12px 16px',
-            borderBottom: '1px solid #E5E7EB',
+            padding: isCollapsed ? '12px' : '16px 20px',
+            borderBottom: '1px solid #eee',
             display: 'flex',
             alignItems: 'center',
             justifyContent: isCollapsed ? 'center' : 'space-between',
             gap: '12px',
-            background: '#fff',
           }}>
             {!isCollapsed && (
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h2 style={{ fontSize: '15px', fontWeight: '600', color: '#111', margin: 0, letterSpacing: '-0.01em' }}>Calendars</h2>
-                <p style={{ fontSize: '12px', color: '#888', marginTop: '2px', margin: 0 }}>
-                  {calendars.length} connected
-                </p>
+                <span style={{ fontSize: '15px', fontWeight: '600', color: '#000', letterSpacing: '-0.01em' }}>Calendars</span>
+                <span style={{
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: '#f5f5f5',
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                  marginLeft: '8px',
+                }}>
+                  {calendars.length}
+                </span>
               </div>
             )}
 
@@ -245,26 +252,26 @@ export default function CalendarSidebar({
             <button
               onClick={onToggle}
               style={{
-                padding: '8px',
-                background: isCollapsed ? '#fff' : 'rgba(0, 0, 0, 0.04)',
-                border: isCollapsed ? '1px solid #E5E7EB' : 'none',
-                borderRadius: '8px',
+                padding: '6px',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '6px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <svg
                 style={{
-                  width: '18px',
-                  height: '18px',
+                  width: '16px',
+                  height: '16px',
                   color: '#666',
-                  transition: 'transform 0.2s',
                   transform: isCollapsed ? 'rotate(180deg)' : 'none',
                 }}
                 fill="none"
@@ -285,7 +292,7 @@ export default function CalendarSidebar({
           <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
             {isCollapsed ? (
               // Collapsed view: Show colored dots/indicators
-              <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+              <div style={{ padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
                 {calendars.map((calendar) => {
                   const calColor = getCalendarColor(calendar.calendarColor, calendar.provider as Provider);
                   return (
@@ -293,18 +300,19 @@ export default function CalendarSidebar({
                       key={calendar.id}
                       onClick={() => handleCalendarClick(calendar.id)}
                       style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        transition: 'all 0.2s',
                         position: 'relative',
-                        background: `${calColor}20`,
+                        background: '#fafafa',
                         border: 'none',
                         cursor: 'pointer',
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = '#fafafa'}
                       aria-label={calendar.calendarName}
                       title={calendar.calendarName}
                     >
@@ -312,12 +320,12 @@ export default function CalendarSidebar({
                       <div
                         style={{
                           position: 'absolute',
-                          top: '-2px',
-                          right: '-2px',
-                          width: '10px',
-                          height: '10px',
+                          top: '-1px',
+                          right: '-1px',
+                          width: '8px',
+                          height: '8px',
                           borderRadius: '50%',
-                          border: '2px solid #FAFBFC',
+                          border: '2px solid #fff',
                           background: getStatusColor(calendar),
                           animation: calendar.isSyncing ? 'pulse 2s infinite' : 'none',
                         }}
@@ -326,8 +334,8 @@ export default function CalendarSidebar({
                       {/* Calendar color dot */}
                       <div
                         style={{
-                          width: '14px',
-                          height: '14px',
+                          width: '12px',
+                          height: '12px',
                           borderRadius: '50%',
                           backgroundColor: calColor,
                         }}
@@ -340,55 +348,29 @@ export default function CalendarSidebar({
                 <button
                   onClick={() => setShowConnectModal(true)}
                   style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '10px',
-                    border: '2px dashed #D1D5DB',
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    border: '1px dashed #ccc',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     background: 'transparent',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#fafafa'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   aria-label="Connect calendar"
                   title="Connect calendar"
                 >
-                  <svg style={{ width: '18px', height: '18px', color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg style={{ width: '16px', height: '16px', color: '#999' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               </div>
             ) : (
               // Expanded view: Show full calendar details
-              <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {/* Provider Statistics */}
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                  {Object.entries(providerCounts).map(([provider, count]) => (
-                    <span
-                      key={provider}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '4px 8px',
-                        borderRadius: '9999px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        ...getProviderBadgeStyle(provider as Provider),
-                      }}
-                    >
-                      <div style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: 'currentColor',
-                      }} />
-                      {count}
-                    </span>
-                  ))}
-                </div>
-
+              <div style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {/* Calendar Items */}
                 {calendars.map((calendar) => {
                   const calColor = getCalendarColor(calendar.calendarColor, calendar.provider as Provider);
@@ -396,11 +378,9 @@ export default function CalendarSidebar({
                     <div
                       key={calendar.id}
                       style={{
-                        background: '#fff',
-                        borderRadius: '10px',
+                        background: '#fafafa',
+                        borderRadius: '8px',
                         overflow: 'hidden',
-                        borderLeft: `3px solid ${calColor}`,
-                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                       }}
                     >
                       {/* Calendar Header */}
@@ -416,16 +396,21 @@ export default function CalendarSidebar({
                           border: 'none',
                           cursor: 'pointer',
                           textAlign: 'left',
-                          transition: 'all 0.15s',
                         }}
                       >
-                        <ProviderIcon provider={calendar.provider} size="sm" />
+                        <div style={{
+                          width: '3px',
+                          height: '18px',
+                          borderRadius: '2px',
+                          background: calColor,
+                          flexShrink: 0,
+                        }} />
 
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{
                             fontSize: '14px',
                             fontWeight: '500',
-                            color: '#000',
+                            color: '#333',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
@@ -443,7 +428,7 @@ export default function CalendarSidebar({
                                 animation: calendar.isSyncing ? 'pulse 2s infinite' : 'none',
                               }}
                             />
-                            <span style={{ fontSize: '12px', color: '#666' }}>
+                            <span style={{ fontSize: '12px', color: '#999' }}>
                               {calendar.isSyncing ? 'Syncing...' : calendar.isConnected ? 'Active' : 'Inactive'}
                             </span>
                           </div>
@@ -451,10 +436,9 @@ export default function CalendarSidebar({
 
                         <svg
                           style={{
-                            width: '16px',
-                            height: '16px',
-                            color: '#9CA3AF',
-                            transition: 'transform 0.2s',
+                            width: '14px',
+                            height: '14px',
+                            color: '#999',
                             transform: expandedCalendarId === calendar.id ? 'rotate(180deg)' : 'none',
                           }}
                           fill="none"
@@ -468,199 +452,67 @@ export default function CalendarSidebar({
                       {/* Expanded Calendar Details */}
                       {expandedCalendarId === calendar.id && (
                         <div style={{
-                          padding: '16px',
-                          background: 'linear-gradient(to bottom, #FAFBFC, #F5F5F7)',
-                          borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+                          padding: '12px',
+                          background: '#fff',
+                          borderTop: '1px solid #eee',
                         }}>
-                          {/* Badges Row */}
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            flexWrap: 'wrap',
-                            marginBottom: '16px',
-                          }}>
-                            {/* Provider badge */}
-                            <span style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              padding: '4px 10px',
-                              borderRadius: '6px',
-                              fontSize: '11px',
-                              fontWeight: '600',
-                              letterSpacing: '0.3px',
-                              textTransform: 'uppercase',
-                              ...getProviderBadgeStyle(calendar.provider as Provider),
-                            }}>
-                              {getProviderName(calendar.provider as Provider)}
-                            </span>
-                            {calendar.isPrimary && (
-                              <span style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                fontSize: '11px',
-                                fontWeight: '600',
-                                letterSpacing: '0.3px',
-                                textTransform: 'uppercase',
-                                background: 'rgba(147, 51, 234, 0.1)',
-                                color: '#9333EA',
-                              }}>
-                                Primary
-                              </span>
-                            )}
-                            {calendar.isReadOnly && (
-                              <span style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                fontSize: '11px',
-                                fontWeight: '600',
-                                letterSpacing: '0.3px',
-                                textTransform: 'uppercase',
-                                background: 'rgba(0, 0, 0, 0.05)',
-                                color: '#6B7280',
-                              }}>
-                                <svg style={{ width: '10px', height: '10px' }} fill="currentColor" viewBox="0 0 20 20">
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                                Read-only
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Info Section */}
-                          <div style={{
-                            background: '#fff',
-                            borderRadius: '10px',
-                            padding: '12px',
-                            marginBottom: '12px',
-                            border: '1px solid rgba(0, 0, 0, 0.06)',
-                          }}>
-                            {/* Owner Email */}
+                          {/* Info Row */}
+                          <div style={{ marginBottom: '12px' }}>
                             {calendar.ownerEmail && (
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                paddingBottom: calendar.lastSyncedAt ? '10px' : 0,
-                                marginBottom: calendar.lastSyncedAt ? '10px' : 0,
-                                borderBottom: calendar.lastSyncedAt ? '1px solid rgba(0, 0, 0, 0.06)' : 'none',
-                              }}>
-                                <svg style={{ width: '14px', height: '14px', color: '#9CA3AF', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                                <span style={{ fontSize: '12px', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {calendar.ownerEmail}
-                                </span>
-                              </div>
+                              <p style={{ fontSize: '12px', color: '#999', margin: '0 0 4px 0' }}>
+                                {calendar.ownerEmail}
+                              </p>
                             )}
-
-                            {/* Last Synced */}
                             {calendar.lastSyncedAt && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <svg style={{ width: '14px', height: '14px', color: '#9CA3AF', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span style={{ fontSize: '12px', color: '#666' }}>
-                                  Synced {formatRelativeTime(calendar.lastSyncedAt)}
-                                </span>
-                              </div>
+                              <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>
+                                Synced {formatRelativeTime(calendar.lastSyncedAt)}
+                              </p>
                             )}
-
-                            {/* Sync Error */}
                             {calendar.syncError && (
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                marginTop: '10px',
-                                padding: '8px',
-                                background: 'rgba(239, 68, 68, 0.08)',
-                                borderRadius: '6px',
-                              }} title={calendar.syncError}>
-                                <svg style={{ width: '14px', height: '14px', color: '#EF4444', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span style={{ fontSize: '12px', color: '#EF4444', fontWeight: '500' }}>
-                                  Sync failed
-                                </span>
-                              </div>
+                              <p style={{ fontSize: '12px', color: '#DC2626', margin: '4px 0 0 0' }}>
+                                Sync failed
+                              </p>
                             )}
                           </div>
 
                           {/* Actions */}
                           <div style={{ display: 'flex', gap: '8px' }}>
-                            {/* Sync Button */}
                             {!calendar.isReadOnly && (
                               <button
                                 onClick={() => handleSync(calendar)}
                                 disabled={isSyncing === calendar.id}
                                 style={{
                                   flex: 1,
-                                  padding: '10px 16px',
+                                  padding: '8px 12px',
                                   fontSize: '13px',
-                                  fontWeight: '600',
-                                  color: '#fff',
-                                  background: '#0066FF',
+                                  fontWeight: '500',
+                                  color: '#000',
+                                  background: '#f5f5f5',
                                   border: 'none',
-                                  borderRadius: '8px',
+                                  borderRadius: '6px',
                                   cursor: isSyncing === calendar.id ? 'not-allowed' : 'pointer',
                                   opacity: isSyncing === calendar.id ? 0.7 : 1,
-                                  transition: 'all 0.2s',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px',
                                 }}
                               >
-                                {isSyncing === calendar.id ? (
-                                  <>
-                                    <svg style={{ width: '14px', height: '14px', animation: 'spin 1s linear infinite' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Syncing
-                                  </>
-                                ) : (
-                                  <>
-                                    <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    Sync Now
-                                  </>
-                                )}
+                                {isSyncing === calendar.id ? 'Syncing...' : 'Sync'}
                               </button>
                             )}
-
-                            {/* Disconnect Button */}
                             <button
                               onClick={() => handleDisconnectClick(calendar)}
                               style={{
-                                padding: '10px 16px',
+                                padding: '8px 12px',
                                 fontSize: '13px',
-                                fontWeight: '600',
-                                color: '#DC2626',
+                                fontWeight: '500',
+                                color: '#999',
                                 background: 'transparent',
-                                border: '1px solid rgba(220, 38, 38, 0.3)',
-                                borderRadius: '8px',
+                                border: 'none',
+                                borderRadius: '6px',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s',
                               }}
-                              onMouseEnter={(e) => {
-                                (e.target as HTMLButtonElement).style.background = 'rgba(220, 38, 38, 0.08)';
-                              }}
-                              onMouseLeave={(e) => {
-                                (e.target as HTMLButtonElement).style.background = 'transparent';
-                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.color = '#666'}
+                              onMouseLeave={(e) => e.currentTarget.style.color = '#999'}
                             >
-                              Disconnect
+                              Remove
                             </button>
                           </div>
                         </div>
@@ -674,27 +526,27 @@ export default function CalendarSidebar({
                   onClick={() => setShowConnectModal(true)}
                   style={{
                     width: '100%',
-                    padding: '10px',
-                    border: '1px dashed #D1D5DB',
-                    borderRadius: '10px',
-                    fontSize: '13px',
+                    padding: '8px',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
                     fontWeight: '500',
-                    color: '#888',
-                    background: 'transparent',
+                    color: '#666',
+                    background: '#fafafa',
                     cursor: 'pointer',
-                    transition: 'all 0.15s',
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#fafafa'}
                 >
-                  + Connect Calendar
+                  + Add calendar
                 </button>
 
-                {/* Team Section Divider */}
+                {/* Team Section */}
                 <div style={{
-                  marginTop: '8px',
-                  paddingTop: '12px',
-                  borderTop: '1px solid #E5E7EB',
+                  marginTop: '16px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid #eee',
                 }}>
-                  {/* Team Header */}
                   <button
                     onClick={() => setShowTeamSection(!showTeamSection)}
                     style={{
@@ -702,21 +554,20 @@ export default function CalendarSidebar({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '6px 0',
+                      padding: '0',
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
                     }}
                   >
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#111' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Team
                     </span>
                     <svg
                       style={{
-                        width: '16px',
-                        height: '16px',
-                        color: '#9CA3AF',
-                        transition: 'transform 0.2s',
+                        width: '14px',
+                        height: '14px',
+                        color: '#999',
                         transform: showTeamSection ? 'rotate(180deg)' : 'none',
                       }}
                       fill="none"
@@ -727,17 +578,15 @@ export default function CalendarSidebar({
                     </svg>
                   </button>
 
-                  {/* Team Content */}
                   {showTeamSection && (
-                    <div style={{ marginTop: '8px' }}>
+                    <div style={{ marginTop: '12px' }}>
                       {filteredTeamUsers.length === 0 ? (
-                        <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>
-                          No team members with calendars
+                        <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>
+                          No team members
                         </p>
                       ) : (
                         <>
-                          {/* User List */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '12px' }}>
                             {filteredTeamUsers.map(user => (
                               <label
                                 key={user.id}
@@ -745,20 +594,22 @@ export default function CalendarSidebar({
                                   display: 'flex',
                                   alignItems: 'center',
                                   gap: '8px',
-                                  padding: '6px 8px',
+                                  padding: '8px 10px',
                                   borderRadius: '6px',
                                   cursor: 'pointer',
-                                  background: selectedUserIds.includes(String(user.id)) ? 'rgba(0, 102, 255, 0.08)' : 'transparent',
+                                  background: selectedUserIds.includes(String(user.id)) ? '#f5f5f5' : 'transparent',
                                 }}
+                                onMouseEnter={(e) => { if (!selectedUserIds.includes(String(user.id))) e.currentTarget.style.background = '#fafafa'; }}
+                                onMouseLeave={(e) => { if (!selectedUserIds.includes(String(user.id))) e.currentTarget.style.background = 'transparent'; }}
                               >
                                 <input
                                   type="checkbox"
                                   checked={selectedUserIds.includes(String(user.id))}
                                   onChange={() => toggleUserSelection(String(user.id))}
-                                  style={{ accentColor: '#0066FF', cursor: 'pointer' }}
+                                  style={{ accentColor: '#000', cursor: 'pointer' }}
                                 />
                                 <span style={{
-                                  fontSize: '13px',
+                                  fontSize: '14px',
                                   color: '#333',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
@@ -770,41 +621,44 @@ export default function CalendarSidebar({
                             ))}
                           </div>
 
-                          {/* Find Free Time Button */}
                           <button
                             onClick={handleFindFreeTime}
                             disabled={findFreeTimes.isPending}
                             style={{
                               width: '100%',
-                              padding: '10px',
-                              fontSize: '13px',
+                              padding: '8px',
+                              fontSize: '14px',
                               fontWeight: '500',
-                              color: '#fff',
-                              background: findFreeTimes.isPending ? '#9CA3AF' : '#22C55E',
+                              color: '#000',
+                              background: '#f5f5f5',
                               border: 'none',
-                              borderRadius: '8px',
+                              borderRadius: '6px',
                               cursor: findFreeTimes.isPending ? 'not-allowed' : 'pointer',
+                              opacity: findFreeTimes.isPending ? 0.7 : 1,
                             }}
+                            onMouseEnter={(e) => { if (!findFreeTimes.isPending) e.currentTarget.style.background = '#eee'; }}
+                            onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}
                           >
-                            {findFreeTimes.isPending ? 'Finding...' : 'Find Free Time'}
+                            {findFreeTimes.isPending ? 'Finding...' : 'Find free time'}
                           </button>
 
-                          {/* Clear Button */}
                           {selectedUserIds.length > 0 && (
                             <button
                               onClick={clearFreeTimeSlots}
                               style={{
                                 width: '100%',
                                 marginTop: '8px',
-                                padding: '8px',
-                                fontSize: '12px',
-                                color: '#666',
+                                padding: '6px',
+                                fontSize: '13px',
+                                color: '#999',
                                 background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
                               }}
+                              onMouseEnter={(e) => e.currentTarget.style.color = '#666'}
+                              onMouseLeave={(e) => e.currentTarget.style.color = '#999'}
                             >
-                              Clear selection
+                              Clear
                             </button>
                           )}
                         </>
