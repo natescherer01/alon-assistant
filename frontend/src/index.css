@@ -295,14 +295,23 @@ p {
   border-width: 0;
 }
 
-/* Focus States */
+/* Focus States - minimal for keyboard navigation only */
 :focus {
+  outline: none;
+}
+
+:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
 button:focus,
 a:focus {
+  outline: none;
+}
+
+button:focus-visible,
+a:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
