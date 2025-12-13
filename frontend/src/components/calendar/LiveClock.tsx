@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks/calendar/useAuth';
 import { formatTime24Hour, getUserTimezone } from '../../utils/calendar/dateTime';
 
 /**
- * Live clock display with modern styling
+ * Live clock display styled like a digital LED clock
  * Shows current time in 24-hour format with timezone
  * Updates every second
  */
@@ -29,25 +29,39 @@ export default function LiveClock() {
     : timezone;
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium">
-      <svg
-        className="w-5 h-5 text-gray-500"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
+    <div
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '8px 16px',
+        backgroundColor: '#1a1a1a',
+        borderRadius: '8px',
+        border: '2px solid #333',
+        boxShadow: 'inset 0 2px 8px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)',
+      }}
+    >
+      <span
+        style={{
+          fontFamily: '"SF Mono", "Roboto Mono", "Consolas", monospace',
+          fontSize: '28px',
+          fontWeight: 600,
+          color: '#00ff88',
+          textShadow: '0 0 10px rgba(0, 255, 136, 0.7), 0 0 20px rgba(0, 255, 136, 0.4)',
+          letterSpacing: '2px',
+        }}
       >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-      <span className="font-mono tabular-nums tracking-tight">
         {formatTime24Hour(currentTime, timezone)}
       </span>
-      <span className="text-gray-500 text-sm">
+      <span
+        style={{
+          fontSize: '12px',
+          fontWeight: 500,
+          color: '#666',
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+        }}
+      >
         {displayTimezone}
       </span>
     </div>
