@@ -338,25 +338,44 @@ export default function UnifiedCalendarView({
 
         {/* Right: Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* View Mode Toggle - subtle pills */}
+          {/* View Mode Toggle - minimalist sliding bar */}
           <div style={{
             display: 'flex',
-            background: '#f5f5f5',
-            borderRadius: '6px',
-            padding: '2px',
+            position: 'relative',
+            background: '#f0f0f0',
+            borderRadius: '8px',
+            padding: '3px',
           }}>
+            {/* Sliding indicator */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '3px',
+                left: viewMode === 'week' ? '3px' : 'calc(50% + 1.5px)',
+                width: 'calc(50% - 4.5px)',
+                height: 'calc(100% - 6px)',
+                background: '#fff',
+                borderRadius: '6px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                transition: 'left 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                pointerEvents: 'none',
+              }}
+            />
             <button
               onClick={() => setViewMode('week')}
               style={{
-                padding: '6px 12px',
+                padding: '6px 14px',
                 fontSize: '13px',
                 fontWeight: '500',
                 border: 'none',
-                borderRadius: '4px',
+                borderRadius: '6px',
                 cursor: 'pointer',
-                background: viewMode === 'week' ? '#fff' : 'transparent',
-                color: viewMode === 'week' ? '#000' : '#666',
-                boxShadow: viewMode === 'week' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                background: 'transparent',
+                color: viewMode === 'week' ? '#000' : '#888',
+                transition: 'color 0.2s ease',
+                position: 'relative',
+                zIndex: 1,
+                outline: 'none',
               }}
             >
               {isMobile ? 'Day' : 'Week'}
@@ -364,15 +383,18 @@ export default function UnifiedCalendarView({
             <button
               onClick={() => setViewMode('month')}
               style={{
-                padding: '6px 12px',
+                padding: '6px 14px',
                 fontSize: '13px',
                 fontWeight: '500',
                 border: 'none',
-                borderRadius: '4px',
+                borderRadius: '6px',
                 cursor: 'pointer',
-                background: viewMode === 'month' ? '#fff' : 'transparent',
-                color: viewMode === 'month' ? '#000' : '#666',
-                boxShadow: viewMode === 'month' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                background: 'transparent',
+                color: viewMode === 'month' ? '#000' : '#888',
+                transition: 'color 0.2s ease',
+                position: 'relative',
+                zIndex: 1,
+                outline: 'none',
               }}
             >
               Month
