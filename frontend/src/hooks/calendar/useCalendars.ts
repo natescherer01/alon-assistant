@@ -39,8 +39,8 @@ export function useCalendars() {
         queryKeys.calendar.calendars(),
         (old) => old?.filter((cal) => cal.id !== id) || []
       );
-      // Invalidate calendar events since a calendar was removed
-      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.events() });
+      // Refetch active event queries only - preserves prefetch cache for instant navigation
+      queryClient.refetchQueries({ queryKey: queryKeys.calendar.events(), type: 'active' });
     },
   });
 
@@ -56,8 +56,8 @@ export function useCalendars() {
             cal.id === id ? { ...cal, lastSyncedAt: new Date().toISOString() } : cal
           ) || []
       );
-      // Invalidate events to get fresh data
-      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.events() });
+      // Refetch active event queries only - preserves prefetch cache for instant navigation
+      queryClient.refetchQueries({ queryKey: queryKeys.calendar.events(), type: 'active' });
     },
   });
 
@@ -71,8 +71,8 @@ export function useCalendars() {
         (old) =>
           old?.map((cal) => ({ ...cal, lastSyncedAt: new Date().toISOString() })) || []
       );
-      // Invalidate events to get fresh data
-      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.events() });
+      // Refetch active event queries only - preserves prefetch cache for instant navigation
+      queryClient.refetchQueries({ queryKey: queryKeys.calendar.events(), type: 'active' });
     },
   });
 
@@ -86,8 +86,8 @@ export function useCalendars() {
         queryKeys.calendar.calendars(),
         (old) => [...(old || []), newCalendar]
       );
-      // Invalidate events to fetch from new calendar
-      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.events() });
+      // Refetch active event queries only - preserves prefetch cache for instant navigation
+      queryClient.refetchQueries({ queryKey: queryKeys.calendar.events(), type: 'active' });
     },
   });
 

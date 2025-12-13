@@ -173,17 +173,29 @@ export function useWeekEvents(
 }
 
 /**
- * Helper function to invalidate all cached week events
+ * Helper function to refetch active week events
  * Useful after calendar sync or when events are modified
+ * Uses refetchQueries with type:'active' to preserve prefetch cache
  *
  * @example
  * const queryClient = useQueryClient();
  * await syncCalendars();
- * invalidateAllWeekEvents(queryClient);
+ * refetchActiveWeekEvents(queryClient);
+ */
+export function refetchActiveWeekEvents(queryClient: ReturnType<typeof useQueryClient>): void {
+  queryClient.refetchQueries({
+    queryKey: queryKeys.calendar.events(),
+    type: 'active',
+  });
+}
+
+/**
+ * @deprecated Use refetchActiveWeekEvents instead - invalidateAllWeekEvents destroys prefetch cache
  */
 export function invalidateAllWeekEvents(queryClient: ReturnType<typeof useQueryClient>): void {
-  queryClient.invalidateQueries({
-    queryKey: queryKeys.calendar.all,
+  queryClient.refetchQueries({
+    queryKey: queryKeys.calendar.events(),
+    type: 'active',
   });
 }
 
