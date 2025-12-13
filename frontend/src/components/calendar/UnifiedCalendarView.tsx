@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import type { CalendarEvent } from '../../api/calendar/calendar';
 import type { FreeSlot } from '../../api/calendar/users';
 import { useAuth } from '../../hooks/calendar/useAuth';
@@ -163,10 +163,16 @@ export default function UnifiedCalendarView({
 
   const { start, end } = getDateRange(currentDate, viewMode);
 
-  // Get current week start for week view
-  const weekStart = new Date(currentDate);
-  weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-  weekStart.setHours(0, 0, 0, 0);
+  // Get current week start for week view - memoized to prevent unnecessary rerenders
+  // This is important because WeekCalendarGrid uses weekStart in a useEffect dependency
+  // Without memoization, the countdown timer's setCurrentTime would create a new Date object
+  // every second, triggering the useEffect and resetting the mobile day view
+  const weekStart = useMemo(() => {
+    const ws = new Date(currentDate);
+    ws.setDate(currentDate.getDate() - currentDate.getDay());
+    ws.setHours(0, 0, 0, 0);
+    return ws;
+  }, [currentDate]);
 
   // Handle cell click in month view (navigate to week view or show day details)
   const handleMonthCellClick = (date: Date) => {
