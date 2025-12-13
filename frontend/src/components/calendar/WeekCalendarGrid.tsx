@@ -8,7 +8,6 @@ import {
   separateAllDayEvents,
   getCurrentTimeSlot,
   isToday,
-  getWeekdayName,
   formatTime,
   validateAndSanitizeUrl,
   sanitizeEventText,
@@ -44,6 +43,8 @@ interface WeekCalendarGridProps {
   timezone?: string;
   /** Free time slots to highlight with green overlay */
   freeSlots?: FreeSlot[] | null;
+  /** Current day for mobile view (controlled by parent) */
+  mobileDay: Date;
 }
 
 /**
@@ -57,10 +58,10 @@ export default function WeekCalendarGrid({
   countdownInfo,
   timezone,
   freeSlots,
+  mobileDay,
 }: WeekCalendarGridProps) {
   const { user } = useAuth();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [mobileDay, setMobileDay] = useState(new Date());
 
   // Handle window resize for responsive mobile detection
   useEffect(() => {
@@ -71,27 +72,6 @@ export default function WeekCalendarGrid({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  // Sync mobileDay with weekStart when it changes (e.g., when "Today" button is clicked)
-  // This ensures the mobile day view navigates to the correct day when the parent updates
-  useEffect(() => {
-    // Check if weekStart is today's week - if so, set mobileDay to today
-    const today = new Date();
-    const todayWeekStart = new Date(today);
-    todayWeekStart.setDate(today.getDate() - today.getDay());
-    todayWeekStart.setHours(0, 0, 0, 0);
-
-    const weekStartNormalized = new Date(weekStart);
-    weekStartNormalized.setHours(0, 0, 0, 0);
-
-    // If weekStart matches today's week start, set mobileDay to today
-    if (weekStartNormalized.getTime() === todayWeekStart.getTime()) {
-      setMobileDay(new Date());
-    } else {
-      // Otherwise, set mobileDay to the weekStart
-      setMobileDay(new Date(weekStart));
-    }
-  }, [weekStart]);
 
   // Generate week days (Sun-Sat)
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
@@ -213,19 +193,6 @@ export default function WeekCalendarGrid({
     return result;
   }, [freeSlots, displayDays]);
 
-  // Handle mobile day navigation
-  const handleMobilePrevDay = () => {
-    const prevDay = new Date(mobileDay);
-    prevDay.setDate(mobileDay.getDate() - 1);
-    setMobileDay(prevDay);
-  };
-
-  const handleMobileNextDay = () => {
-    const nextDay = new Date(mobileDay);
-    nextDay.setDate(mobileDay.getDate() + 1);
-    setMobileDay(nextDay);
-  };
-
   return (
     <div style={{
       background: '#fff',
@@ -237,61 +204,6 @@ export default function WeekCalendarGrid({
       flexDirection: 'column',
       minHeight: 0,
     }}>
-      {/* Mobile Navigation */}
-      {isMobile && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '16px',
-          borderBottom: '1px solid #E5E7EB',
-          background: '#F9FAFB',
-        }}>
-          <button
-            onClick={handleMobilePrevDay}
-            style={{
-              padding: '8px',
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-            aria-label="Previous day"
-          >
-            <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '14px', fontWeight: '500', color: '#000' }}>
-              {getWeekdayName(mobileDay)}
-            </div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              {mobileDay.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-            </div>
-          </div>
-
-          <button
-            onClick={handleMobileNextDay}
-            style={{
-              padding: '8px',
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-            aria-label="Next day"
-          >
-            <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-      )}
-
       {/* Calendar Grid Container */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'auto' }}>
         {/* Header Row - Day Names and Dates */}
