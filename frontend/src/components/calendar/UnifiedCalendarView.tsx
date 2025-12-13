@@ -1,10 +1,9 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { CalendarEvent } from '../../api/calendar/calendar';
 import type { FreeSlot } from '../../api/calendar/users';
-import calendarApi from '../../api/calendar/calendar';
-import { useToast } from '../../hooks/calendar/useToast';
 import { useAuth } from '../../hooks/calendar/useAuth';
 import { useWeekEvents } from '../../hooks/calendar/useWeekEvents';
+import { useMonthEvents } from '../../hooks/calendar/useMonthEvents';
 import WeekCalendarGrid from './WeekCalendarGrid';
 import MonthCalendarGrid from './MonthCalendarGrid';
 import { getUserTimezone } from '../../utils/calendar/dateTime';
@@ -34,7 +33,6 @@ export default function UnifiedCalendarView({
   const [internalViewMode, setInternalViewMode] = useState<'week' | 'month'>('week');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const { error: showError } = useToast();
   const { user } = useAuth();
 
   // Handle window resize for responsive mobile detection
@@ -50,12 +48,6 @@ export default function UnifiedCalendarView({
   // Use controlled mode if provided, otherwise use internal state
   const viewMode = controlledViewMode ?? internalViewMode;
 
-  // Month view state (manual fetching for now)
-  const [monthEvents, setMonthEvents] = useState<CalendarEvent[]>([]);
-  const [monthLoading, setMonthLoading] = useState(false);
-  const [monthError, setMonthError] = useState<string | null>(null);
-  const lastFetchedMonthRange = useRef<string | null>(null);
-
   // Week view: Use React Query hook with automatic prefetching (±2 weeks)
   const {
     events: weekEvents,
@@ -67,10 +59,20 @@ export default function UnifiedCalendarView({
     prefetchDistance: 2, // Preload 2 weeks ahead and behind
   });
 
+  // Month view: Use React Query hook (events preloaded on app start)
+  const {
+    events: monthEvents,
+    isLoading: monthLoading,
+    error: monthError,
+    refetch: refetchMonth,
+  } = useMonthEvents(currentDate, {
+    enabled: viewMode === 'month',
+  });
+
   // Derive current events and loading state based on view mode
   const events = viewMode === 'week' ? weekEvents : monthEvents;
   const isLoading = viewMode === 'week' ? weekLoading : monthLoading;
-  const error = viewMode === 'week' ? (weekError?.message ?? null) : monthError;
+  const error = viewMode === 'week' ? (weekError?.message ?? null) : (monthError?.message ?? null);
 
   const setViewMode = (mode: 'week' | 'month') => {
     if (onViewModeChange) {
@@ -113,56 +115,14 @@ export default function UnifiedCalendarView({
     }
   };
 
-  // Create a cache key from date range (for month view)
-  const getDateRangeKey = useCallback((start: Date, end: Date) => {
-    return `${start.toISOString().split('T')[0]}_${end.toISOString().split('T')[0]}`;
-  }, []);
-
-  // Fetch events for month view (week view uses React Query hook)
-  const fetchMonthEvents = useCallback(async (forceRefresh = false) => {
-    if (viewMode !== 'month') return;
-
-    const { start, end } = getDateRange(currentDate, 'month');
-    const rangeKey = getDateRangeKey(start, end);
-
-    // Skip if we're already fetching this exact range
-    if (lastFetchedMonthRange.current === rangeKey && !forceRefresh) {
-      return;
-    }
-
-    setMonthLoading(true);
-    setMonthError(null);
-    lastFetchedMonthRange.current = rangeKey;
-
-    try {
-      console.log('[UnifiedCalendarView] Fetching month events:', start.toISOString(), 'to', end.toISOString());
-      const fetchedEvents = await calendarApi.getEvents(start, end);
-      console.log('[UnifiedCalendarView] Fetched month events:', fetchedEvents.length);
-      setMonthEvents(fetchedEvents);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load events';
-      setMonthError(errorMessage);
-      showError(errorMessage);
-    } finally {
-      setMonthLoading(false);
-    }
-  }, [currentDate, viewMode, getDateRangeKey, showError]);
-
-  // Fetch month events when in month view
-  useEffect(() => {
-    if (viewMode === 'month') {
-      fetchMonthEvents();
-    }
-  }, [fetchMonthEvents, viewMode]);
-
   // Handle refresh button - refetch based on current view
   const handleRefresh = useCallback(() => {
     if (viewMode === 'week') {
       refetchWeek();
     } else {
-      fetchMonthEvents(true);
+      refetchMonth();
     }
-  }, [viewMode, refetchWeek, fetchMonthEvents]);
+  }, [viewMode, refetchWeek, refetchMonth]);
 
   // Update clock every second
   useEffect(() => {

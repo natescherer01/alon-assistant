@@ -18,6 +18,7 @@ import { queryKeys } from '../lib/queryKeys';
 import { tasksAPI, chatAPI } from '../api/client';
 import { calendarApi } from '../api/calendar/calendar';
 import { eventsApi } from '../api/calendar/events';
+import { getMonthGridRange } from '../hooks/calendar/useMonthEvents';
 
 /**
  * AppDataLoader Component
@@ -33,6 +34,7 @@ function AppDataLoader({ onLoadComplete, onLoadError }) {
     currentUser: 'pending',
     calendars: 'pending',
     calendarEvents: 'pending',
+    calendarMonthEvents: 'pending',
   });
 
   useEffect(() => {
@@ -115,6 +117,32 @@ function AppDataLoader({ onLoadComplete, onLoadError }) {
             // Events fetch may fail if no calendars - that's OK
             if (isMounted) {
               setLoadingState(prev => ({ ...prev, calendarEvents: 'skipped' }));
+            }
+          }),
+
+          // Calendar events for current month (preload for instant week-to-month view switching)
+          queryClient.prefetchQuery({
+            queryKey: (() => {
+              const now = new Date();
+              const { start, end } = getMonthGridRange(now);
+              const startKey = start.toISOString().split('T')[0];
+              const endKey = end.toISOString().split('T')[0];
+              return queryKeys.calendar.eventsForRange(startKey, endKey);
+            })(),
+            queryFn: () => {
+              const now = new Date();
+              const { start, end } = getMonthGridRange(now);
+              return calendarApi.getEvents(start, end);
+            },
+            staleTime: 5 * 60 * 1000, // 5 minutes
+          }).then(() => {
+            if (isMounted) {
+              setLoadingState(prev => ({ ...prev, calendarMonthEvents: 'success' }));
+            }
+          }).catch(() => {
+            // Events fetch may fail if no calendars - that's OK
+            if (isMounted) {
+              setLoadingState(prev => ({ ...prev, calendarMonthEvents: 'skipped' }));
             }
           }),
         ]);
