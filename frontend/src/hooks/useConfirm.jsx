@@ -80,6 +80,8 @@ function useConfirm() {
   const ConfirmDialog = useCallback(() => {
     if (!modalState.isOpen) return null;
 
+    const isAlert = modalState.type === 'alert';
+
     return (
       <>
         {/* Backdrop */}
@@ -88,10 +90,11 @@ function useConfirm() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             zIndex: 9998,
-            animation: 'fadeIn 0.2s ease-out',
+            animation: 'fadeIn 0.15s ease-out',
           }}
         />
 
@@ -104,52 +107,67 @@ function useConfirm() {
             transform: 'translate(-50%, -50%)',
             zIndex: 9999,
             width: '90%',
-            maxWidth: '440px',
-            animation: 'slideUp 0.3s ease-out',
+            maxWidth: '380px',
+            animation: 'slideUp 0.2s ease-out',
           }}
         >
           <div
             style={{
               background: '#fff',
-              borderRadius: '20px',
-              padding: '32px',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-              border: '1px solid rgba(0, 0, 0, 0.1)',
+              borderRadius: '16px',
+              padding: '28px',
+              boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
+              border: '1px solid #eee',
             }}
           >
             {/* Icon */}
             <div
               style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                background:
-                  modalState.type === 'alert'
-                    ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
-                    : 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: isAlert ? '#fafafa' : '#f5f5f5',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 20px',
-                fontSize: '28px',
-                boxShadow:
-                  modalState.type === 'alert'
-                    ? '0 8px 20px rgba(239, 68, 68, 0.3)'
-                    : '0 8px 20px rgba(0, 102, 255, 0.3)',
               }}
             >
-              {modalState.type === 'alert' ? '⚠️' : '❓'}
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={isAlert ? '#666' : '#000'}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {isAlert ? (
+                  <>
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </>
+                ) : (
+                  <>
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </>
+                )}
+              </svg>
             </div>
 
             {/* Title */}
             <h3
               style={{
-                fontSize: '20px',
-                fontWeight: '700',
+                fontSize: '17px',
+                fontWeight: '600',
                 color: '#000',
-                margin: '0 0 12px 0',
+                margin: '0 0 8px 0',
                 textAlign: 'center',
-                letterSpacing: '-0.3px',
+                letterSpacing: '-0.2px',
               }}
             >
               {modalState.title}
@@ -158,10 +176,10 @@ function useConfirm() {
             {/* Message */}
             <p
               style={{
-                fontSize: '15px',
-                color: 'rgba(0, 0, 0, 0.7)',
-                lineHeight: '1.6',
-                margin: '0 0 28px 0',
+                fontSize: '14px',
+                color: '#666',
+                lineHeight: '1.5',
+                margin: '0 0 24px 0',
                 textAlign: 'center',
               }}
             >
@@ -172,8 +190,8 @@ function useConfirm() {
             <div
               style={{
                 display: 'flex',
-                gap: '12px',
-                flexDirection: modalState.type === 'alert' ? 'column' : 'row',
+                gap: '8px',
+                flexDirection: isAlert ? 'column' : 'row',
               }}
             >
               {modalState.type === 'confirm' && (
@@ -181,23 +199,21 @@ function useConfirm() {
                   onClick={handleClose}
                   style={{
                     flex: 1,
-                    padding: '14px',
-                    fontSize: '15px',
-                    fontWeight: '600',
-                    color: '#6B7280',
-                    background: 'transparent',
-                    border: '1px solid rgba(0, 0, 0, 0.15)',
-                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#666',
+                    background: '#f5f5f5',
+                    border: 'none',
+                    borderRadius: '8px',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'all 0.15s',
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = '#F3F4F6';
-                    e.target.style.borderColor = 'rgba(0, 0, 0, 0.2)';
+                    e.target.style.background = '#eee';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = 'transparent';
-                    e.target.style.borderColor = 'rgba(0, 0, 0, 0.15)';
+                    e.target.style.background = '#f5f5f5';
                   }}
                 >
                   {modalState.cancelText}
@@ -208,39 +224,24 @@ function useConfirm() {
                 onClick={handleConfirm}
                 style={{
                   flex: 1,
-                  padding: '14px',
-                  fontSize: '15px',
-                  fontWeight: '600',
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
                   color: '#fff',
-                  background:
-                    modalState.type === 'alert'
-                      ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
-                      : 'linear-gradient(135deg, #0066FF 0%, #0052CC 100%)',
+                  background: '#000',
                   border: 'none',
-                  borderRadius: '12px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow:
-                    modalState.type === 'alert'
-                      ? '0 4px 12px rgba(239, 68, 68, 0.3)'
-                      : '0 4px 12px rgba(0, 102, 255, 0.3)',
+                  transition: 'all 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow =
-                    modalState.type === 'alert'
-                      ? '0 6px 16px rgba(239, 68, 68, 0.4)'
-                      : '0 6px 16px rgba(0, 102, 255, 0.4)';
+                  e.target.style.background = '#333';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow =
-                    modalState.type === 'alert'
-                      ? '0 4px 12px rgba(239, 68, 68, 0.3)'
-                      : '0 4px 12px rgba(0, 102, 255, 0.3)';
+                  e.target.style.background = '#000';
                 }}
               >
-                {modalState.type === 'alert' ? 'OK' : modalState.confirmText}
+                {isAlert ? 'OK' : modalState.confirmText}
               </button>
             </div>
           </div>
@@ -249,18 +250,14 @@ function useConfirm() {
         {/* Animations */}
         <style>{`
           @keyframes fadeIn {
-            from {
-              opacity: 0;
-            }
-            to {
-              opacity: 1;
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
           }
 
           @keyframes slideUp {
             from {
               opacity: 0;
-              transform: translate(-50%, -45%);
+              transform: translate(-50%, -48%);
             }
             to {
               opacity: 1;

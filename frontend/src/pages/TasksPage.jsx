@@ -538,76 +538,84 @@ function TasksPage() {
 
             {/* Search Bar - Minimalist */}
             <div style={{
-              background: '#fff',
-              borderRadius: '12px',
-              border: '1px solid #eee',
-              padding: '12px 16px',
+              position: 'relative',
             }}>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  placeholder="Search tasks..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px 10px 36px',
-                    fontSize: '14px',
-                    border: '1px solid #eee',
-                    borderRadius: '6px',
-                    outline: 'none',
-                    background: '#fafafa',
-                    transition: 'all 0.2s',
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#ccc';
-                    e.target.style.background = '#fff';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#eee';
-                    e.target.style.background = '#fafafa';
-                  }}
-                />
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#999"
-                  strokeWidth="2"
+              <input
+                type="text"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px 12px 40px',
+                  fontSize: '14px',
+                  border: '1px solid #eee',
+                  borderRadius: '10px',
+                  outline: 'none',
+                  background: '#fff',
+                  transition: 'all 0.15s ease',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#ddd';
+                  e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#eee';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#999"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  position: 'absolute',
+                  left: '14px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  pointerEvents: 'none',
+                }}
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
                   style={{
                     position: 'absolute',
-                    left: '12px',
+                    right: '10px',
                     top: '50%',
                     transform: 'translateY(-50%)',
+                    background: '#f5f5f5',
+                    border: 'none',
+                    color: '#666',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    lineHeight: 1,
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#eee';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f5f5f5';
                   }}
                 >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.35-4.35" />
-                </svg>
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    style={{
-                      position: 'absolute',
-                      right: '8px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#999',
-                      fontSize: '16px',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      lineHeight: 1,
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </div>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
 
             {/* Task Filters - Minimalist */}
@@ -631,23 +639,29 @@ function TasksPage() {
                   key={f.key}
                   onClick={() => setFilter(f.key)}
                   style={{
-                    padding: '6px 12px',
+                    padding: '7px 14px',
                     fontSize: '13px',
                     fontWeight: '500',
                     border: 'none',
-                    borderRadius: '6px',
+                    borderRadius: '8px',
                     cursor: 'pointer',
-                    transition: 'all 0.15s',
+                    transition: 'all 0.15s ease',
                     background: filter === f.key ? '#000' : '#f5f5f5',
                     color: filter === f.key ? '#fff' : '#666',
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
                   }}
                   onMouseEnter={(e) => {
-                    if (filter !== f.key) e.target.style.background = '#eee';
+                    if (filter !== f.key) {
+                      e.target.style.background = '#eee';
+                      e.target.style.color = '#333';
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    if (filter !== f.key) e.target.style.background = '#f5f5f5';
+                    if (filter !== f.key) {
+                      e.target.style.background = '#f5f5f5';
+                      e.target.style.color = '#666';
+                    }
                   }}
                 >
                   {f.label}{f.count !== null ? ` (${f.count})` : ''}
@@ -657,20 +671,29 @@ function TasksPage() {
               {/* Project Filter Dropdown */}
               {projects.length > 0 && (
                 <>
-                  <div style={{ width: '1px', height: '24px', background: '#eee', margin: '0 4px' }} />
+                  <div style={{ width: '1px', height: '24px', background: '#eee', margin: '0 6px' }} />
                   <select
                     value={projectFilter}
                     onChange={(e) => setProjectFilter(e.target.value)}
                     style={{
-                      padding: '6px 12px',
+                      padding: '7px 12px',
                       fontSize: '13px',
                       fontWeight: '500',
                       border: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       cursor: 'pointer',
-                      background: '#f5f5f5',
-                      color: '#666',
+                      background: projectFilter !== 'all' ? '#000' : '#f5f5f5',
+                      color: projectFilter !== 'all' ? '#fff' : '#666',
                       outline: 'none',
+                      transition: 'all 0.15s ease',
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                      paddingRight: '28px',
+                      backgroundImage: projectFilter !== 'all'
+                        ? `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`
+                        : `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 10px center',
                     }}
                   >
                     <option value="all">All Projects</option>
