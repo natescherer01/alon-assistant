@@ -437,7 +437,7 @@ function Dashboard() {
         margin: '0 auto',
         padding: isMobile ? '0' : '0 24px',
         gap: '24px',
-        overflow: 'hidden',
+        overflow: 'auto',
       }}>
         {/* Chat Section - Takes most of the space */}
         <div style={{
