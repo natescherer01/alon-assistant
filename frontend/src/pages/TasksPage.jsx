@@ -361,17 +361,8 @@ function TasksPage() {
         margin: '0 auto',
         padding: isMobile ? '24px 20px 40px' : '40px 32px 60px',
       }}>
-        {/* Header */}
+        {/* Stats */}
         <div style={{ marginBottom: '32px' }}>
-          <h1 style={{
-            fontSize: isMobile ? '28px' : '32px',
-            fontWeight: '700',
-            color: '#111',
-            margin: '0 0 6px 0',
-            letterSpacing: '-0.03em',
-          }}>
-            Tasks
-          </h1>
           <p style={{
             fontSize: '15px',
             color: '#9ca3af',
