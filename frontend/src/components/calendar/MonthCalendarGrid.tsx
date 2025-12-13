@@ -451,6 +451,22 @@ function MonthEventBar({ event, onClick, timezone, isMobile }: MonthEventBarProp
             {event.isAllDay ? '' : `${formatTime(new Date(event.startTime), timezone)} `}
             {sanitizeEventText(event.title, 100) || '(No title)'}
           </span>
+          {event.attendees && event.attendees.length > 0 && (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '2px',
+              fontSize: '10px',
+              fontWeight: '600',
+              flexShrink: 0,
+              opacity: 0.9,
+            }} aria-label={`${event.attendees.length} attendees`}>
+              <svg style={{ width: '10px', height: '10px' }} fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+              </svg>
+              {event.attendees.length}
+            </span>
+          )}
           {event.teamsEnabled && (
             <svg style={{ width: '12px', height: '12px', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor" aria-label="Teams meeting">
               <path d="M19.75 10.5h-2.5V8c0-1.1-.9-2-2-2h-9c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h2v2.5c0 .42.34.75.75.75h10.75c.42 0 .75-.34.75-.75v-10c0-.42-.34-.75-.75-.75zM15.25 20v-8.5h4v8.5h-4zm-1.5-9.5V8h-8v8.5h6.5v-4.5c0-.83.67-1.5 1.5-1.5h0z"/>
