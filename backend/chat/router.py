@@ -247,7 +247,8 @@ async def chat_with_assistant_stream(
             db.commit()
 
             # Convert tasks to response format
-            task_responses = [TaskResponse.from_orm(task).dict() for task in modified_tasks]
+            # Use model_dump(mode='json') to properly serialize date objects to ISO strings
+            task_responses = [TaskResponse.from_orm(task).model_dump(mode='json') for task in modified_tasks]
 
             # Send done event with task updates
             yield {"data": json.dumps({"type": "done", "task_updates": task_responses})}
