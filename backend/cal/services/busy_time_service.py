@@ -23,40 +23,38 @@ class BusyTimeService:
     @staticmethod
     def get_all_users_with_calendars(db: Session) -> List[Dict[str, Any]]:
         """
-        Get all users, indicating if they have calendar events.
+        Get all users, indicating if they have calendar connections.
 
         Returns:
             List of user dicts with id, email, full_name, has_calendar
-            where has_calendar indicates the user has calendar events in the database.
+            where has_calendar indicates the user has active calendar connections.
         """
         # Query all main users
         users = db.query(User).all()
 
         result = []
         for user in users:
-            # Check if user has calendar events via CalendarUser
+            # Check if user has calendar connections via CalendarUser
             calendar_user = db.query(CalendarUser).filter(
                 CalendarUser.email == user.email  # Link by email
             ).first()
 
             has_calendar = False
             if calendar_user:
-                # Check if user has any calendar events (not just connections)
-                # This allows seeing users who have events synced regardless of
-                # whether their calendar connection is currently "active"
-                event_count = (
-                    db.query(CalendarEvent)
-                    .join(CalendarConnection)
+                # Check if user has any active calendar connections (integrations)
+                # This shows users who have connected calendars, even if they
+                # don't have events synced yet
+                connection_count = (
+                    db.query(CalendarConnection)
                     .filter(
                         and_(
                             CalendarConnection.user_id == calendar_user.id,
                             CalendarConnection.deleted_at.is_(None),
-                            CalendarEvent.deleted_at.is_(None)
                         )
                     )
                     .count()
                 )
-                has_calendar = event_count > 0
+                has_calendar = connection_count > 0
 
             result.append({
                 "id": user.id,
