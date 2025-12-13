@@ -6,6 +6,7 @@ import useAuthStore from './utils/authStore';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import TasksPage from './pages/TasksPage';
 import Profile from './pages/Profile';
 import CalendarPage from './pages/CalendarPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
@@ -112,6 +113,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tasks"
+            element={
+              <ProtectedRoute>
+                <TasksPage />
               </ProtectedRoute>
             }
           />

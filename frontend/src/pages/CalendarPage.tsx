@@ -150,7 +150,7 @@ export default function CalendarPage() {
           {/* Desktop: Full Navigation */}
           {!isMobile && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {/* Tasks Button */}
+              {/* Chat Button */}
               <button
                 onClick={() => navigate('/dashboard')}
                 style={{
@@ -163,6 +163,9 @@ export default function CalendarPage() {
                   borderRadius: '8px',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
                 onMouseEnter={(e) => {
                   (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
@@ -171,6 +174,40 @@ export default function CalendarPage() {
                   (e.target as HTMLButtonElement).style.background = 'transparent';
                 }}
               >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                Chat
+              </button>
+
+              {/* Tasks Button */}
+              <button
+                onClick={() => navigate('/tasks')}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#666',
+                  background: 'transparent',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+                onMouseEnter={(e) => {
+                  (e.target as HTMLButtonElement).style.background = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.target as HTMLButtonElement).style.background = 'transparent';
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
                 Tasks
               </button>
 
@@ -184,10 +221,18 @@ export default function CalendarPage() {
                   background: '#0066FF',
                   border: 'none',
                   borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  cursor: 'default',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
                 Calendar
               </button>
 
@@ -261,6 +306,22 @@ export default function CalendarPage() {
           }}>
             <button
               onClick={() => { navigate('/dashboard'); setMobileMenuOpen(false); }}
+              style={{
+                padding: '12px 16px',
+                fontSize: '15px',
+                fontWeight: '500',
+                color: '#333',
+                background: '#F3F4F6',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              💬 Chat
+            </button>
+            <button
+              onClick={() => { navigate('/tasks'); setMobileMenuOpen(false); }}
               style={{
                 padding: '12px 16px',
                 fontSize: '15px',
