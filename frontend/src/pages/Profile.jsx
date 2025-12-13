@@ -146,18 +146,17 @@ function Profile() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F5F5F7', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column', position: 'relative' }}>
 
-      {/* Glassmorphism Navbar */}
+      {/* Minimal Navbar */}
       <nav style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        background: 'rgba(255, 255, 255, 0.8)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        background: 'rgba(255, 255, 255, 0.9)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #eee',
       }}>
         <div className="navbar-container" style={{
           maxWidth: '1600px',
@@ -189,9 +188,9 @@ function Profile() {
                   fontSize: '13px',
                   fontWeight: '500',
                   color: '#fff',
-                  background: '#0066FF',
+                  background: '#000',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   cursor: 'pointer',
                 }}
               >
@@ -236,17 +235,17 @@ function Profile() {
                   fontSize: '14px',
                   fontWeight: '500',
                   color: '#fff',
-                  background: '#0066FF',
+                  background: '#000',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = '#0052CC';
+                  e.target.style.background = '#333';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = '#0066FF';
+                  e.target.style.background = '#000';
                 }}
               >
                 ← Back to Dashboard
@@ -260,13 +259,13 @@ function Profile() {
                   fontWeight: '500',
                   color: '#666',
                   background: 'transparent',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '8px',
+                  border: '1px solid #eee',
+                  borderRadius: '6px',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(0, 0, 0, 0.05)';
+                  e.target.style.background = '#f5f5f5';
                 }}
                 onMouseLeave={(e) => {
                   e.target.style.background = 'transparent';
@@ -285,64 +284,62 @@ function Profile() {
             top: '100%',
             left: 0,
             right: 0,
-            background: 'rgba(255, 255, 255, 0.98)',
-            backdropFilter: 'blur(20px)',
-            padding: '16px',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            background: '#fff',
+            padding: '12px 16px',
+            borderBottom: '1px solid #eee',
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px',
+            gap: '4px',
           }}>
             <button
               onClick={() => { navigate('/calendar'); setMobileMenuOpen(false); }}
               style={{
-                padding: '12px 16px',
-                fontSize: '15px',
+                padding: '10px 12px',
+                fontSize: '14px',
                 fontWeight: '500',
                 color: '#333',
-                background: '#F3F4F6',
+                background: 'transparent',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 cursor: 'pointer',
                 textAlign: 'left',
               }}
             >
-              📅 Calendar
+              Calendar
             </button>
             <button
               onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
               style={{
-                padding: '12px 16px',
-                fontSize: '15px',
+                padding: '10px 12px',
+                fontSize: '14px',
                 fontWeight: '500',
-                color: '#DC2626',
-                background: '#FEE2E2',
+                color: '#999',
+                background: 'transparent',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 cursor: 'pointer',
                 textAlign: 'left',
               }}
             >
-              🚪 Logout
+              Logout
             </button>
           </div>
         )}
       </nav>
 
       {/* Main Content */}
-      <main className="profile-container" style={{ position: 'relative', zIndex: 1, flex: 1, maxWidth: '800px', width: '100%', margin: '0 auto', padding: isMobile ? '24px 16px' : '48px 24px' }}>
+      <main className="profile-container" style={{ position: 'relative', zIndex: 1, flex: 1, maxWidth: '640px', width: '100%', margin: '0 auto', padding: isMobile ? '24px 16px' : '40px 24px' }}>
         {/* Header */}
-        <div style={{ marginBottom: isMobile ? '24px' : '40px' }}>
+        <div style={{ marginBottom: isMobile ? '20px' : '32px' }}>
           <h1 style={{
-            fontSize: isMobile ? '28px' : '36px',
-            fontWeight: 'bold',
+            fontSize: isMobile ? '24px' : '28px',
+            fontWeight: '600',
             color: '#000',
-            marginBottom: '8px',
+            marginBottom: '4px',
           }}>
             Profile
           </h1>
-          <p style={{ fontSize: isMobile ? '14px' : '16px', color: 'rgba(0, 0, 0, 0.6)' }}>
+          <p style={{ fontSize: '14px', color: '#999' }}>
             View and edit your account information
           </p>
         </div>
@@ -350,47 +347,47 @@ function Profile() {
         {/* Profile Card */}
         <div className="profile-card" style={{
           background: '#fff',
-          borderRadius: '16px',
-          padding: isMobile ? '20px' : '32px',
+          borderRadius: '12px',
+          padding: isMobile ? '20px' : '24px',
           marginBottom: '24px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          border: '1px solid #eee',
         }}>
           {/* Avatar Section */}
           <div className="profile-avatar-section" style={{
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
             alignItems: 'center',
-            gap: isMobile ? '16px' : '24px',
-            marginBottom: isMobile ? '24px' : '32px',
-            paddingBottom: isMobile ? '24px' : '32px',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+            gap: isMobile ? '12px' : '16px',
+            marginBottom: isMobile ? '20px' : '24px',
+            paddingBottom: isMobile ? '20px' : '24px',
+            borderBottom: '1px solid #eee',
             textAlign: isMobile ? 'center' : 'left',
           }}>
             <div style={{
-              width: isMobile ? '64px' : '80px',
-              height: isMobile ? '64px' : '80px',
+              width: isMobile ? '56px' : '64px',
+              height: isMobile ? '56px' : '64px',
               borderRadius: '50%',
-              background: '#0066FF',
+              background: '#000',
               color: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: isMobile ? '24px' : '32px',
-              fontWeight: '600',
+              fontSize: isMobile ? '20px' : '24px',
+              fontWeight: '500',
               flexShrink: 0,
             }}>
               {getInitials(user?.full_name || user?.email)}
             </div>
             <div>
               <h2 style={{
-                fontSize: isMobile ? '20px' : '24px',
-                fontWeight: 'bold',
+                fontSize: isMobile ? '18px' : '20px',
+                fontWeight: '600',
                 color: '#000',
-                marginBottom: '4px',
+                marginBottom: '2px',
               }}>
                 {user.full_name || 'User'}
               </h2>
-              <p style={{ fontSize: '14px', color: 'rgba(0, 0, 0, 0.6)', wordBreak: 'break-all' }}>
+              <p style={{ fontSize: '14px', color: '#999', wordBreak: 'break-all' }}>
                 {user.email}
               </p>
             </div>
@@ -402,12 +399,12 @@ function Profile() {
             flexDirection: isMobile ? 'column' : 'row',
             justifyContent: 'space-between',
             alignItems: isMobile ? 'stretch' : 'center',
-            gap: isMobile ? '16px' : '0',
-            marginBottom: '24px',
+            gap: isMobile ? '12px' : '0',
+            marginBottom: '20px',
           }}>
             <h3 style={{
-              fontSize: '18px',
-              fontWeight: 'bold',
+              fontSize: '15px',
+              fontWeight: '600',
               color: '#000',
               margin: 0,
             }}>
@@ -415,26 +412,26 @@ function Profile() {
             </h3>
 
             {/* Edit/Save/Cancel Buttons */}
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               {isEditing ? (
                 <>
                   <button
                     onClick={handleCancelEdit}
                     disabled={isSaving}
                     style={{
-                      padding: '8px 16px',
-                      fontSize: '14px',
+                      padding: '6px 12px',
+                      fontSize: '13px',
                       fontWeight: '500',
                       color: '#666',
                       background: 'transparent',
-                      border: '1px solid rgba(0, 0, 0, 0.1)',
-                      borderRadius: '8px',
+                      border: '1px solid #eee',
+                      borderRadius: '6px',
                       cursor: isSaving ? 'not-allowed' : 'pointer',
                       opacity: isSaving ? 0.5 : 1,
                       transition: 'all 0.2s',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isSaving) e.target.style.background = 'rgba(0, 0, 0, 0.05)';
+                      if (!isSaving) e.target.style.background = '#f5f5f5';
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.background = 'transparent';
@@ -446,22 +443,22 @@ function Profile() {
                     onClick={handleSaveProfile}
                     disabled={isSaving}
                     style={{
-                      padding: '8px 16px',
-                      fontSize: '14px',
+                      padding: '6px 12px',
+                      fontSize: '13px',
                       fontWeight: '500',
                       color: '#fff',
-                      background: '#0066FF',
+                      background: '#000',
                       border: 'none',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       cursor: isSaving ? 'not-allowed' : 'pointer',
                       opacity: isSaving ? 0.5 : 1,
                       transition: 'all 0.2s',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isSaving) e.target.style.background = '#0052CC';
+                      if (!isSaving) e.target.style.background = '#333';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.background = '#0066FF';
+                      e.target.style.background = '#000';
                     }}
                   >
                     {isSaving ? 'Saving...' : 'Save Changes'}
@@ -471,21 +468,21 @@ function Profile() {
                 <button
                   onClick={handleEdit}
                   style={{
-                    padding: '8px 16px',
-                    fontSize: '14px',
+                    padding: '6px 12px',
+                    fontSize: '13px',
                     fontWeight: '500',
                     color: '#fff',
-                    background: '#0066FF',
+                    background: '#000',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = '#0052CC';
+                    e.target.style.background = '#333';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = '#0066FF';
+                    e.target.style.background = '#000';
                   }}
                 >
                   Edit Profile
@@ -497,28 +494,26 @@ function Profile() {
           {/* Save Message */}
           {saveMessage && (
             <div style={{
-              padding: '12px 16px',
-              marginBottom: '24px',
-              borderRadius: '8px',
-              fontSize: '14px',
-              background: saveMessage.type === 'success' ? '#D1FAE5' : '#FEE2E2',
-              color: saveMessage.type === 'success' ? '#065F46' : '#991B1B',
-              border: `1px solid ${saveMessage.type === 'success' ? '#6EE7B7' : '#FCA5A5'}`,
+              padding: '10px 14px',
+              marginBottom: '20px',
+              borderRadius: '6px',
+              fontSize: '13px',
+              background: saveMessage.type === 'success' ? '#f5f5f5' : '#fafafa',
+              color: saveMessage.type === 'success' ? '#333' : '#666',
+              border: '1px solid #eee',
             }}>
               {saveMessage.text}
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <label style={{
                 display: 'block',
                 fontSize: '12px',
-                fontWeight: '600',
-                color: 'rgba(0, 0, 0, 0.5)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '8px',
+                fontWeight: '500',
+                color: '#999',
+                marginBottom: '6px',
               }}>
                 Full Name
               </label>
@@ -531,23 +526,24 @@ function Profile() {
                   placeholder="Enter your full name"
                   style={{
                     width: '100%',
-                    fontSize: '16px',
+                    fontSize: '14px',
                     color: '#000',
-                    padding: '12px 16px',
+                    padding: '10px 12px',
                     background: '#fff',
-                    border: '2px solid #0066FF',
-                    borderRadius: '8px',
+                    border: '1px solid #000',
+                    borderRadius: '6px',
                     outline: 'none',
                     boxSizing: 'border-box',
                   }}
                 />
               ) : (
                 <p style={{
-                  fontSize: '16px',
+                  fontSize: '14px',
                   color: '#000',
-                  padding: '12px 16px',
-                  background: '#F9FAFB',
-                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  background: '#fafafa',
+                  borderRadius: '6px',
+                  border: '1px solid #eee',
                 }}>
                   {user.full_name || 'Not set'}
                 </p>
@@ -558,20 +554,19 @@ function Profile() {
               <label style={{
                 display: 'block',
                 fontSize: '12px',
-                fontWeight: '600',
-                color: 'rgba(0, 0, 0, 0.5)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '8px',
+                fontWeight: '500',
+                color: '#999',
+                marginBottom: '6px',
               }}>
                 Email Address
               </label>
               <p style={{
-                fontSize: '16px',
+                fontSize: '14px',
                 color: '#000',
-                padding: '12px 16px',
-                background: '#F9FAFB',
-                borderRadius: '8px',
+                padding: '10px 12px',
+                background: '#fafafa',
+                borderRadius: '6px',
+                border: '1px solid #eee',
               }}>
                 {user.email}
               </p>
@@ -581,11 +576,9 @@ function Profile() {
               <label style={{
                 display: 'block',
                 fontSize: '12px',
-                fontWeight: '600',
-                color: 'rgba(0, 0, 0, 0.5)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '8px',
+                fontWeight: '500',
+                color: '#999',
+                marginBottom: '6px',
               }}>
                 Timezone
               </label>
@@ -596,12 +589,12 @@ function Profile() {
                   onChange={handleChange}
                   style={{
                     width: '100%',
-                    fontSize: '16px',
+                    fontSize: '14px',
                     color: '#000',
-                    padding: '12px 16px',
+                    padding: '10px 12px',
                     background: '#fff',
-                    border: '2px solid #0066FF',
-                    borderRadius: '8px',
+                    border: '1px solid #000',
+                    borderRadius: '6px',
                     outline: 'none',
                     boxSizing: 'border-box',
                     cursor: 'pointer',
@@ -615,11 +608,12 @@ function Profile() {
                 </select>
               ) : (
                 <p style={{
-                  fontSize: '16px',
+                  fontSize: '14px',
                   color: '#000',
-                  padding: '12px 16px',
-                  background: '#F9FAFB',
-                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  background: '#fafafa',
+                  borderRadius: '6px',
+                  border: '1px solid #eee',
                 }}>
                   {user.timezone || 'UTC'}
                 </p>
@@ -630,21 +624,20 @@ function Profile() {
               <label style={{
                 display: 'block',
                 fontSize: '12px',
-                fontWeight: '600',
-                color: 'rgba(0, 0, 0, 0.5)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '8px',
+                fontWeight: '500',
+                color: '#999',
+                marginBottom: '6px',
               }}>
                 User ID
               </label>
               <p style={{
-                fontSize: '14px',
-                color: '#000',
-                padding: '12px 16px',
-                background: '#F9FAFB',
-                borderRadius: '8px',
+                fontSize: '13px',
+                color: '#666',
+                padding: '10px 12px',
+                background: '#fafafa',
+                borderRadius: '6px',
                 fontFamily: 'monospace',
+                border: '1px solid #eee',
               }}>
                 {user.id}
               </p>
@@ -654,20 +647,19 @@ function Profile() {
               <label style={{
                 display: 'block',
                 fontSize: '12px',
-                fontWeight: '600',
-                color: 'rgba(0, 0, 0, 0.5)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '8px',
+                fontWeight: '500',
+                color: '#999',
+                marginBottom: '6px',
               }}>
                 Member Since
               </label>
               <p style={{
-                fontSize: '16px',
+                fontSize: '14px',
                 color: '#000',
-                padding: '12px 16px',
-                background: '#F9FAFB',
-                borderRadius: '8px',
+                padding: '10px 12px',
+                background: '#fafafa',
+                borderRadius: '6px',
+                border: '1px solid #eee',
               }}>
                 {new Date(user.created_at).toLocaleDateString('en-US', {
                   timeZone: user.timezone || 'UTC',
@@ -682,24 +674,24 @@ function Profile() {
 
         {/* Danger Zone */}
         <div style={{
-          background: '#FEE2E2',
-          borderRadius: '16px',
-          padding: isMobile ? '20px' : '32px',
-          border: '1px solid #FCA5A5',
+          background: '#fff',
+          borderRadius: '12px',
+          padding: isMobile ? '20px' : '24px',
+          border: '1px solid #eee',
         }}>
           <h3 style={{
-            fontSize: isMobile ? '16px' : '18px',
-            fontWeight: 'bold',
-            color: '#DC2626',
-            marginBottom: '12px',
+            fontSize: '15px',
+            fontWeight: '600',
+            color: '#000',
+            marginBottom: '8px',
           }}>
             Danger Zone
           </h3>
           <p style={{
-            fontSize: isMobile ? '13px' : '14px',
-            color: '#991B1B',
-            marginBottom: '24px',
-            lineHeight: '1.6',
+            fontSize: '13px',
+            color: '#999',
+            marginBottom: '16px',
+            lineHeight: '1.5',
           }}>
             Deleting your account is permanent and cannot be undone. All your data including tasks and chat history will be permanently deleted.
           </p>
@@ -707,23 +699,27 @@ function Profile() {
             onClick={handleDeleteAccount}
             disabled={isDeleting}
             style={{
-              padding: isMobile ? '10px 20px' : '12px 24px',
-              fontSize: isMobile ? '14px' : '15px',
-              fontWeight: '600',
-              color: '#fff',
-              background: '#DC2626',
-              border: 'none',
-              borderRadius: '8px',
+              padding: '8px 16px',
+              fontSize: '13px',
+              fontWeight: '500',
+              color: '#999',
+              background: 'transparent',
+              border: '1px solid #eee',
+              borderRadius: '6px',
               cursor: isDeleting ? 'not-allowed' : 'pointer',
               opacity: isDeleting ? 0.6 : 1,
-              transition: 'background 0.2s',
+              transition: 'all 0.2s',
               width: isMobile ? '100%' : 'auto',
             }}
             onMouseEnter={(e) => {
-              if (!isDeleting) e.target.style.background = '#B91C1C';
+              if (!isDeleting) {
+                e.target.style.background = '#f5f5f5';
+                e.target.style.color = '#666';
+              }
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = '#DC2626';
+              e.target.style.background = 'transparent';
+              e.target.style.color = '#999';
             }}
           >
             {isDeleting ? 'Deleting Account...' : 'Delete Account'}
