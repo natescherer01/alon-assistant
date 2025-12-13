@@ -329,11 +329,11 @@ export default function CalendarPage() {
 
       {/* Main Layout */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Left Sidebar - Only show if calendars are loaded (hidden behind modal on mobile) */}
+        {/* Left Sidebar - Only show if calendars are loaded */}
         {!isLoading && calendars.length > 0 && (
           <CalendarSidebar
             calendars={calendars}
-            isCollapsed={isMobile ? true : isSidebarCollapsed}
+            isCollapsed={isSidebarCollapsed}
             onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             currentUserId={currentUserId}
             selectedUserIds={selectedUserIds}
@@ -348,8 +348,8 @@ export default function CalendarPage() {
           display: 'flex',
           flexDirection: 'column',
           overflowY: 'auto',
-          marginLeft: isMobile ? '0' : (!isLoading && calendars.length > 0 ? (isSidebarCollapsed ? '64px' : '288px') : '0'),
-          transition: 'all 0.3s ease',
+          minWidth: 0, // Prevent flex item from overflowing
+          background: '#F5F5F7',
         }}>
           <div style={{
             flex: 1,
