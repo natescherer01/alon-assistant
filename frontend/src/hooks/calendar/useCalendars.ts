@@ -113,13 +113,9 @@ export function useCalendars() {
   });
 
   // Initiate OAuth (redirects to provider)
-  const initiateOAuth = async (provider: 'GOOGLE' | 'MICROSOFT') => {
+  const initiateOAuth = async (provider: 'GOOGLE') => {
     try {
-      const authUrl =
-        provider === 'GOOGLE'
-          ? await calendarApi.getGoogleAuthUrl()
-          : await calendarApi.getMicrosoftAuthUrl();
-
+      const authUrl = await calendarApi.getGoogleAuthUrl();
       window.location.href = authUrl;
     } catch (err) {
       throw new Error(`Failed to initiate ${provider} OAuth`);

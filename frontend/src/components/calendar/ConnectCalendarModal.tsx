@@ -49,17 +49,14 @@ export default function ConnectCalendarModal({
     }
   };
 
-  const handleConnectProvider = async (provider: 'GOOGLE' | 'MICROSOFT') => {
+  const handleConnectGoogle = async () => {
     setIsLoading(true);
     try {
-      await initiateOAuth(provider);
+      await initiateOAuth('GOOGLE');
       // OAuth redirect will happen, so we don't need to close the modal
     } catch (error) {
       setIsLoading(false);
-      const providerName =
-        provider === 'GOOGLE' ? 'Google Calendar' :
-        'Microsoft Outlook';
-      showError(`Failed to connect ${providerName}`);
+      showError('Failed to connect Google Calendar');
     }
   };
 
@@ -143,7 +140,7 @@ export default function ConnectCalendarModal({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* Google Calendar */}
           <button
-            onClick={() => handleConnectProvider('GOOGLE')}
+            onClick={handleConnectGoogle}
             disabled={isLoading}
             onMouseEnter={() => setHoveredButton('google')}
             onMouseLeave={() => setHoveredButton(null)}
@@ -153,24 +150,6 @@ export default function ConnectCalendarModal({
             <div style={{ flex: 1, textAlign: 'left' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: '0 0 4px 0' }}>Google Calendar</h3>
               <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>Connect your Google account</p>
-            </div>
-            <svg style={{ width: '20px', height: '20px', color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-
-          {/* Microsoft Outlook */}
-          <button
-            onClick={() => handleConnectProvider('MICROSOFT')}
-            disabled={isLoading}
-            onMouseEnter={() => setHoveredButton('microsoft')}
-            onMouseLeave={() => setHoveredButton(null)}
-            style={providerButtonStyle('microsoft')}
-          >
-            <ProviderIcon provider="MICROSOFT" size="lg" />
-            <div style={{ flex: 1, textAlign: 'left' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: '0 0 4px 0' }}>Microsoft Outlook</h3>
-              <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>Connect your Microsoft account</p>
             </div>
             <svg style={{ width: '20px', height: '20px', color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
