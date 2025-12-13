@@ -156,6 +156,12 @@ export const useAuth = create<AuthState>()(
             isLoading: false,
             error: null,
           });
+
+          // Trigger calendar sync in background on session resume (don't await, don't block)
+          calendarApi.syncAllCalendars().catch((error) => {
+            console.error('Background calendar sync failed:', error);
+            // Silently fail - don't interrupt app loading
+          });
         } catch (error: unknown) {
           set({
             user: null,
