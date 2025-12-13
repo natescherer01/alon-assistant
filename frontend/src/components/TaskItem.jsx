@@ -1112,15 +1112,22 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                     value={task.status}
                     onChange={(e) => handleStatusChange(e.target.value)}
                     style={{
-                      padding: '6px 8px',
+                      padding: '6px 12px',
                       fontSize: '12px',
                       fontWeight: '500',
-                      border: '1px solid #eee',
+                      border: 'none',
                       borderRadius: '6px',
-                      background: '#fff',
+                      background: '#f5f5f5',
                       cursor: 'pointer',
                       outline: 'none',
                       color: '#666',
+                      transition: 'background 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = '#eee';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = '#f5f5f5';
                     }}
                   >
                     <option value="not_started">Not Started</option>
