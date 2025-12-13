@@ -846,47 +846,47 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               disabled={isSaving}
               style={{
                 flex: 1,
-                padding: '10px',
-                fontSize: '13px',
+                padding: '11px 16px',
+                fontSize: '14px',
                 fontWeight: '500',
                 color: '#fff',
-                background: isSaving ? '#ccc' : '#000',
+                background: isSaving ? '#999' : '#000',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 cursor: isSaving ? 'not-allowed' : 'pointer',
                 opacity: isSaving ? 0.7 : 1,
-                transition: 'all 0.2s',
+                transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
-                if (!isSaving) e.target.style.background = '#333';
+                if (!isSaving) e.target.style.background = '#222';
               }}
               onMouseLeave={(e) => {
                 if (!isSaving) e.target.style.background = '#000';
               }}
             >
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
             <button
               type="button"
               onClick={handleCancelEdit}
               disabled={isSaving}
               style={{
-                padding: '10px 16px',
-                fontSize: '13px',
+                padding: '11px 20px',
+                fontSize: '14px',
                 fontWeight: '500',
                 color: isSaving ? '#ccc' : '#666',
-                background: 'transparent',
-                border: '1px solid #eee',
-                borderRadius: '6px',
+                background: '#f5f5f5',
+                border: 'none',
+                borderRadius: '8px',
                 cursor: isSaving ? 'not-allowed' : 'pointer',
                 opacity: isSaving ? 0.5 : 1,
-                transition: 'all 0.2s',
+                transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
-                if (!isSaving) e.target.style.background = '#fafafa';
+                if (!isSaving) e.target.style.background = '#eee';
               }}
               onMouseLeave={(e) => {
-                if (!isSaving) e.target.style.background = 'transparent';
+                if (!isSaving) e.target.style.background = '#f5f5f5';
               }}
             >
               Cancel
@@ -1055,20 +1055,27 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
         </div>
 
         {/* Actions */}
-        <div className="task-item-actions" style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: '6px', flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
+        <div className="task-item-actions" style={{
+          display: 'flex',
+          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          gap: '6px',
+          flexShrink: 0,
+          width: isMobile ? '100%' : 'auto',
+          alignItems: 'center',
+        }}>
           {task.status === 'deleted' ? (
             <button
               onClick={handleRestore}
               style={{
-                padding: '6px 12px',
-                fontSize: '12px',
+                padding: '7px 14px',
+                fontSize: '13px',
                 fontWeight: '500',
                 color: '#000',
                 background: '#f5f5f5',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'background 0.2s',
+                transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
                 e.target.style.background = '#eee';
@@ -1087,22 +1094,22 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                     onClick={handleComplete}
                     disabled={isCompleting}
                     style={{
-                      padding: '6px 12px',
-                      fontSize: '12px',
+                      padding: '7px 14px',
+                      fontSize: '13px',
                       fontWeight: '500',
                       color: '#fff',
                       background: '#000',
                       border: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       cursor: isCompleting ? 'not-allowed' : 'pointer',
-                      opacity: isCompleting ? 0.6 : 1,
-                      transition: 'background 0.2s',
+                      opacity: isCompleting ? 0.5 : 1,
+                      transition: 'all 0.15s ease',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isCompleting) e.target.style.background = '#333';
+                      if (!isCompleting) e.target.style.background = '#222';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.background = '#000';
+                      if (!isCompleting) e.target.style.background = '#000';
                     }}
                   >
                     Done
@@ -1112,22 +1119,34 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
                     value={task.status}
                     onChange={(e) => handleStatusChange(e.target.value)}
                     style={{
-                      padding: '6px 12px',
-                      fontSize: '12px',
+                      padding: '7px 12px',
+                      fontSize: '13px',
                       fontWeight: '500',
                       border: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       background: '#f5f5f5',
                       cursor: 'pointer',
                       outline: 'none',
                       color: '#666',
-                      transition: 'background 0.2s',
+                      transition: 'all 0.15s ease',
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                      paddingRight: '28px',
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'right 10px center',
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.background = '#eee';
+                      e.target.style.backgroundImage = `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`;
+                      e.target.style.backgroundRepeat = 'no-repeat';
+                      e.target.style.backgroundPosition = 'right 10px center';
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.background = '#f5f5f5';
+                      e.target.style.backgroundImage = `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`;
+                      e.target.style.backgroundRepeat = 'no-repeat';
+                      e.target.style.backgroundPosition = 'right 10px center';
                     }}
                   >
                     <option value="not_started">Not Started</option>
@@ -1140,21 +1159,23 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               <button
                 onClick={handleEdit}
                 style={{
-                  padding: '6px 12px',
-                  fontSize: '12px',
+                  padding: '7px 14px',
+                  fontSize: '13px',
                   fontWeight: '500',
                   color: '#666',
                   background: '#f5f5f5',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  transition: 'background 0.2s',
+                  transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.background = '#eee';
+                  e.target.style.color = '#333';
                 }}
                 onMouseLeave={(e) => {
                   e.target.style.background = '#f5f5f5';
+                  e.target.style.color = '#666';
                 }}
               >
                 Edit
@@ -1163,22 +1184,24 @@ function TaskItem({ task, onUpdate, onDelete, onError, markSaving, isSaving = fa
               <button
                 onClick={handleDelete}
                 style={{
-                  padding: '6px 12px',
-                  fontSize: '12px',
+                  padding: '7px 14px',
+                  fontSize: '13px',
                   fontWeight: '500',
                   color: '#999',
                   background: 'transparent',
                   border: '1px solid #eee',
-                  borderRadius: '6px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.background = '#fafafa';
+                  e.target.style.borderColor = '#ddd';
                   e.target.style.color = '#666';
                 }}
                 onMouseLeave={(e) => {
                   e.target.style.background = 'transparent';
+                  e.target.style.borderColor = '#eee';
                   e.target.style.color = '#999';
                 }}
               >

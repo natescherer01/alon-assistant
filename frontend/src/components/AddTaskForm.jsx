@@ -89,7 +89,7 @@ function AddTaskForm({ onTaskAdded }) {
           onClick={() => setIsOpen(true)}
           style={{
             width: '100%',
-            padding: '12px 16px',
+            padding: '14px 18px',
             fontSize: '14px',
             fontWeight: '500',
             color: '#666',
@@ -97,19 +97,26 @@ function AddTaskForm({ onTaskAdded }) {
             border: '1px solid #eee',
             borderRadius: '12px',
             cursor: 'pointer',
-            transition: 'all 0.2s',
+            transition: 'all 0.15s ease',
             textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
           }}
           onMouseEnter={(e) => {
-            e.target.style.background = '#fafafa';
-            e.target.style.borderColor = '#ddd';
+            e.currentTarget.style.background = '#fafafa';
+            e.currentTarget.style.borderColor = '#ddd';
           }}
           onMouseLeave={(e) => {
-            e.target.style.background = '#fff';
-            e.target.style.borderColor = '#eee';
+            e.currentTarget.style.background = '#fff';
+            e.currentTarget.style.borderColor = '#eee';
           }}
         >
-          + Add task
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Add task
         </button>
       </>
     );
@@ -520,44 +527,44 @@ function AddTaskForm({ onTaskAdded }) {
               type="submit"
               style={{
                 flex: 1,
-                padding: '10px',
-                fontSize: '13px',
+                padding: '11px 16px',
+                fontSize: '14px',
                 fontWeight: '500',
                 color: '#fff',
                 background: '#000',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
+                transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = '#333';
+                e.target.style.background = '#222';
               }}
               onMouseLeave={(e) => {
                 e.target.style.background = '#000';
               }}
             >
-              Add Task
+              Create Task
             </button>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
               style={{
-                padding: '10px 16px',
-                fontSize: '13px',
+                padding: '11px 20px',
+                fontSize: '14px',
                 fontWeight: '500',
                 color: '#666',
-                background: 'transparent',
-                border: '1px solid #eee',
-                borderRadius: '6px',
+                background: '#f5f5f5',
+                border: 'none',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
+                transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = '#fafafa';
+                e.target.style.background = '#eee';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'transparent';
+                e.target.style.background = '#f5f5f5';
               }}
             >
               Cancel
