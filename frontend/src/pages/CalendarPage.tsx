@@ -8,7 +8,6 @@ import ConnectCalendarModal from '../components/calendar/ConnectCalendarModal';
 import CreateEventButton from '../components/calendar/CreateEventButton';
 import CreateEventModal from '../components/calendar/CreateEventModal';
 import EventDetailsModal from '../components/calendar/EventDetailsModal';
-import TodaysPlanPanel from '../components/calendar/TodaysPlanPanel';
 import type { CalendarEvent } from '../api/calendar/calendar';
 import type { FreeSlot } from '../api/calendar/users';
 import LiveClock from '../components/calendar/LiveClock';
@@ -25,8 +24,6 @@ export default function CalendarPage() {
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-  const [isTodaysPlanExpanded, setIsTodaysPlanExpanded] = useState(false);
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   // Multi-user calendar state
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -58,10 +55,6 @@ export default function CalendarPage() {
   const handleEventDeleted = () => {
     setRefreshKey((prev) => prev + 1);
     setSelectedEventId(null);
-  };
-
-  const handleEventsLoaded = (events: CalendarEvent[]) => {
-    setCalendarEvents(events);
   };
 
   const handleLogout = () => {
@@ -209,15 +202,6 @@ export default function CalendarPage() {
           />
         )}
 
-        {/* Right Sidebar - Today's Plan Panel */}
-        {!isLoading && calendars.length > 0 && (
-          <TodaysPlanPanel
-            events={calendarEvents}
-            isExpanded={isTodaysPlanExpanded}
-            onToggle={() => setIsTodaysPlanExpanded(!isTodaysPlanExpanded)}
-          />
-        )}
-
         {/* Main Content Area */}
         <main style={{
           flex: 1,
@@ -225,7 +209,6 @@ export default function CalendarPage() {
           flexDirection: 'column',
           overflowY: 'auto',
           marginLeft: !isLoading && calendars.length > 0 ? (isSidebarCollapsed ? '64px' : '288px') : '0',
-          marginRight: !isLoading && calendars.length > 0 ? (isTodaysPlanExpanded ? '320px' : '48px') : '0',
           transition: 'all 0.3s ease',
         }}>
           <div style={{
@@ -369,7 +352,6 @@ export default function CalendarPage() {
                   <UnifiedCalendarView
                     key={refreshKey}
                     onEventClick={handleEventClick}
-                    onEventsLoaded={handleEventsLoaded}
                     freeSlots={freeTimeSlots}
                   />
                 </div>
