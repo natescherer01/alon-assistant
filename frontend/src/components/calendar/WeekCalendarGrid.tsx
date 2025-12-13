@@ -72,6 +72,27 @@ export default function WeekCalendarGrid({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Sync mobileDay with weekStart when it changes (e.g., when "Today" button is clicked)
+  // This ensures the mobile day view navigates to the correct day when the parent updates
+  useEffect(() => {
+    // Check if weekStart is today's week - if so, set mobileDay to today
+    const today = new Date();
+    const todayWeekStart = new Date(today);
+    todayWeekStart.setDate(today.getDate() - today.getDay());
+    todayWeekStart.setHours(0, 0, 0, 0);
+
+    const weekStartNormalized = new Date(weekStart);
+    weekStartNormalized.setHours(0, 0, 0, 0);
+
+    // If weekStart matches today's week start, set mobileDay to today
+    if (weekStartNormalized.getTime() === todayWeekStart.getTime()) {
+      setMobileDay(new Date());
+    } else {
+      // Otherwise, set mobileDay to the weekStart
+      setMobileDay(new Date(weekStart));
+    }
+  }, [weekStart]);
+
   // Generate week days (Sun-Sat)
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
 
