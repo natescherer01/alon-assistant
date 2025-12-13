@@ -45,6 +45,7 @@ export default function CreateEventModal({
 
   const [showDetails, setShowDetails] = useState(false);
   const [showRecurrence, setShowRecurrence] = useState(false);
+  const [showAttendees, setShowAttendees] = useState(false);
   const [showTeamAvailability, setShowTeamAvailability] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [freeTimeSlots, setFreeTimeSlots] = useState<FreeSlot[] | null>(null);
@@ -219,6 +220,7 @@ export default function CreateEventModal({
     setErrors({});
     setShowDetails(false);
     setShowRecurrence(false);
+    setShowAttendees(false);
     setShowTeamAvailability(false);
     setSelectedUserIds([]);
     setFreeTimeSlots(null);
@@ -632,6 +634,7 @@ export default function CreateEventModal({
                   value={formData.recurrence}
                   onChange={(value) => handleInputChange('recurrence', value)}
                   startDate={formData.startDate}
+                  disabled={isLoading}
                 />
               </div>
             )}
@@ -639,11 +642,42 @@ export default function CreateEventModal({
 
           {/* Attendees Section */}
           <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', paddingTop: '16px', marginBottom: '16px' }}>
-            <AttendeeInput
-              attendees={formData.attendees}
-              onChange={(attendees) => handleInputChange('attendees', attendees)}
-              error={errors.attendees}
-            />
+            <button type="button" onClick={() => setShowAttendees(!showAttendees)} disabled={isLoading} style={sectionHeaderStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#000', margin: 0 }}>Attendees</h3>
+                {formData.attendees.length > 0 && (
+                  <span style={{
+                    background: '#0066FF',
+                    color: '#fff',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                  }}>
+                    {formData.attendees.length}
+                  </span>
+                )}
+              </div>
+              <svg
+                style={{ width: '20px', height: '20px', color: '#666', transition: 'transform 0.2s', transform: showAttendees ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showAttendees && (
+              <div style={{ marginTop: '16px' }}>
+                <AttendeeInput
+                  attendees={formData.attendees}
+                  onChange={(attendees) => handleInputChange('attendees', attendees)}
+                  error={errors.attendees}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
           </div>
 
           {/* Team Availability Section */}

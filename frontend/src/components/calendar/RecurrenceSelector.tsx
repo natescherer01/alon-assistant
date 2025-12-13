@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, CSSProperties } from 'react';
 import type { RecurrenceInput, RecurrenceFrequency, RecurrenceEndType, MonthDayType } from '../../types/event';
 import { getDayOfMonth, getRelativeDayPosition } from '../../utils/calendar/dateTime';
 
@@ -6,6 +6,7 @@ interface RecurrenceSelectorProps {
   value: RecurrenceInput | null;
   onChange: (value: RecurrenceInput | null) => void;
   startDate: string;
+  disabled?: boolean;
 }
 
 const WEEKDAYS = [
@@ -18,6 +19,42 @@ const WEEKDAYS = [
   { label: 'Su', value: 'SU', name: 'Sunday' },
 ];
 
+const selectStyle: CSSProperties = {
+  width: '100%',
+  padding: '12px 16px',
+  fontSize: '15px',
+  border: '1px solid rgba(0, 0, 0, 0.1)',
+  borderRadius: '8px',
+  outline: 'none',
+  background: '#fff',
+  cursor: 'pointer',
+};
+
+const labelStyle: CSSProperties = {
+  display: 'block',
+  fontSize: '14px',
+  fontWeight: '500',
+  color: '#374151',
+  marginBottom: '8px',
+};
+
+const radioLabelStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  color: '#374151',
+};
+
+const inputStyle: CSSProperties = {
+  padding: '8px 12px',
+  fontSize: '14px',
+  border: '1px solid rgba(0, 0, 0, 0.1)',
+  borderRadius: '6px',
+  outline: 'none',
+};
+
 /**
  * Comprehensive recurrence selector for event creation
  * Handles daily, weekly, monthly, and yearly recurrence patterns
@@ -26,6 +63,7 @@ export default function RecurrenceSelector({
   value,
   onChange,
   startDate,
+  disabled = false,
 }: RecurrenceSelectorProps) {
   const [frequency, setFrequency] = useState<RecurrenceFrequency | 'NONE'>('NONE');
   const [endType, setEndType] = useState<RecurrenceEndType>('NEVER');
@@ -136,15 +174,20 @@ export default function RecurrenceSelector({
 
   if (frequency === 'NONE') {
     return (
-      <div className="space-y-4">
-        <label htmlFor="recurrence-frequency" className="block text-sm font-medium text-gray-700">
+      <div>
+        <label htmlFor="recurrence-frequency" style={labelStyle}>
           Repeat
         </label>
         <select
           id="recurrence-frequency"
           value={frequency}
           onChange={(e) => handleFrequencyChange(e.target.value as RecurrenceFrequency | 'NONE')}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          disabled={disabled}
+          style={{
+            ...selectStyle,
+            background: disabled ? '#F9FAFB' : '#fff',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+          }}
         >
           <option value="NONE">Does not repeat</option>
           <option value="DAILY">Daily</option>
@@ -160,16 +203,21 @@ export default function RecurrenceSelector({
   const { positionName, dayName } = getRelativeDayPosition(startDate);
 
   return (
-    <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div>
-        <label htmlFor="recurrence-frequency" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="recurrence-frequency" style={labelStyle}>
           Repeat
         </label>
         <select
           id="recurrence-frequency"
           value={frequency}
           onChange={(e) => handleFrequencyChange(e.target.value as RecurrenceFrequency | 'NONE')}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          disabled={disabled}
+          style={{
+            ...selectStyle,
+            background: disabled ? '#F9FAFB' : '#fff',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+          }}
         >
           <option value="NONE">Does not repeat</option>
           <option value="DAILY">Daily</option>
@@ -182,20 +230,26 @@ export default function RecurrenceSelector({
       {/* Weekly: Day Selection */}
       {frequency === 'WEEKLY' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Repeat on
-          </label>
-          <div className="flex gap-2">
+          <label style={labelStyle}>Repeat on</label>
+          <div style={{ display: 'flex', gap: '8px' }}>
             {WEEKDAYS.map((day) => (
               <button
                 key={day.value}
                 type="button"
                 onClick={() => toggleWeekday(day.value)}
-                className={`flex-1 px-3 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
-                  selectedDays.includes(day.value)
-                    ? 'border-blue-500 bg-blue-100 text-blue-700'
-                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
-                }`}
+                disabled={disabled}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: selectedDays.includes(day.value) ? '2px solid #0066FF' : '2px solid rgba(0, 0, 0, 0.1)',
+                  background: selectedDays.includes(day.value) ? '#E6F0FF' : '#fff',
+                  color: selectedDays.includes(day.value) ? '#0066FF' : '#374151',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s',
+                }}
                 aria-label={day.name}
                 aria-pressed={selectedDays.includes(day.value)}
               >
@@ -209,33 +263,29 @@ export default function RecurrenceSelector({
       {/* Monthly: Day Type Selection */}
       {frequency === 'MONTHLY' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Repeat on
-          </label>
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <label style={labelStyle}>Repeat on</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={radioLabelStyle}>
               <input
                 type="radio"
                 name="monthDayType"
                 checked={monthDayType === 'DAY_OF_MONTH'}
                 onChange={() => handleMonthDayTypeChange('DAY_OF_MONTH')}
-                className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                disabled={disabled}
+                style={{ width: '16px', height: '16px', accentColor: '#0066FF' }}
               />
-              <span className="text-sm text-gray-700">
-                Day {dayOfMonth} of the month
-              </span>
+              <span>Day {dayOfMonth} of the month</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label style={radioLabelStyle}>
               <input
                 type="radio"
                 name="monthDayType"
                 checked={monthDayType === 'RELATIVE_DAY'}
                 onChange={() => handleMonthDayTypeChange('RELATIVE_DAY')}
-                className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                disabled={disabled}
+                style={{ width: '16px', height: '16px', accentColor: '#0066FF' }}
               />
-              <span className="text-sm text-gray-700">
-                The {positionName} {dayName}
-              </span>
+              <span>The {positionName} {dayName}</span>
             </label>
           </div>
         </div>
@@ -243,65 +293,76 @@ export default function RecurrenceSelector({
 
       {/* End Condition */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Ends
-        </label>
-        <div className="space-y-3">
+        <label style={labelStyle}>Ends</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* Never */}
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label style={radioLabelStyle}>
             <input
               type="radio"
               name="endType"
               checked={endType === 'NEVER'}
               onChange={() => handleEndTypeChange('NEVER')}
-              className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+              disabled={disabled}
+              style={{ width: '16px', height: '16px', accentColor: '#0066FF' }}
             />
-            <span className="text-sm text-gray-700">Never</span>
+            <span>Never</span>
           </label>
 
           {/* On Date */}
-          <label className="flex items-start gap-2 cursor-pointer">
+          <label style={{ ...radioLabelStyle, alignItems: 'flex-start' }}>
             <input
               type="radio"
               name="endType"
               checked={endType === 'DATE'}
               onChange={() => handleEndTypeChange('DATE')}
-              className="w-4 h-4 text-blue-600 focus:ring-blue-500 mt-0.5"
+              disabled={disabled}
+              style={{ width: '16px', height: '16px', accentColor: '#0066FF', marginTop: '2px' }}
             />
-            <div className="flex-1 flex items-center gap-2">
-              <span className="text-sm text-gray-700">On</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+              <span>On</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => handleEndDateChange(e.target.value)}
                 min={startDate}
-                className="flex-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={endType !== 'DATE'}
+                disabled={disabled || endType !== 'DATE'}
+                style={{
+                  ...inputStyle,
+                  flex: 1,
+                  background: (disabled || endType !== 'DATE') ? '#F9FAFB' : '#fff',
+                  cursor: (disabled || endType !== 'DATE') ? 'not-allowed' : 'pointer',
+                }}
               />
             </div>
           </label>
 
           {/* After Count */}
-          <label className="flex items-start gap-2 cursor-pointer">
+          <label style={{ ...radioLabelStyle, alignItems: 'flex-start' }}>
             <input
               type="radio"
               name="endType"
               checked={endType === 'COUNT'}
               onChange={() => handleEndTypeChange('COUNT')}
-              className="w-4 h-4 text-blue-600 focus:ring-blue-500 mt-0.5"
+              disabled={disabled}
+              style={{ width: '16px', height: '16px', accentColor: '#0066FF', marginTop: '2px' }}
             />
-            <div className="flex-1 flex items-center gap-2">
-              <span className="text-sm text-gray-700">After</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>After</span>
               <input
                 type="number"
                 value={count}
                 onChange={(e) => handleCountChange(e.target.value)}
                 min="1"
                 max="999"
-                className="w-20 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={endType !== 'COUNT'}
+                disabled={disabled || endType !== 'COUNT'}
+                style={{
+                  ...inputStyle,
+                  width: '80px',
+                  background: (disabled || endType !== 'COUNT') ? '#F9FAFB' : '#fff',
+                  cursor: (disabled || endType !== 'COUNT') ? 'not-allowed' : 'text',
+                }}
               />
-              <span className="text-sm text-gray-700">occurrences</span>
+              <span>occurrences</span>
             </div>
           </label>
         </div>

@@ -1,4 +1,4 @@
-import { useState, KeyboardEvent } from 'react';
+import { useState, KeyboardEvent, CSSProperties } from 'react';
 import type { AttendeeInput } from '../../types/event';
 
 interface AttendeeInputProps {
@@ -6,20 +6,52 @@ interface AttendeeInputProps {
   onChange: (attendees: AttendeeInput[]) => void;
   maxAttendees?: number;
   error?: string;
+  disabled?: boolean;
 }
+
+const labelStyle: CSSProperties = {
+  display: 'block',
+  fontSize: '14px',
+  fontWeight: '500',
+  color: '#374151',
+  marginBottom: '8px',
+};
+
+const chipStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '4px 10px',
+  background: '#E6F0FF',
+  color: '#0066FF',
+  borderRadius: '6px',
+  fontSize: '14px',
+};
+
+const inputContainerStyle: CSSProperties = {
+  minHeight: '48px',
+  width: '100%',
+  padding: '8px 12px',
+  border: '1px solid rgba(0, 0, 0, 0.1)',
+  borderRadius: '8px',
+  background: '#fff',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
+};
 
 /**
  * Chip input component for managing event attendees
  * Supports email validation and chip-style display
  */
-export default function AttendeeInput({
+export default function AttendeeInputComponent({
   attendees,
   onChange,
   maxAttendees = 100,
   error,
+  disabled = false,
 }: AttendeeInputProps) {
   const [inputValue, setInputValue] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -76,35 +108,42 @@ export default function AttendeeInput({
   const displayError = error || localError;
 
   return (
-    <div className="w-full">
-      <label htmlFor="attendee-input" className="block text-sm font-medium text-gray-700 mb-1">
+    <div style={{ width: '100%' }}>
+      <label htmlFor="attendee-input" style={labelStyle}>
         Attendees
       </label>
 
       {/* Chip Container */}
       <div
-        className={`min-h-[42px] w-full px-3 py-2 border rounded-lg transition-colors duration-200 ${
-          displayError
-            ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500'
-            : 'border-gray-300 focus-within:border-blue-500 focus-within:ring-blue-500'
-        } focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-1`}
+        style={{
+          ...inputContainerStyle,
+          borderColor: displayError ? '#EF4444' : isFocused ? '#0066FF' : 'rgba(0, 0, 0, 0.1)',
+          boxShadow: isFocused ? '0 0 0 3px rgba(0, 102, 255, 0.1)' : 'none',
+          background: disabled ? '#F9FAFB' : '#fff',
+        }}
       >
-        <div className="flex flex-wrap gap-2 items-center">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
           {/* Attendee Chips */}
           {attendees.map((attendee) => (
-            <div
-              key={attendee.email}
-              className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
-            >
+            <div key={attendee.email} style={chipStyle}>
               <span>{attendee.email}</span>
               <button
                 type="button"
                 onClick={() => removeAttendee(attendee.email)}
-                className="text-blue-600 hover:text-blue-800 focus:outline-none"
+                disabled={disabled}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '0',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  color: '#0066FF',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
                 aria-label={`Remove ${attendee.email}`}
               >
                 <svg
-                  className="w-4 h-4"
+                  style={{ width: '16px', height: '16px' }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -121,7 +160,7 @@ export default function AttendeeInput({
           ))}
 
           {/* Input Field */}
-          <div className="flex-1 flex items-center gap-2 min-w-[200px]">
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', minWidth: '200px' }}>
             <input
               id="attendee-input"
               type="email"
@@ -131,8 +170,18 @@ export default function AttendeeInput({
                 setLocalError(null);
               }}
               onKeyDown={handleKeyDown}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               placeholder={attendees.length === 0 ? 'Enter email address' : ''}
-              className="flex-1 border-none outline-none focus:ring-0 p-0 text-sm"
+              disabled={disabled}
+              style={{
+                flex: 1,
+                border: 'none',
+                outline: 'none',
+                padding: '4px 0',
+                fontSize: '14px',
+                background: 'transparent',
+              }}
               aria-invalid={displayError ? 'true' : 'false'}
               aria-describedby={displayError ? 'attendee-error' : undefined}
             />
@@ -140,7 +189,17 @@ export default function AttendeeInput({
               <button
                 type="button"
                 onClick={handleAddClick}
-                className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                disabled={disabled}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  background: '#0066FF',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                }}
               >
                 Add
               </button>
@@ -151,14 +210,14 @@ export default function AttendeeInput({
 
       {/* Helper Text */}
       {!displayError && (
-        <p className="mt-1 text-sm text-gray-500">
+        <p style={{ marginTop: '6px', fontSize: '13px', color: '#666' }}>
           Press Enter or click Add to add an attendee. {attendees.length}/{maxAttendees} attendees
         </p>
       )}
 
       {/* Error Message */}
       {displayError && (
-        <p id="attendee-error" className="mt-1 text-sm text-red-600" role="alert">
+        <p id="attendee-error" style={{ marginTop: '6px', fontSize: '13px', color: '#EF4444' }} role="alert">
           {displayError}
         </p>
       )}
