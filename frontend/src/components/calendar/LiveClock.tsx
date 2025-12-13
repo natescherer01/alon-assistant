@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks/calendar/useAuth';
 import { formatTime24Hour, getUserTimezone } from '../../utils/calendar/dateTime';
 
 /**
- * Live clock display styled like a digital LED clock
+ * Live clock display with modern styling
  * Shows current time in 24-hour format with timezone
  * Updates every second
  */
@@ -34,32 +34,31 @@ export default function LiveClock() {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '12px',
-        padding: '8px 16px',
-        backgroundColor: '#1a1a1a',
-        borderRadius: '8px',
-        border: '2px solid #333',
-        boxShadow: 'inset 0 2px 8px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)',
+        padding: '10px 20px',
+        backgroundColor: '#FFFFFF',
+        borderRadius: '16px',
+        border: '1px solid #E5E7EB',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06)',
       }}
     >
       <span
         style={{
-          fontFamily: '"SF Mono", "Roboto Mono", "Consolas", monospace',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
           fontSize: '28px',
           fontWeight: 600,
-          color: '#00ff88',
-          textShadow: '0 0 10px rgba(0, 255, 136, 0.7), 0 0 20px rgba(0, 255, 136, 0.4)',
-          letterSpacing: '2px',
+          color: '#0066FF',
+          letterSpacing: '1px',
         }}
       >
         {formatTime24Hour(currentTime, timezone)}
       </span>
       <span
         style={{
-          fontSize: '12px',
+          fontSize: '13px',
           fontWeight: 500,
-          color: '#666',
+          color: '#6B7280',
           textTransform: 'uppercase',
-          letterSpacing: '1px',
+          letterSpacing: '0.5px',
         }}
       >
         {displayTimezone}
