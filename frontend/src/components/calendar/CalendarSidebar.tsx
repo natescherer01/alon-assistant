@@ -22,6 +22,8 @@ interface CalendarSidebarProps {
   selectedUserIds: string[];
   onUserSelectionChange: (userIds: string[]) => void;
   onFreeTimeSlotsChange: (slots: FreeSlot[] | null) => void;
+  /** When true, renders as a full-page view instead of a sidebar (for mobile calendars tab) */
+  isMobileFullPage?: boolean;
 }
 
 /**
@@ -36,6 +38,7 @@ export default function CalendarSidebar({
   selectedUserIds,
   onUserSelectionChange,
   onFreeTimeSlotsChange,
+  isMobileFullPage = false,
 }: CalendarSidebarProps) {
   const [expandedCalendarId, setExpandedCalendarId] = useState<string | null>(null);
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
@@ -180,6 +183,355 @@ export default function CalendarSidebar({
     if (calendar.isConnected) return '#22C55E';
     return '#EF4444';
   };
+
+  // Mobile full page view - render as a simple list without sidebar chrome
+  if (isMobileFullPage) {
+    return (
+      <>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Header */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '8px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '18px', fontWeight: '600', color: '#000' }}>Calendars</span>
+              <span style={{
+                fontSize: '13px',
+                fontWeight: '500',
+                color: '#666',
+                background: '#f5f5f5',
+                padding: '2px 8px',
+                borderRadius: '10px',
+              }}>
+                {calendars.length}
+              </span>
+            </div>
+          </div>
+
+          {/* Calendar Items */}
+          {calendars.map((calendar) => {
+            const calColor = getCalendarColor(calendar.calendarColor, calendar.provider as Provider);
+            return (
+              <div
+                key={calendar.id}
+                style={{
+                  background: '#fafafa',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Calendar Header */}
+                <button
+                  onClick={() => handleCalendarClick(calendar.id)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{
+                    width: '4px',
+                    height: '24px',
+                    borderRadius: '2px',
+                    background: calColor,
+                    flexShrink: 0,
+                  }} />
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{
+                      fontSize: '15px',
+                      fontWeight: '500',
+                      color: '#333',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      margin: 0,
+                    }} title={calendar.calendarName}>
+                      {calendar.calendarName}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                      <div
+                        style={{
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          background: getStatusColor(calendar),
+                          animation: calendar.isSyncing ? 'pulse 2s infinite' : 'none',
+                        }}
+                      />
+                      <span style={{ fontSize: '13px', color: '#999' }}>
+                        {calendar.isSyncing ? 'Syncing...' : calendar.isConnected ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <svg
+                    style={{
+                      width: '16px',
+                      height: '16px',
+                      color: '#999',
+                      transform: expandedCalendarId === calendar.id ? 'rotate(180deg)' : 'none',
+                    }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Expanded Calendar Details */}
+                {expandedCalendarId === calendar.id && (
+                  <div style={{
+                    padding: '14px',
+                    background: '#fff',
+                    borderTop: '1px solid #eee',
+                  }}>
+                    {/* Info Row */}
+                    <div style={{ marginBottom: '14px' }}>
+                      {calendar.ownerEmail && (
+                        <p style={{ fontSize: '13px', color: '#999', margin: '0 0 4px 0' }}>
+                          {calendar.ownerEmail}
+                        </p>
+                      )}
+                      {calendar.lastSyncedAt && (
+                        <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>
+                          Synced {formatRelativeTime(calendar.lastSyncedAt)}
+                        </p>
+                      )}
+                      {calendar.syncError && (
+                        <p style={{ fontSize: '13px', color: '#DC2626', margin: '4px 0 0 0' }}>
+                          Sync failed
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {!calendar.isReadOnly && (
+                        <button
+                          onClick={() => handleSync(calendar)}
+                          disabled={isSyncing === calendar.id}
+                          style={{
+                            flex: 1,
+                            padding: '10px 14px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#000',
+                            background: '#f5f5f5',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: isSyncing === calendar.id ? 'not-allowed' : 'pointer',
+                            opacity: isSyncing === calendar.id ? 0.7 : 1,
+                          }}
+                        >
+                          {isSyncing === calendar.id ? 'Syncing...' : 'Sync'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDisconnectClick(calendar)}
+                        style={{
+                          padding: '10px 14px',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          color: '#999',
+                          background: 'transparent',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Add Calendar Button */}
+          <button
+            onClick={() => setShowConnectModal(true)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '15px',
+              fontWeight: '500',
+              color: '#666',
+              background: '#fafafa',
+              cursor: 'pointer',
+            }}
+          >
+            + Add calendar
+          </button>
+
+          {/* Team Section */}
+          <div style={{
+            marginTop: '16px',
+            paddingTop: '16px',
+            borderTop: '1px solid #eee',
+          }}>
+            <button
+              onClick={() => setShowTeamSection(!showTeamSection)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ fontSize: '13px', fontWeight: '600', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Team
+              </span>
+              <svg
+                style={{
+                  width: '16px',
+                  height: '16px',
+                  color: '#999',
+                  transform: showTeamSection ? 'rotate(180deg)' : 'none',
+                }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showTeamSection && (
+              <div style={{ marginTop: '12px' }}>
+                {filteredTeamUsers.length === 0 ? (
+                  <p style={{ fontSize: '14px', color: '#999', margin: 0 }}>
+                    No team members
+                  </p>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '12px' }}>
+                      {filteredTeamUsers.map(user => (
+                        <label
+                          key={user.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            background: selectedUserIds.includes(String(user.id)) ? '#f5f5f5' : 'transparent',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedUserIds.includes(String(user.id))}
+                            onChange={() => toggleUserSelection(String(user.id))}
+                            style={{ accentColor: '#000', cursor: 'pointer', width: '18px', height: '18px' }}
+                          />
+                          <span style={{
+                            fontSize: '15px',
+                            color: '#333',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {user.fullName || user.email.split('@')[0]}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={handleFindFreeTime}
+                      disabled={findFreeTimes.isPending}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        fontSize: '15px',
+                        fontWeight: '500',
+                        color: '#000',
+                        background: '#f5f5f5',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: findFreeTimes.isPending ? 'not-allowed' : 'pointer',
+                        opacity: findFreeTimes.isPending ? 0.7 : 1,
+                      }}
+                    >
+                      {findFreeTimes.isPending ? 'Finding...' : 'Find free time'}
+                    </button>
+
+                    {selectedUserIds.length > 0 && (
+                      <button
+                        onClick={clearFreeTimeSlots}
+                        style={{
+                          width: '100%',
+                          marginTop: '8px',
+                          padding: '8px',
+                          fontSize: '14px',
+                          color: '#999',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Disconnect Confirmation Modal */}
+        {calendarToDisconnect && (
+          <ConfirmationModal
+            isOpen={showDisconnectModal}
+            title="Disconnect Calendar"
+            message={`Are you sure you want to disconnect "${calendarToDisconnect.calendarName}"? This will remove all synced events.`}
+            confirmText="Disconnect"
+            cancelText="Cancel"
+            variant="danger"
+            onConfirm={handleDisconnectConfirm}
+            onCancel={() => {
+              setShowDisconnectModal(false);
+              setCalendarToDisconnect(null);
+            }}
+            isLoading={false}
+          />
+        )}
+
+        {/* Connect Calendar Modal */}
+        <ConnectCalendarModal
+          isOpen={showConnectModal}
+          onClose={() => setShowConnectModal(false)}
+        />
+
+        {/* Animations */}
+        <style>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+        `}</style>
+      </>
+    );
+  }
 
   return (
     <>

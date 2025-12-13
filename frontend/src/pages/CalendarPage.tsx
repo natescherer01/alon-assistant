@@ -31,6 +31,8 @@ export default function CalendarPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Mobile view state: 'calendar' shows the calendar grid, 'calendars' shows the calendars list
+  const [mobileView, setMobileView] = useState<'calendar' | 'calendars'>('calendar');
   // Multi-user calendar state
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [freeTimeSlots, setFreeTimeSlots] = useState<FreeSlot[] | null>(null);
@@ -344,13 +346,13 @@ export default function CalendarPage() {
               Tasks
             </button>
             <button
-              onClick={() => { setMobileMenuOpen(false); }}
+              onClick={() => { setMobileView('calendar'); setMobileMenuOpen(false); }}
               style={{
                 padding: '12px 16px',
                 fontSize: '14px',
                 fontWeight: '500',
-                color: '#000',
-                background: '#f5f5f5',
+                color: mobileView === 'calendar' ? '#000' : '#333',
+                background: mobileView === 'calendar' ? '#f5f5f5' : 'transparent',
                 border: 'none',
                 borderRadius: '6px',
                 cursor: 'pointer',
@@ -376,13 +378,13 @@ export default function CalendarPage() {
               )}
             </button>
             <button
-              onClick={() => { setIsSidebarCollapsed(!isSidebarCollapsed); setMobileMenuOpen(false); }}
+              onClick={() => { setMobileView('calendars'); setMobileMenuOpen(false); }}
               style={{
                 padding: '12px 16px',
                 fontSize: '14px',
                 fontWeight: '500',
-                color: '#333',
-                background: 'transparent',
+                color: mobileView === 'calendars' ? '#000' : '#333',
+                background: mobileView === 'calendars' ? '#f5f5f5' : 'transparent',
                 border: 'none',
                 borderRadius: '6px',
                 cursor: 'pointer',
@@ -430,8 +432,8 @@ export default function CalendarPage() {
 
       {/* Main Layout */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Left Sidebar - Only show if calendars are loaded */}
-        {!isLoading && calendars.length > 0 && (
+        {/* Left Sidebar - Only show on desktop when calendars are loaded */}
+        {!isMobile && !isLoading && calendars.length > 0 && (
           <CalendarSidebar
             calendars={calendars}
             isCollapsed={isSidebarCollapsed}
@@ -443,122 +445,241 @@ export default function CalendarPage() {
           />
         )}
 
-        {/* Main Content Area */}
-        <main style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflowY: 'auto',
-          minWidth: 0,
-          background: '#fff',
-        }}>
-          <div style={{
+        {/* Mobile Calendars View - Full page list of calendars */}
+        {isMobile && mobileView === 'calendars' && (
+          <main style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            padding: isMobile ? '16px' : '24px',
+            overflowY: 'auto',
+            minWidth: 0,
+            background: '#fff',
           }}>
-            {/* Loading State - minimal */}
-            {isLoading && (
-              <div style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '16px',
+            }}>
+              {/* Loading State */}
+              {isLoading && (
                 <div style={{
-                  width: '24px',
-                  height: '24px',
-                  border: '2px solid #eee',
-                  borderTop: '2px solid #000',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite',
-                }} />
-              </div>
-            )}
-
-            {/* Error State - minimal */}
-            {error && !isLoading && (
-              <div style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '12px',
-              }}>
-                <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>Failed to load calendars</p>
-                <button
-                  onClick={() => fetchCalendars()}
-                  style={{
-                    background: '#f5f5f5',
-                    color: '#000',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#eee'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-
-            {/* Empty State - No calendars connected */}
-            {!isLoading && !error && calendars.length === 0 && (
-              <div style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '16px',
-              }}>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ color: '#000', fontSize: '15px', fontWeight: '500', margin: '0 0 4px 0' }}>
-                    No calendars connected
-                  </p>
-                  <p style={{ color: '#999', fontSize: '14px', margin: 0 }}>
-                    Connect a calendar to see your events
-                  </p>
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    border: '2px solid #eee',
+                    borderTop: '2px solid #000',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                  }} />
                 </div>
-                <button
-                  onClick={handleOpenConnectModal}
-                  style={{
-                    background: '#000',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#333'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = '#000'}
-                >
-                  Connect Calendar
-                </button>
-              </div>
-            )}
+              )}
 
-            {/* Calendar View - Show when calendars are connected */}
-            {!isLoading && !error && calendars.length > 0 && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <UnifiedCalendarView
-                  key={refreshKey}
-                  onEventClick={handleEventClick}
-                  freeSlots={freeTimeSlots}
-                  onCreateEvent={() => setShowCreateEventModal(true)}
+              {/* Error State */}
+              {error && !isLoading && (
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '12px',
+                }}>
+                  <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>Failed to load calendars</p>
+                  <button
+                    onClick={() => fetchCalendars()}
+                    style={{
+                      background: '#f5f5f5',
+                      color: '#000',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Empty State */}
+              {!isLoading && !error && calendars.length === 0 && (
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '16px',
+                }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ color: '#000', fontSize: '15px', fontWeight: '500', margin: '0 0 4px 0' }}>
+                      No calendars connected
+                    </p>
+                    <p style={{ color: '#999', fontSize: '14px', margin: 0 }}>
+                      Connect a calendar to see your events
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleOpenConnectModal}
+                    style={{
+                      background: '#000',
+                      color: '#fff',
+                      border: 'none',
+                      padding: '10px 20px',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Connect Calendar
+                  </button>
+                </div>
+              )}
+
+              {/* Mobile Calendars List */}
+              {!isLoading && !error && calendars.length > 0 && (
+                <CalendarSidebar
+                  calendars={calendars}
+                  isCollapsed={false}
+                  onToggle={() => {}}
+                  currentUserId={currentUserId}
+                  selectedUserIds={selectedUserIds}
+                  onUserSelectionChange={setSelectedUserIds}
+                  onFreeTimeSlotsChange={setFreeTimeSlots}
+                  isMobileFullPage={true}
                 />
-              </div>
-            )}
-          </div>
-        </main>
+              )}
+            </div>
+          </main>
+        )}
+
+        {/* Main Content Area - Calendar Grid */}
+        {(!isMobile || mobileView === 'calendar') && (
+          <main style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflowY: 'auto',
+            minWidth: 0,
+            background: '#fff',
+          }}>
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              padding: isMobile ? '16px' : '24px',
+            }}>
+              {/* Loading State - minimal */}
+              {isLoading && (
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    border: '2px solid #eee',
+                    borderTop: '2px solid #000',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                  }} />
+                </div>
+              )}
+
+              {/* Error State - minimal */}
+              {error && !isLoading && (
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '12px',
+                }}>
+                  <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>Failed to load calendars</p>
+                  <button
+                    onClick={() => fetchCalendars()}
+                    style={{
+                      background: '#f5f5f5',
+                      color: '#000',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#eee'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Empty State - No calendars connected */}
+              {!isLoading && !error && calendars.length === 0 && (
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '16px',
+                }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ color: '#000', fontSize: '15px', fontWeight: '500', margin: '0 0 4px 0' }}>
+                      No calendars connected
+                    </p>
+                    <p style={{ color: '#999', fontSize: '14px', margin: 0 }}>
+                      Connect a calendar to see your events
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleOpenConnectModal}
+                    style={{
+                      background: '#000',
+                      color: '#fff',
+                      border: 'none',
+                      padding: '10px 20px',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#333'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = '#000'}
+                  >
+                    Connect Calendar
+                  </button>
+                </div>
+              )}
+
+              {/* Calendar View - Show when calendars are connected */}
+              {!isLoading && !error && calendars.length > 0 && (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <UnifiedCalendarView
+                    key={refreshKey}
+                    onEventClick={handleEventClick}
+                    freeSlots={freeTimeSlots}
+                    onCreateEvent={() => setShowCreateEventModal(true)}
+                  />
+                </div>
+              )}
+            </div>
+          </main>
+        )}
       </div>
 
       {/* Connect Calendar Modal */}
