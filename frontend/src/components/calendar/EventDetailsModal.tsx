@@ -18,10 +18,32 @@ import {
 } from '../../utils/calendar/calendarColors';
 import type { EventFormData, EventFormErrors, CreateEventRequest, ReminderInput } from '../../types/event';
 
+// Initial event data passed from the calendar view (avoids extra API call)
+interface InitialEventData {
+  id: string;
+  title: string;
+  description?: string;
+  location?: string;
+  startTime: string;
+  endTime: string;
+  isAllDay: boolean;
+  provider: 'GOOGLE' | 'MICROSOFT' | 'ICS';
+  calendarName: string;
+  calendarColor?: string;
+  status?: string;
+  htmlLink?: string;
+  attendees?: string[];
+  teamsEnabled?: boolean;
+  teamsMeetingUrl?: string;
+  importance?: 'low' | 'normal' | 'high';
+  outlookCategories?: string[];
+}
+
 interface EventDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   eventId: string;
+  initialEvent?: InitialEventData;
   onEventUpdated?: () => void;
   onEventDeleted?: () => void;
 }
@@ -65,6 +87,7 @@ export default function EventDetailsModal({
   isOpen,
   onClose,
   eventId,
+  initialEvent,
   onEventUpdated,
   onEventDeleted,
 }: EventDetailsModalProps) {
@@ -109,10 +132,68 @@ export default function EventDetailsModal({
   });
   const [formErrors, setFormErrors] = useState<EventFormErrors>({});
 
-  // Load event details
+  // Convert initial event data to EventDetails format
+  const convertInitialEventToDetails = (initial: InitialEventData): EventDetails => {
+    return {
+      id: initial.id,
+      title: initial.title,
+      description: initial.description,
+      location: initial.location,
+      startTime: initial.startTime,
+      endTime: initial.endTime,
+      isAllDay: initial.isAllDay,
+      status: initial.status?.toUpperCase() as EventDetails['status'],
+      htmlLink: initial.htmlLink,
+      attendees: initial.attendees?.map(email => ({ email })),
+      calendar: {
+        provider: initial.provider,
+        name: initial.calendarName,
+        color: initial.calendarColor,
+      },
+      providerMetadata: {
+        teamsEnabled: initial.teamsEnabled,
+        teamsMeetingUrl: initial.teamsMeetingUrl,
+        importance: initial.importance,
+        outlookCategories: initial.outlookCategories,
+      },
+      createdAt: '',
+      updatedAt: '',
+    };
+  };
+
+  // Initialize form data from event details
+  const initializeFormData = (eventData: EventDetails) => {
+    setFormData({
+      title: eventData.title || '',
+      description: eventData.description || '',
+      location: eventData.location || '',
+      startDate: toLocalDate(eventData.startTime),
+      startTime: eventData.isAllDay ? '00:00' : toLocalTime(eventData.startTime),
+      endDate: toLocalDate(eventData.endTime),
+      endTime: eventData.isAllDay ? '23:59' : toLocalTime(eventData.endTime),
+      isAllDay: eventData.isAllDay,
+      timezone: eventData.timezone || getUserTimezone(),
+      calendarConnectionId: '',
+      recurrence: null,
+      attendees: eventData.attendees || [],
+      reminders: eventData.reminders || [],
+    });
+  };
+
+  // Load event details - use initialEvent if available, otherwise fetch from API
   useEffect(() => {
     if (isOpen && eventId) {
-      loadEventDetails();
+      if (initialEvent && initialEvent.id === eventId) {
+        // Use pre-loaded event data - no API call needed
+        const eventDetails = convertInitialEventToDetails(initialEvent);
+        setEvent(eventDetails);
+        initializeFormData(eventDetails);
+        setIsLoading(false);
+        setError(null);
+      } else {
+        // Fetch from API (fallback for deep links or stale data)
+        loadEventDetails();
+      }
       fetchCalendars();
     }
   }, [isOpen, eventId]);
@@ -148,23 +229,7 @@ export default function EventDetailsModal({
     try {
       const eventData = await eventsApi.getEventById(eventId);
       setEvent(eventData);
-
-      // Initialize form data for edit mode
-      setFormData({
-        title: eventData.title || '',
-        description: eventData.description || '',
-        location: eventData.location || '',
-        startDate: toLocalDate(eventData.startTime),
-        startTime: eventData.isAllDay ? '00:00' : toLocalTime(eventData.startTime),
-        endDate: toLocalDate(eventData.endTime),
-        endTime: eventData.isAllDay ? '23:59' : toLocalTime(eventData.endTime),
-        isAllDay: eventData.isAllDay,
-        timezone: eventData.timezone || getUserTimezone(),
-        calendarConnectionId: '',
-        recurrence: null,
-        attendees: eventData.attendees || [],
-        reminders: eventData.reminders || [],
-      });
+      initializeFormData(eventData);
     } catch (err: any) {
       console.error('Failed to load event:', err);
       if (err.response?.status === 404) {
